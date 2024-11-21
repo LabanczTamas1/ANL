@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import LandingPage from './OuterApp/LandingPage.tsx';
-import Register from './OuterApp/Register.tsx';
+import RegisterPage from './OuterApp/RegisterPage.tsx';
+import LoginPage from './OuterApp/LoginPage.tsx';
 import NotFoundPage from './HelperPages/NotFoundPage.tsx';
 import App from './App.tsx';
 
@@ -14,7 +15,11 @@ const router = createBrowserRouter([{
 },
 {
   path: '/register',
-  element: <Register/>
+  element: <RegisterPage/>
+},
+{
+  path: '/login',
+  element: <LoginPage/>
 }
 ]);
 
