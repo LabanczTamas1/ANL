@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';  // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import stars from '/public/LandingPage.svg';
 import googleLogo from '/public/GoogleLogo.svg';

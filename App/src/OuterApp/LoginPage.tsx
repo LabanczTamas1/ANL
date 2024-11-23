@@ -39,6 +39,7 @@ const LoginPage: React.FC = () => {
         console.log('User:', responseData);
 
         localStorage.setItem("authToken", responseData.token);
+        localStorage.setItem("name", responseData.user.username);
 
         navigate('/progress');
       } else {
@@ -69,7 +70,7 @@ const LoginPage: React.FC = () => {
         ></div>
       </div>
       <Navbar />
-      <div className="relative h-screen flex justify-center text-white">
+      <div className="relative h-[100vh] flex justify-center text-white">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 rounded-lg shadow-lg w-full max-w-md"

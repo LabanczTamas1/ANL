@@ -8,6 +8,7 @@ import LoginPage from './OuterApp/LoginPage.tsx';
 import NotFoundPage from './HelperPages/NotFoundPage.tsx';
 import App from './App.tsx';
 import ProgressPage from './InnerApp/ProgressPage.tsx';
+import Contact from './OuterApp/Contact.tsx';
 
 const router = createBrowserRouter([{
   path: '/',
@@ -25,6 +26,10 @@ const router = createBrowserRouter([{
 {
   path: '/progress',
   element: <ProgressPage />
+},
+{
+  path: '/contact',
+  element: <Contact />
 }
 ]);
 

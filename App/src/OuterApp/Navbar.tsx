@@ -50,7 +50,7 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <div className="hidden lg:flex lg:items-center lg:h-full space-x-8 text-2xl font-bold font-inter mt-0">
-          <Link to="/register" className="hover:text-[#343E4C] p-5">
+          <Link to="/contact" className="hover:text-[#343E4C] p-5">
             Contact
           </Link>
           <Link to="/register" className="hover:text-[#343E4C] p-5">
