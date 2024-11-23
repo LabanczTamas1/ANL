@@ -29,11 +29,15 @@ const Navbar = () => {
   return (
     <div
       className={`relative sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? "lg:p-5 lg:pb-0 bg-[#080A0D] lg:mt-0" : "lg:p-10 lg:pt-[50px] lg:mt-0"
+        isScrolled ? "lg:p-5 lg:pb-0 bg-[#080A0D] lg:pt-0 lg:mt-0" : "lg:p-10 lg:pt-[50px] lg:mt-0"
       }`}
     >
       {/* Navbar container */}
-      <div className="flex items-center justify-between text-white lg:py-4 lg:border-t-2 lg:border-white">
+      <div
+  className={`flex items-center justify-between text-white lg:py-4 ${
+    isScrolled ? "" : "lg:border-t-2 lg:border-white"
+  }`}
+>
         <Link to="/" className="pl-5">
           <img
             src={lightLogo}
@@ -45,7 +49,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden lg:flex space-x-8 text-2xl font-bold font-inter mt-5">
+        <div className="hidden lg:flex lg:items-center lg:h-full space-x-8 text-2xl font-bold font-inter mt-0">
           <Link to="/register" className="hover:text-[#343E4C] p-5">
             Contact
           </Link>

@@ -2,6 +2,8 @@ import React from 'react'
 import Navbar from './Navbar'
 import stars from '/public/LandingPage.svg';
 import HeroSection from './HeroSection';
+import Footer from './Footer';
+import PersonCard from './PersonCard';
 
 
 const LandingPage = () => {
@@ -25,7 +27,12 @@ const LandingPage = () => {
     World Health Organization
   </a>, global vaccination rates increased by 10% in 2023.
 </p>
+<section className='flex md:flex-row gap-50 md:justify-around flex-col items-center justify-center'>
+  <PersonCard imageUrl="/public/Picture1.png" name="Koszta Zsolt" position="Co-Founder" description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"/>
+  <PersonCard imageUrl="/public/Picture1.png" name="Koszta Zsolt" position="Co-Founder" description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"/>
+</section>
 
+      <Footer />
   </div>
   )
 }
