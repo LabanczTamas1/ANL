@@ -12,10 +12,23 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(express.json());
-app.use(cors({
-    origin: 'http://localhost:5173', // Change to your front-end URL
-}));
 
+
+const allowedOrigins = ['http://localhost:5173', 'http://192.168.0.134:5173'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 console.log("server.js-----------------");
 console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID);
 console.log("Google Client Secret:", process.env.GOOGLE_CLIENT_SECRET);
