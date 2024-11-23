@@ -7,6 +7,7 @@ import RegisterPage from './OuterApp/RegisterPage.tsx';
 import LoginPage from './OuterApp/LoginPage.tsx';
 import NotFoundPage from './HelperPages/NotFoundPage.tsx';
 import App from './App.tsx';
+import ProgressPage from './InnerApp/ProgressPage.tsx';
 
 const router = createBrowserRouter([{
   path: '/',
@@ -20,6 +21,10 @@ const router = createBrowserRouter([{
 {
   path: '/login',
   element: <LoginPage/>
+},
+{
+  path: '/progress',
+  element: <ProgressPage />
 }
 ]);
 

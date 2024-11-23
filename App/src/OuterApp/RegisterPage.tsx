@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';  // Import useNavigate
 import Navbar from './Navbar';
 import stars from '/public/LandingPage.svg';
 import googleLogo from '/public/GoogleLogo.svg';
@@ -16,6 +17,8 @@ interface RegisterFormInputs {
 }
 
 const RegisterForm: React.FC = () => {
+  const navigate = useNavigate(); // Initialize navigate
+
   const {
     register,
     handleSubmit,
@@ -23,10 +26,29 @@ const RegisterForm: React.FC = () => {
     formState: { errors },
   } = useForm<RegisterFormInputs>();
 
-  const onSubmit = (data: RegisterFormInputs) => {
-    console.log(data);
-    alert("Registration Successful!");
+  const onSubmit = async (data: RegisterFormInputs) => {
+    try {
+      const response = await fetch('http://localhost:3000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+  
+      if (response.ok) {
+        alert('Registration Successful!');
+        navigate('/progress');  // Redirect to /progress after success
+      } else {
+        const errorData = await response.json();
+        alert(`Registration failed: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+      alert('An error occurred. Please try again later.');
+    }
   };
+  
 
   return (
     <>
