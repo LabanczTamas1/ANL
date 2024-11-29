@@ -71,7 +71,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 // Google callback route
 app.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => res.redirect('/profile')
+  (req, res) => res.redirect('http://localhost:5173/progress')
 );
 
 // Profile route (protected)
@@ -295,3 +295,149 @@ app.get('/user/:username', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.post("/api/save-email", authenticateJWT, async (req, res) => {
+  const { subject, recipient, body , name} = req.body;
+
+  
+  // Validate the incoming data
+  if (!subject || !recipient || !body) {
+    return res.status(400).json({ error: "All fields (subject, recipient, body) are required" });
+  }
+
+  try {
+    // Debug input values
+    console.log("Incoming Data:", { subject, recipient, body , name});
+
+    // Serialize body and recipient if needed
+    const recipientString = typeof recipient === "string" ? recipient : JSON.stringify(recipient);
+    const bodyString = typeof body === "string" ? body : JSON.stringify(body);
+
+    // Verify the JWT token to get the user info
+    const token = req.headers['authorization']?.split(' ')[1]; // Assuming 'Bearer <token>'
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, 'yourSecretKey'); // Replace with your secret key
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userName = `username:${name}`;
+    console.log("------------", userName);
+    const userId = await redisClient.get(userName);
+
+    console.log("Here is the id:", userId);
+
+
+    const userData = await redisClient.hGetAll(`user:${userId}`);
+    console.log("User Data: ", userData);
+
+    const fromEmail = userData.email;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is missing in the token" });
+    }
+
+    const mailId = uuidv4();
+    const emailDetails = `MailDetails:${mailId}`;
+
+    
+    const currentDate = new Date();
+    const timestamp = currentDate.getTime();
+
+    // Save email data in Redis as a hash
+    await redisClient.hSet(emailDetails, {
+      fromId: userId,  // Store userId as 'from'
+      fromName: name,
+      fromEmail: fromEmail,
+      subject: subject,
+      recipient: recipientString,  // Use the serialized string here
+      body: bodyString,
+      timeSended: timestamp             // Use the serialized string here
+    });
+
+
+    const inboxRankingName = `inbox:${userId}`;
+    await redisClient.zAdd(inboxRankingName, {
+      score: timestamp,
+      value: mailId
+    });
+
+    const sentMailRankingName = `SentMail:${userId}`;
+    await redisClient.zAdd(sentMailRankingName, {
+      score: timestamp,
+      value: mailId
+    });
+
+    // Fetch and log stored data for debugging
+    const storedData = await redisClient.hGetAll(emailDetails); // Corrected emailDetails variable name
+    console.log("Stored Data in Redis:", storedData);
+
+    // Set a TTL (optional): e.g., expire the email data after 30 days
+    await redisClient.expire(emailDetails, 30 * 24 * 60 * 60); // 30 days in seconds
+
+    res.status(200).json({ message: "Email saved successfully", id: mailId }); // Use mailId here
+  } catch (error) {
+    console.error("Error saving email:", error);
+    res.status(500).json({ error: "Failed to save email" });
+  }
+});
+
+app.get("/inbox/:username", async (req, res) => {
+  const { username } = req.params;
+  console.log("Your username: ", username);
+  const userNameCreated = `username:${username}`;
+
+  try {
+    const userId = await redisClient.get(userNameCreated);
+    console.log("User ID:", userId);
+
+    const mails = await redisClient.zRange(`inbox:${userId}`, 0, -1);
+    console.log("Your mails:", mails);
+
+    // Fetch details for each mail ID
+    const mailDetails = await Promise.all(
+      mails.map((mailId) => redisClient.hGetAll(`MailDetails:${mailId}`))
+    );
+
+    console.log("Mail details:", mailDetails);
+    res.json(mailDetails); // Return the mail details
+  } catch (error) {
+    console.error("Error fetching inbox:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get("/sentmails/:username", async (req, res) => {
+  const { username } = req.params;
+  console.log("Your username: ", username);
+  const userNameCreated = `username:${username}`;
+
+  try {
+    const userId = await redisClient.get(userNameCreated);
+    console.log("User ID:", userId);
+
+    const mails = await redisClient.zRange(`SentMail:${userId}`, 0, 1);
+    console.log("Your mails:", mails);
+
+    // Fetch details for each mail ID
+    const mailDetails = await Promise.all(
+      mails.map((mailId) => redisClient.hGetAll(`MailDetails:${mailId}`))
+    );
+
+    console.log("Mail details:", mailDetails);
+    res.json(mailDetails); // Return the mail details
+  } catch (error) {
+    console.error("Error fetching inbox:", error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+  
+  
+  
