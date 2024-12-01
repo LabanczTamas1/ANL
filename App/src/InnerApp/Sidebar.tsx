@@ -78,6 +78,13 @@ const Sidebar: React.FC = () => {
             <FaStar className="text-lg" />
             <span>Spends</span>
           </div>
+
+          <Link to="/home/kanban">
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+              <FaUserCircle className="text-lg" />
+              <span>Kanban</span>
+            </div>
+          </Link>
           <div onClick={handleLogout} className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg cursor-pointer">
             <FaSignOutAlt className="text-lg" />
             <span>Logout</span>
