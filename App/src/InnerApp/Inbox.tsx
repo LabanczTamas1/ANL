@@ -94,7 +94,7 @@ const Inbox = () => {
 
             <LastOutGoing />
 
-            <div className="p-2 border-[1px] border-[#E5E6E7] rounded-lg">
+            <div className="p-2 border-[1px] border-[#E5E6E7] rounded-lg mt-2">
               <h2 className="font-[800] text-[2.375em] pl-2">Inbox</h2>
 
               <div className="max-h-96 overflow-y-auto">

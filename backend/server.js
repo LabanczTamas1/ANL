@@ -438,6 +438,323 @@ app.get("/sentmails/:username", async (req, res) => {
 });
 
 
+//Kanban//
+
+app.post("/api/columns", authenticateJWT, async (req, res) => {
+  const { priority, columnName, cardNumbers } = req.body;
+
+
+  try {
+    // Get user information from the JWT token
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, 'yourSecretKey'); // Replace with your secret key
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const columnId = `${uuidv4()}`;
+
+    await redisClient.zAdd(`KanbanTable`, { score: priority, value: columnId });
+
+    await redisClient.hSet(`Boards:${columnId}`, {
+      ColumnName: columnName,
+      CardNumber: cardNumbers
+    });
+
+    // Respond with the new columnId
+    console.log(req.body);
+    res.json({ columnId, columnName, priority, cardNumbers });
+  } catch (error) {
+    console.error("Error saving column:", error);
+    res.status(500).json({ error: "Failed to save column" });
+  }
+});
+
+app.get('/api/columns', authenticateJWT, async (req, res) => {
+  try {
+    const columnIds = await redisClient.zRange('KanbanTable', 0, -1); // Fetch all column IDs
+
+    const columnDetails = await Promise.all(
+      columnIds.map(async (columnId) => {
+        const columnData = await redisClient.hGetAll(`Boards:${columnId}`);
+        return {
+          id: columnId,
+          name: columnData.ColumnName, // Assuming `ColumnName` is the name of the column
+          cardNumber: parseInt(columnData.CardNumber, 10), // Parse the cardNumber correctly
+        };
+      })
+    );
+
+    res.json({ columns: columnDetails }); // Send columns to frontend
+
+  } catch (error) {
+    console.error('Error fetching columns:', error);
+    res.status(500).json({ error: 'Failed to fetch columns' });
+  }
+});
+
+
+app.put("/api/columns/priority", authenticateJWT, async (req, res) => {
+  const { columnId, priority } = req.body;
+
+  if (!columnId || priority === undefined) {
+    return res.status(400).json({ error: "Invalid request: columnId and priority are required" });
+  }
+
+  try {
+    // Update the column priority in the sorted set
+    await redisClient.zAdd("KanbanTable", { score: priority, value: columnId });
+    res.status(200).json({ success: true, message: "Priority updated successfully" });
+  } catch (error) {
+    console.error("Error updating column priority:", error);
+    res.status(500).json({ error: "Failed to update priority" });
+  }
+});
+
+app.delete("/api/columns/:id", authenticateJWT, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Remove the column from the sorted set
+    await redisClient.zRem("KanbanTable", id);
+
+    // Remove the column details
+    await redisClient.del(`Boards:${id}`);
+
+    res.status(200).json({ success: true, message: "Column deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting column:", error);
+    res.status(500).json({ error: "Failed to delete column" });
+  }
+});
+
+
+
+app.post("/api/cards", authenticateJWT, async (req, res) => {
+  const {
+    name,
+    isCommented,
+    columnId,
+    contactName,
+    businessName,
+    firstContact,
+    phoneNumber,
+    email,
+    website,
+    instagram,
+    facebook
+  } = req.body;
+
+  console.log("Received data:", req.body);
+  console.log(name);
+
+  if (!name || !columnId) {
+    return res.status(400).json({ error: "Card name and column ID are required" });
+  }
+
+  try {
+    // Get user information from the JWT token
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, 'yourSecretKey'); // Replace with your secret key
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userId = decoded.userId; // Assuming the token includes `userId`
+    const cardId = `${uuidv4()}`;
+    const timestamp = Date.now();
+
+    console.log(timestamp);
+    const BoardKey = `SortedCards:${columnId}`;
+
+    // Correct usage of zAdd
+    await redisClient.zAdd(BoardKey, [{ score: timestamp, value: cardId }]);
+
+    console.log(BoardKey);
+
+    console.log(typeof timestamp); // Should output "number"
+    console.log(typeof cardId); // Should output "string"
+    console.log(isCommented.toString());
+    // Save card in Redis
+    await redisClient.hSet(`CardDetails:${cardId}`, {
+      ColumnId: columnId,
+      ContactName: contactName,
+      BusinessName: businessName,
+      DateOfAdded: timestamp,
+      FirstContact: firstContact,
+      PhoneNumber: phoneNumber,
+      Email: email,
+      Website: website,
+      Instagram: instagram,
+      Facebook: facebook,
+      IsCommented: String(isCommented)
+    });
+
+    console.log(redisClient.hGetAll(`CardDetails:${cardId}`));
+
+    res.status(200).json({ message: "Card saved successfully", cardId });
+  } catch (error) {
+    console.error("Error saving card:", error);
+    res.status(500).json({ error: "Failed to save card" });
+  }
+});
+
+
+
+app.put("/api/cards/:cardId", authenticateJWT, async (req, res) => {
+  const { cardId } = req.params;
+  const { columnId } = req.body;
+
+  console.log("CardId:", cardId);
+  console.log("ColumnId:", columnId);
+
+  if (!columnId) {
+    return res.status(400).json({ error: "Column ID is required" });
+  }
+
+  try {
+    // Get user information from the JWT token
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, 'yourSecretKey'); // Replace with your secret key
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userId = decoded.userId; // Assuming the token includes `userId`
+    const timestamp = Date.now();
+
+    const BoardKey = `SortedCards:${columnId}`;
+
+    // First, remove the card from the old column (if it exists)
+    const currentColumnId = await redisClient.hGet(`CardDetails:${cardId}`, 'ColumnId');
+    if (currentColumnId) {
+      const oldBoardKey = `SortedCards:${currentColumnId}`;
+      // Remove card from old column's sorted set
+      await redisClient.zRem(oldBoardKey, cardId);
+    }
+
+    // Now, update the column for this card in Redis
+    await redisClient.hSet(`CardDetails:${cardId}`, 'ColumnId', columnId);
+
+    // Add the card to the new column's sorted set
+    await redisClient.zAdd(BoardKey, [{ score: timestamp, value: cardId }]);
+
+    res.status(200).json({ message: "Card updated successfully" });
+  } catch (error) {
+    console.error("Error updating card:", error);
+    res.status(500).json({ error: "Failed to update card" });
+  }
+});
+
+app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
+  const { cardId } = req.params;
+  const { columnId } = req.body;
+
+  console.log("CardIddeleteingReal:", cardId);
+  console.log("ColumnIddeletingReal:", columnId);
+
+  // Validate columnId presence
+  if (!columnId) {
+    return res.status(400).json({ error: "Column ID is required" });
+  }
+
+  try {
+    // Get and verify JWT token
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'yourSecretKey'); // Use env variable for JWT secret
+
+    // Define Redis keys
+    const cardDetailsKey = `CardDetails:${cardId}`;
+    const newBoardKey = `SortedCards:${columnId}`;
+    console.log(cardDetailsKey,newBoardKey);
+    // Check if card exists
+    const cardExists = await redisClient.exists(cardDetailsKey);
+    if (!cardExists) {
+      return res.status(404).json({ error: "Card not found" });
+    }
+
   
+
+    // Remove the card from the current column's sorted set if it exists
+    if (currentColumnId) {
+      const oldBoardKey = `SortedCards:${columnId}`;
+      await redisClient.zRem(oldBoardKey);
+    }
+
+
+    res.status(200).json({ message: "Card updated successfully" });
+  } catch (error) {
+    console.error("Error updating card:", error.message || error);
+    res.status(500).json({ error: "An error occurred while updating the card" });
+  }
+});
+
+
+
+//Todo
+app.post("/api/cards/comments", authenticateJWT, async (req, res) => {
+  const { userName, body } = req.body;
+
+  const commentId = `${uuidv4()}`;
+  const timestamp = Date.now();
+
+  await redisClient.hSet(`Comments:${cardId}`, {
+    CommentId: commentId,
+    UserName: userName,
+    DateAdded: timestamp,
+    Body: body
+  });
+
+});
+
+app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
+  const {columnId} = req.params;
+  try {
+
+    const cardIds = await redisClient.zRange(`SortedCards:${columnId}`, 0, -1);
+    console.log("Columns Card Ids:", cardIds);
+
+    const cardDetails = await Promise.all(
+      cardIds.map(async (cardId) => { // Make the callback async
+        const cardD = await redisClient.hGetAll(`CardDetails:${cardId}`);
+        //console.log(`Details for ${cardId}:`, cardD); // Log each card's details
+        return cardD; // Return the result for use in Promise.all
+      })
+    );
+
+
+    res.json({ cardDetails });
+   
+  } catch (error) {
+    console.error("Error updating card:", error);
+    res.status(500).json({ error: "Failed to update card" });
+  }
+    
+});
+
+
+
   
   
