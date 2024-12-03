@@ -501,21 +501,30 @@ app.get('/api/columns', authenticateJWT, async (req, res) => {
 
 
 app.put("/api/columns/priority", authenticateJWT, async (req, res) => {
-  const { columnId, priority } = req.body;
+  const columns = req.body.columns;
 
-  if (!columnId || priority === undefined) {
-    return res.status(400).json({ error: "Invalid request: columnId and priority are required" });
+  if (!Array.isArray(columns) || columns.length === 0) {
+    return res.status(400).json({ error: "Invalid request: columns array is required" });
   }
 
   try {
-    // Update the column priority in the sorted set
-    await redisClient.zAdd("KanbanTable", { score: priority, value: columnId });
-    res.status(200).json({ success: true, message: "Priority updated successfully" });
+    // Process each column update and update priority in the sorted set
+    const updatePromises = columns.map((column) => {
+      const { columnId, priority } = column;
+      if (!columnId || priority === undefined) {
+        throw new Error("Invalid column data: columnId and priority are required");
+      }
+      return redisClient.zAdd("KanbanTable", { score: priority, value: columnId });
+    });
+
+    await Promise.all(updatePromises);
+    res.status(200).json({ success: true, message: "Priorities updated successfully" });
   } catch (error) {
     console.error("Error updating column priority:", error);
     res.status(500).json({ error: "Failed to update priority" });
   }
 });
+
 
 app.delete("/api/columns/:id", authenticateJWT, async (req, res) => {
   const { id } = req.params;
@@ -613,7 +622,7 @@ app.post("/api/cards", authenticateJWT, async (req, res) => {
 
 
 
-app.put("/api/cards/:cardId", authenticateJWT, async (req, res) => {
+app.put("/api/cardsnot/:cardId", authenticateJWT, async (req, res) => {
   const { cardId } = req.params;
   const { columnId } = req.body;
 
@@ -668,8 +677,8 @@ app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
   const { cardId } = req.params;
   const { columnId } = req.body;
 
-  console.log("CardIddeleteingReal:", cardId);
-  console.log("ColumnIddeletingReal:", columnId);
+  console.log("CardId deleting:", cardId);
+  console.log("ColumnId deleting:", columnId);
 
   // Validate columnId presence
   if (!columnId) {
@@ -687,29 +696,29 @@ app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
 
     // Define Redis keys
     const cardDetailsKey = `CardDetails:${cardId}`;
-    const newBoardKey = `SortedCards:${columnId}`;
-    console.log(cardDetailsKey,newBoardKey);
-    // Check if card exists
+    const boardKey = `SortedCards:${columnId}`;
+
+    console.log(cardDetailsKey, boardKey);
+
+    // Check if card exists in Redis
     const cardExists = await redisClient.exists(cardDetailsKey);
     if (!cardExists) {
       return res.status(404).json({ error: "Card not found" });
     }
 
-  
+    // Remove the card from the sorted set of the current column
+    await redisClient.zRem(boardKey, cardId); // Correctly removing the card from the Redis sorted set
 
-    // Remove the card from the current column's sorted set if it exists
-    if (currentColumnId) {
-      const oldBoardKey = `SortedCards:${columnId}`;
-      await redisClient.zRem(oldBoardKey);
-    }
+    // Optionally, remove the card details if required (if you're storing the card in Redis as well)
+    await redisClient.del(cardDetailsKey); // Deletes the card details
 
-
-    res.status(200).json({ message: "Card updated successfully" });
+    res.status(200).json({ message: "Card deleted successfully" });
   } catch (error) {
-    console.error("Error updating card:", error.message || error);
-    res.status(500).json({ error: "An error occurred while updating the card" });
+    console.error("Error deleting card:", error.message || error);
+    res.status(500).json({ error: "An error occurred while deleting the card" });
   }
 });
+
 
 
 
@@ -745,13 +754,95 @@ app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
     );
 
 
-    res.json({ cardDetails });
+    res.json({ cardDetails,cardIds });
    
   } catch (error) {
     console.error("Error updating card:", error);
     res.status(500).json({ error: "Failed to update card" });
   }
     
+});
+
+
+app.put("/api/cards/priority", authenticateJWT, async (req, res) => {
+  console.log("Itt vagyok");
+  const { sourceColumnId, destinationColumnId, cardId, newIndex } = req.body;
+
+  //console.log("Received data for priority update-------------------:", sourceColumnId, destinationColumnId, cardId, newIndex);
+
+  // Validate the request body
+  if (!sourceColumnId || !destinationColumnId || !cardId || newIndex === undefined) {
+    console.error("Invalid request body:", { sourceColumnId, destinationColumnId, cardId, newIndex });
+    return res.status(400).json({ error: "Invalid request body" });
+  }
+  
+
+  try {
+    // Extract and verify the JWT token
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, "yourSecretKey"); // Replace with your secret key
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userId = decoded.userId; // Extract `userId` from the token
+
+    // Step 1: Remove the card from the source column
+    const sourceBoardKey = `SortedCards:${sourceColumnId}`;
+    const removed = await redisClient.zRem(sourceBoardKey, cardId);
+
+    if (removed === 0) {
+      console.warn(`Card ${cardId} not found in column ${sourceColumnId}`);
+    } else {
+      console.log(`Removed card ${cardId} from column ${sourceColumnId}`);
+    }
+
+    // Step 2: Add the card to the destination column with the new priority
+    const destinationBoardKey = `SortedCards:${destinationColumnId}`;
+    const timestamp = Date.now(); // Use the current timestamp as priority
+    await redisClient.zAdd(destinationBoardKey, [{ score: timestamp, value: cardId }]);
+
+    console.log(`Added card ${cardId} to column ${destinationColumnId} with priority ${timestamp}`);
+
+    // Step 3: Update card details in Redis
+    await redisClient.hSet(`CardDetails:${cardId}`, {
+      ColumnId: destinationColumnId, // Update column ID
+      DateOfAdded: timestamp, // Optionally update timestamp
+    });
+
+    console.log(`Updated card ${cardId}: moved to column ${destinationColumnId}`);
+
+    // Step 4: Reorder cards within the destination column if applicable
+    if (sourceColumnId === destinationColumnId) {
+      const cards = await redisClient.zRangeWithScores(destinationBoardKey, 0, -1);
+
+      // Filter out the moved card and place it at the new index
+      const updatedCards = [
+        ...cards.slice(0, newIndex),
+        { score: timestamp, value: cardId }, // Add the moved card at the new position
+        ...cards.slice(newIndex).filter((card) => card.value !== cardId), // Exclude moved card from old position
+      ];
+
+      // Clear and update the column order in Redis
+      await redisClient.zRemRangeByRank(destinationBoardKey, 0, -1); // Clear all existing cards
+      for (const { score, value } of updatedCards) {
+        await redisClient.zAdd(destinationBoardKey, [{ score, value }]);
+      }
+
+      console.log(`Reordered cards in column ${destinationColumnId}`);
+    }
+
+    res.status(200).json({ message: "Card priority updated successfully" });
+  } catch (error) {
+    console.error("Error updating card priority:", error);
+    res.status(500).json({ error: "Failed to update card priority" });
+  }
 });
 
 
