@@ -11,6 +11,7 @@ interface ColumnProps {
   };
   onAddCard: (columnId: string) => void; // Updated to accept `columnId`
   onDeleteColumn: (columnId: string) => void;
+  onDeleteCard: (columnId: string, cardId: string) => void;
   index: number; // Keeps track of the column's position
 }
 
@@ -18,6 +19,7 @@ const Column: React.FC<ColumnProps> = ({
   column,
   onAddCard,
   onDeleteColumn,
+  onDeleteCard,
   index,
 }) => {
   return (
@@ -46,7 +48,7 @@ const Column: React.FC<ColumnProps> = ({
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="space-y-4 max-h-[50vh] overflow-y-auto"
+                className="space-y-4 min-h-[1vh] max-h-[50vh] overflow-y-auto"
               >
                 {column.cards.map((card, index) => (
                   <Card
@@ -54,6 +56,7 @@ const Column: React.FC<ColumnProps> = ({
                     card={card}
                     columnId={column.id}
                     index={index}
+                    onDeleteCard={onDeleteCard}
                   />
                 ))}
                 {provided.placeholder}
