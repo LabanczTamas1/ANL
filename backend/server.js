@@ -743,7 +743,6 @@ app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
   try {
 
     const cardIds = await redisClient.zRange(`SortedCards:${columnId}`, 0, -1);
-    console.log("Columns Card Ids:", cardIds);
 
     const cardDetails = await Promise.all(
       cardIds.map(async (cardId) => { // Make the callback async
@@ -765,17 +764,14 @@ app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
 
 
 app.put("/api/cards/priority", authenticateJWT, async (req, res) => {
-  console.log("Itt vagyok");
+  console.log("Received data for priority update:", req.body);
   const { sourceColumnId, destinationColumnId, cardId, newIndex } = req.body;
-
-  //console.log("Received data for priority update-------------------:", sourceColumnId, destinationColumnId, cardId, newIndex);
 
   // Validate the request body
   if (!sourceColumnId || !destinationColumnId || !cardId || newIndex === undefined) {
     console.error("Invalid request body:", { sourceColumnId, destinationColumnId, cardId, newIndex });
     return res.status(400).json({ error: "Invalid request body" });
   }
-  
 
   try {
     // Extract and verify the JWT token
@@ -793,57 +789,61 @@ app.put("/api/cards/priority", authenticateJWT, async (req, res) => {
 
     const userId = decoded.userId; // Extract `userId` from the token
 
-    // Step 1: Remove the card from the source column
     const sourceBoardKey = `SortedCards:${sourceColumnId}`;
-    const removed = await redisClient.zRem(sourceBoardKey, cardId);
+    const destinationBoardKey = `SortedCards:${destinationColumnId}`;
 
-    if (removed === 0) {
-      console.warn(`Card ${cardId} not found in column ${sourceColumnId}`);
-    } else {
-      console.log(`Removed card ${cardId} from column ${sourceColumnId}`);
+    // Step 1: Remove the card from the source column if necessary
+    if (sourceColumnId !== destinationColumnId) {
+      const removed = await redisClient.zRem(sourceBoardKey, cardId);
+      if (removed === 0) {
+        console.warn(`Card ${cardId} not found in column ${sourceColumnId}`);
+      } else {
+        console.log(`Removed card ${cardId} from column ${sourceColumnId}`);
+      }
     }
 
     // Step 2: Add the card to the destination column with the new priority
-    const destinationBoardKey = `SortedCards:${destinationColumnId}`;
-    const timestamp = Date.now(); // Use the current timestamp as priority
-    await redisClient.zAdd(destinationBoardKey, [{ score: timestamp, value: cardId }]);
+    await redisClient.zAdd(destinationBoardKey, [{ score: newIndex, value: cardId }]);
+    console.log(`Added card ${cardId} to column ${destinationColumnId} with priority ${newIndex}`);
 
-    console.log(`Added card ${cardId} to column ${destinationColumnId} with priority ${timestamp}`);
+    // Step 3: Reorder cards within the destination column
+    const destinationCards = await redisClient.zRangeWithScores(destinationBoardKey, 0, -1);
 
-    // Step 3: Update card details in Redis
+    // Remove the moved card and insert it at the new index
+    const reorderedCards = destinationCards.filter((card) => card.value !== cardId);
+    reorderedCards.splice(newIndex, 0, { score: newIndex, value: cardId });
+
+    // Adjust the scores for all cards to maintain the order
+    for (let i = 0; i < reorderedCards.length; i++) {
+      reorderedCards[i].score = i; // Reassign scores sequentially
+    }
+
+    // Step 4: Clear the sorted set in the destination column
+    await redisClient.zRemRangeByRank(destinationBoardKey, 0, -1); // Clear all cards
+
+    // Step 5: Re-add the reordered cards back to Redis with updated scores
+    for (const card of reorderedCards) {
+      await redisClient.zAdd(destinationBoardKey, [{ score: card.score, value: card.value }]);
+    }
+
+    console.log(`Successfully reordered cards in column ${destinationColumnId}`);
+
+    // Step 6: Update the card details in Redis
+    const timestamp = Date.now();
     await redisClient.hSet(`CardDetails:${cardId}`, {
       ColumnId: destinationColumnId, // Update column ID
       DateOfAdded: timestamp, // Optionally update timestamp
     });
 
     console.log(`Updated card ${cardId}: moved to column ${destinationColumnId}`);
-
-    // Step 4: Reorder cards within the destination column if applicable
-    if (sourceColumnId === destinationColumnId) {
-      const cards = await redisClient.zRangeWithScores(destinationBoardKey, 0, -1);
-
-      // Filter out the moved card and place it at the new index
-      const updatedCards = [
-        ...cards.slice(0, newIndex),
-        { score: timestamp, value: cardId }, // Add the moved card at the new position
-        ...cards.slice(newIndex).filter((card) => card.value !== cardId), // Exclude moved card from old position
-      ];
-
-      // Clear and update the column order in Redis
-      await redisClient.zRemRangeByRank(destinationBoardKey, 0, -1); // Clear all existing cards
-      for (const { score, value } of updatedCards) {
-        await redisClient.zAdd(destinationBoardKey, [{ score, value }]);
-      }
-
-      console.log(`Reordered cards in column ${destinationColumnId}`);
-    }
-
     res.status(200).json({ message: "Card priority updated successfully" });
   } catch (error) {
     console.error("Error updating card priority:", error);
     res.status(500).json({ error: "Failed to update card priority" });
   }
 });
+
+
 
 
 
