@@ -27,7 +27,7 @@ interface CardProps {
             }}
           >
             <p className="text-lg font-semibold text-gray-800 truncate">
-              {card.name}
+              {card.name}{card.name}
             </p>
             <p className="text-sm text-gray-600">Card ID: {card.id}</p>
             <p className="text-sm text-gray-600">Column ID: {columnId}</p>

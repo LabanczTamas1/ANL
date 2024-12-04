@@ -127,31 +127,31 @@ const Kanban: React.FC = () => {
         `http://localhost:3000/api/cards/${cardId}`,
         {
           data: { columnId },
-          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
         }
       );
       console.log(`Deleted card ${cardId}:`, response.data);
-  
 
-      console.log("-----------------",columns);
+      console.log("-----------------", columns);
       // Update the state to remove the card from the specified column
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
           col.id === columnId
-      ? {
-        ...col,
-        cards: col.cards.filter((card: any) => card.id !== cardId),
-        cardIds: col.cardIds.filter((id: any) => id !== cardId),
-        cardNumber: col.cardNumber - 1, // Decrement card count
-      }
-    : col
+            ? {
+                ...col,
+                cards: col.cards.filter((card: any) => card.id !== cardId),
+                cardIds: col.cardIds.filter((id: any) => id !== cardId),
+                cardNumber: col.cardNumber - 1, // Decrement card count
+              }
+            : col
         )
       );
     } catch (error) {
       console.error("Error deleting card:", (error as Error).message);
     }
   };
-  
 
   const handleAddColumn = async () => {
     if (!newColumnName.trim()) return;
@@ -244,9 +244,7 @@ const Kanban: React.FC = () => {
     if (type === "card") {
       const sourceColumnId = source.droppableId;
       const destinationColumnId = destination.droppableId;
-      console.log("Request Data:", sourceColumnId, destinationColumnId);
 
-      // Find the source and destination columns
       const sourceColumn = columns.find((col) => col.id === sourceColumnId);
       const destinationColumn = columns.find(
         (col) => col.id === destinationColumnId
@@ -267,50 +265,64 @@ const Kanban: React.FC = () => {
         return;
       }
 
-      // Remove the card from the source column
-      const updatedSourceCards = sourceColumn.cards.filter(
-        (card: any) => card.id !== draggableId
-      );
+      if (sourceColumnId === destinationColumnId) {
+        // Reordering within the same column
+        const updatedCards = Array.from(sourceColumn.cards);
 
-      // Add the card to the destination column at the correct position
-      const updatedDestinationCards = Array.from(destinationColumn.cards);
-      updatedDestinationCards.splice(destination.index, 0, movedCard);
+        // Remove card from current position
+        updatedCards.splice(source.index, 1);
 
-      // Update state
-      setColumns((prevColumns) =>
-        prevColumns.map((col) => {
-          if (col.id === sourceColumnId) {
-            return { ...col, cards: updatedSourceCards };
-          }
-          if (col.id === destinationColumnId) {
-            return { ...col, cards: updatedDestinationCards };
-          }
-          return col;
-        })
-      );
+        // Add card to new position
+        updatedCards.splice(destination.index, 0, movedCard);
 
-      try {
-        const payload = {
-          sourceColumnId,
-          destinationColumnId,
-          cardId: draggableId,
-          newIndex: destination.index,
-        };
+        // Update state for the single column
+        setColumns((prevColumns) =>
+          prevColumns.map((col) =>
+            col.id === sourceColumnId ? { ...col, cards: updatedCards } : col
+          )
+        );
+      } else {
+        // Moving card to a different column
+        const updatedSourceCards = sourceColumn.cards.filter(
+          (card: any) => card.id !== draggableId
+        );
+        const updatedDestinationCards = Array.from(destinationColumn.cards);
+        updatedDestinationCards.splice(destination.index, 0, movedCard);
 
-        console.log("Payload for updating card priority:", payload);
+        // Update state for both columns
+        setColumns((prevColumns) =>
+          prevColumns.map((col) => {
+            if (col.id === sourceColumnId) {
+              return { ...col, cards: updatedSourceCards };
+            }
+            if (col.id === destinationColumnId) {
+              return { ...col, cards: updatedDestinationCards };
+            }
+            return col;
+          })
+        );
+    }
+        try {
+          const payload = {
+            sourceColumnId,
+            destinationColumnId,
+            cardId: draggableId,
+            newIndex: destination.index,
+          };
 
-        await axios.put("http://localhost:3000/api/cards/priority", payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        });
-      } catch (error) {
-        console.error("Error updating card position:", error);
-      }
+          console.log("Payload for updating card priority:", payload);
+
+          await axios.put("http://localhost:3000/api/cards/priority", payload, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+          });
+        } catch (error) {
+          console.error("Error updating card position:", error);
+        }
+      
     }
   };
-
-  console.log("Dataaaaaaaa", columns);
 
   return (
     <div className="kanban-board">
