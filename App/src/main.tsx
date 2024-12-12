@@ -16,6 +16,7 @@ import Home from './InnerApp/Home.tsx';
 import Account from './InnerApp/Account.tsx';
 import AboutUs from './OuterApp/AboutUs.tsx';
 import Kanban from './InnerApp/Kanban/Kanban.tsx';
+import AdminPage from './InnerApp/AdminPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
       { path: "mail/send", element: <SendMail /> }, // Renders SendMail under "/home/send"
       { path: "account", element: <Account /> },
       { path: "kanban", element: <Kanban /> },
+      { path: "adminpage", element: <AdminPage /> },
     ],
   },
 ]);
