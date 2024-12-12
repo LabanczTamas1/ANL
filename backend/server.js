@@ -56,14 +56,19 @@ redisClient.on('connect', () => {
     console.log('Connected to Redis successfully');
 });
 
-// Connect to Redis
 (async () => {
-    try {
-        await redisClient.connect();
-    } catch (err) {
-        console.error('Failed to connect to Redis:', err);
-    }
+  try {
+    // Connect to Redis
+    await redisClient.connect();
+    console.log('Connected to Redis successfully.');
+
+    // Ensure an admin account exists
+    await ensureAdminAccount();
+  } catch (err) {
+    console.error('Error during server initialization:', err);
+  }
 })();
+
 
 // Google authentication route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -139,7 +144,6 @@ app.post('/register', async (req, res) => {
         const usernameKey = `username:${username}`;
         const emailKey = `email:${email}`;
 
-
    
 
         await redisClient.hSet(
@@ -162,6 +166,10 @@ app.post('/register', async (req, res) => {
           await redisClient.hSet(
             `${userKey}`,
             'hashedPassword', hashedPassword
+          );
+          await redisClient.hSet(
+            `${userKey}`,
+            'role', `user`
           );
         
         console.log('User saved to Redis successfully');
@@ -186,6 +194,47 @@ app.post('/register', async (req, res) => {
     }
 });
 
+// Ensure Admin Account Exists
+const ensureAdminAccount = async () => {
+  try {
+    const adminUsername = 'admin';
+    const adminEmail = 'admin@example.com';
+
+    // Check if an admin account exists
+    const adminId = await redisClient.get(`username:${adminUsername}`);
+    if (adminId) {
+      console.log('Admin account already exists in the database.');
+      return;
+    }
+
+    // Create a new admin account if it doesn't exist
+    const adminIdGenerated = uuidv4();
+    const adminPassword = 'Admin123!'; // You can make this configurable
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+    const adminKey = `user:${adminIdGenerated}`;
+    await redisClient.sAdd('users', `${adminIdGenerated}`);
+
+    await redisClient.hSet(adminKey, {
+      firstName: 'Admin',
+      lastName: 'User',
+      email: adminEmail,
+      username: adminUsername,
+      hashedPassword: hashedPassword,
+      role: 'admin',
+    });
+
+    await redisClient.set(`username:${adminUsername}`, adminIdGenerated);
+    await redisClient.set(`email:${adminEmail}`, adminIdGenerated);
+
+    console.log('Admin account created successfully:', {
+      username: adminUsername,
+      password: adminPassword,
+    });
+  } catch (error) {
+    console.error('Error ensuring admin account exists:', error);
+  }
+};
 
 
 app.post('/login', async (req, res) => {

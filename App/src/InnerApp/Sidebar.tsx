@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate(); // Hook to navigate to different routes
+  const username = localStorage.getItem("name");
 
   const handleLogout = () => {
     // Clear session data from localStorage
@@ -85,6 +86,15 @@ const Sidebar: React.FC = () => {
               <span>Kanban</span>
             </div>
           </Link>
+        { username===`admin` ?
+          <Link to="/home/adminpage">
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+              <FaUserCircle className="text-lg" />
+              <span>Kanban Editor</span>
+            </div>
+          </Link>
+          : ""
+}
           <div onClick={handleLogout} className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg cursor-pointer">
             <FaSignOutAlt className="text-lg" />
             <span>Logout</span>
