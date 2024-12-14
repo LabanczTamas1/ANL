@@ -5,6 +5,8 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const redis = require('redis');
 const { v4: uuidv4 } = require('uuid');
+const ensureAdminAccount = require('./utils/ensureAdminAccount');
+const listAllUsersAdmin = require('./utils/listAllUsersAdmin')
 require('dotenv').config();
 require('./passport');
 //const redisClient = require('./redisClient');
@@ -24,7 +26,7 @@ const corsOptions = {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
@@ -62,12 +64,13 @@ redisClient.on('connect', () => {
     await redisClient.connect();
     console.log('Connected to Redis successfully.');
 
-    // Ensure an admin account exists
-    await ensureAdminAccount();
   } catch (err) {
     console.error('Error during server initialization:', err);
   }
 })();
+
+ensureAdminAccount();
+
 
 
 // Google authentication route
@@ -100,6 +103,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+
 
 
     
@@ -194,112 +199,73 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Ensure Admin Account Exists
-const ensureAdminAccount = async () => {
-  try {
-    const adminUsername = 'admin';
-    const adminEmail = 'admin@example.com';
-
-    // Check if an admin account exists
-    const adminId = await redisClient.get(`username:${adminUsername}`);
-    if (adminId) {
-      console.log('Admin account already exists in the database.');
-      return;
-    }
-
-    // Create a new admin account if it doesn't exist
-    const adminIdGenerated = uuidv4();
-    const adminPassword = 'Admin123!'; // You can make this configurable
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
-    const adminKey = `user:${adminIdGenerated}`;
-    await redisClient.sAdd('users', `${adminIdGenerated}`);
-
-    await redisClient.hSet(adminKey, {
-      firstName: 'Admin',
-      lastName: 'User',
-      email: adminEmail,
-      username: adminUsername,
-      hashedPassword: hashedPassword,
-      role: 'admin',
-    });
-
-    await redisClient.set(`username:${adminUsername}`, adminIdGenerated);
-    await redisClient.set(`email:${adminEmail}`, adminIdGenerated);
-
-    console.log('Admin account created successfully:', {
-      username: adminUsername,
-      password: adminPassword,
-    });
-  } catch (error) {
-    console.error('Error ensuring admin account exists:', error);
-  }
-};
 
 
 app.post('/login', async (req, res) => {
-    const { identifier, password } = req.body;
+  const { identifier, password } = req.body;
 
-    // Log the incoming request for debugging
-    console.log('Received login request:', req.body);
+  // Log the incoming request for debugging
+  console.log('Received login request:', req.body);
 
-    // Check if both identifier and password are provided
-    if (!identifier || !password) {
-      return res.status(400).json({ error: 'Email/Username and password are required' });
+  // Check if both identifier and password are provided
+  if (!identifier || !password) {
+    return res.status(400).json({ error: 'Email/Username and password are required' });
+  }
+
+  try {
+    let user = null;
+    let userId = null;  // Initialize userId variable
+
+    // Check if the identifier is an email or username
+    if (identifier.includes('@')) {
+      // Identifier is likely an email, fetch user by email
+      console.log(`Fetching user by email: ${identifier}`);
+      userId = await redisClient.get(`email:${identifier}`);
+      if (userId) {
+        user = await redisClient.hGetAll(`user:${userId}`);
+      }
+    } else {
+      // Identifier is a username, fetch user by username
+      console.log(`Fetching user by username: ${identifier}`);
+      userId = await redisClient.get(`username:${identifier}`);
+      if (userId) {
+        user = await redisClient.hGetAll(`user:${userId}`);
+      }
     }
 
-    try {
-      let user = null;
-
-      // Check if the identifier is an email or username
-      if (identifier.includes('@')) {
-        // Identifier is likely an email, fetch user by email
-        console.log(`Fetching user by email: ${identifier}`);
-        const userId = await redisClient.get(`email:${identifier}`);
-        if (userId) {
-          user = await redisClient.hGetAll(`user:${userId}`);
-        }
-      } else {
-        // Identifier is a username, fetch user by username
-        console.log(`Fetching user by username: ${identifier}`);
-        const userId = await redisClient.get(`username:${identifier}`);
-        if (userId) {
-          user = await redisClient.hGetAll(`user:${userId}`);
-        }
-      }
-
-      // If no user found, return an error
-      if (!user || Object.keys(user).length === 0) {
-        return res.status(401).json({ error: 'Invalid identifier or password' });
-      }
-
-      console.log('User found:', user);
-
-      // Validate the password with bcrypt
-      const isPasswordCorrect = await bcrypt.compare(password, user.hashedPassword);
-      if (!isPasswordCorrect) {
-        return res.status(401).json({ error: 'Invalid identifier or password' });
-      }
-
-      // Generate JWT
-      const token = jwt.sign(
-        { username: user.username, email: user.email },
-        'yourSecretKey', // Replace with an environment variable for secret key
-        { expiresIn: '1h' }
-      );
-
-      // Respond with the user data and token
-      res.json({
-        message: 'Login successful',
-        token,
-        user: { username: user.username, email: user.email }
-      });
-
-    } catch (error) {
-      console.error('Error during login:', error);
-      res.status(500).json({ error: 'Internal server error' });
+    // If no user found, return an error
+    if (!user || Object.keys(user).length === 0) {
+      return res.status(401).json({ error: 'Invalid identifier or password' });
     }
+
+    console.log('User found:', user);
+
+    // Validate the password with bcrypt
+    const isPasswordCorrect = await bcrypt.compare(password, user.hashedPassword);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ error: 'Invalid identifier or password' });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { username: user.username, email: user.email },
+      'yourSecretKey', // Replace with an environment variable for secret key
+      { expiresIn: '1h' }
+    );
+
+    // Respond with the user data and token
+    res.json({
+      message: 'Login successful',
+      token,
+      user: { username: user.username, email: user.email ,userId: userId },
+    });
+
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
 
   
 
@@ -326,7 +292,60 @@ app.post('/login', async (req, res) => {
     res.send(`Welcome ${req.user.username}!`);
   });
   
+  app.get('/listAllUsersAdmin', authenticateJWT, async (req, res) => {
+    try {
+      // Fetch all users (this assumes the listAllUsers function is modified to return data instead of saving to a file)
+      const users = await listAllUsersAdmin();
   
+      // Return the list of users as JSON
+      res.status(200).json(users);
+    } catch (error) {
+      console.error('Error listing all users:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+  // Assuming listAllUsersAdmin function is modified to return data directly as discussed earlier
+
+  app.patch('/updateUserRole/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const { role } = req.body;  // New role to set (admin, user, owner)
+
+    // Step 1: Log the incoming request
+    console.log(`Received role change request for user ID: ${userId}, New role: ${role}`);
+
+    const userIdReal = await redisClient.get(`username:${userId}`);
+    console.log("anything--------",userIdReal);
+
+    // Validate the role input
+    if (!['admin', 'user', 'owner'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Allowed roles are: admin, user, owner' });
+    }
+
+    try {
+        // Step 2: Check if the user exists in Redis
+        const userKey = `user:${userIdReal}`;
+        const userData = await redisClient.hGetAll(userKey);
+
+        if (!userData || Object.keys(userData).length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Step 3: Update the role in Redis
+        await redisClient.hSet(userKey, 'role', role);
+        console.log(`User role updated to ${role} for user ID: ${userIdReal}`);
+
+        // Step 4: Send success response
+        res.status(200).json({ message: `User role updated successfully to ${role}` });
+    } catch (error) {
+        // General error handling
+        console.error('Error changing user role:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
   
 
 // Get user by username

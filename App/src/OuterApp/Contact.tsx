@@ -3,7 +3,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHouse } from '@fortawesome/free-solid-svg-icons';
-import ContactForm from "./COntactForm";
+import ContactForm from "./ContactForm";
 
 const Contact = () => {
   return (

@@ -40,6 +40,7 @@ const LoginPage: React.FC = () => {
 
         localStorage.setItem("authToken", responseData.token);
         localStorage.setItem("name", responseData.user.username);
+        localStorage.setItem("userId", responseData.user.userId);
 
         navigate('/progress');
       } else {
