@@ -1,0 +1,18 @@
+[
+  {
+    "firstName": "Admin",
+    "lastName": "User",
+    "email": "admin@example.com",
+    "username": "admin",
+    "hashedPassword": "$2b$10$CJY1GSSnoP8ynkWeOzF.nOjb0w1Rko0TjL3QivCYBp4RFy9STzNXi",
+    "role": "admin"
+  },
+  {
+    "firstName": "c",
+    "lastName": "c",
+    "email": "c@c.hu",
+    "username": "c",
+    "hashedPassword": "$2b$10$UTcB.v.cwXd1OTPMo5gey.nGYN6pDPcK2qcrxJOLKPVX8/aENUodG",
+    "role": "user"
+  }
+]

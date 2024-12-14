@@ -6,6 +6,9 @@ const ProgressBar = () => {
   const [darkMode, setDarkMode] = useState(false);
   const location = useLocation(); // Get the current location
 
+  // Check if the logged-in user is an admin
+  const isAdmin = username === "admin";
+
   useEffect(() => {
     // Apply the dark class to the HTML tag
     if (darkMode) {
@@ -15,11 +18,9 @@ const ProgressBar = () => {
     }
   }, [darkMode]);
 
-
   const generateBreadcrumbs = () => {
     const pathnames = location.pathname.split("/").filter((x) => x); // Split path and remove empty parts
     return [
-      { name: "Home", path: "/" }, // Add Home link as the base
       ...pathnames.map((name, index) => {
         const path = `/${pathnames.slice(0, index + 1).join("/")}`;
         return { name: name.charAt(0).toUpperCase() + name.slice(1), path };
@@ -31,8 +32,7 @@ const ProgressBar = () => {
 
   return (
     <div
-      className="flex flex-row justify-between mr-5 border-b-[1px] border-black p-3 pr-0"
-      style={{ borderColor: "rgba(0, 0, 0 , 0.34)" }}
+      className={`flex flex-row justify-between mr-5 border-b-[1px] p-3 pr-0 dark:border-gray-300 `} // Apply admin-specific styles
     >
       {/* Breadcrumbs Section */}
       <div className="flex flex-col">
@@ -53,7 +53,16 @@ const ProgressBar = () => {
 
       {/* User Info Section */}
       <div className="flex flex-row items-center space-x-4">
-        <div className="dark:text-white">Hello, {username}!</div>
+      {!isAdmin ? (
+  <div className={`dark:text-white font-bold`}>
+    Hello, {username}!
+  </div>
+) : (
+  <div className={`dark:text-white bg-[#FF5B61] rounded-lg px-2`}>
+    {username.charAt(0).toUpperCase() + username.slice(1)} view!
+  </div>
+)}
+
 
         {/* Toggle Button for Dark/Light Mode */}
         <button

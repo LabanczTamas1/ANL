@@ -90,7 +90,7 @@ const Sidebar: React.FC = () => {
           <Link to="/home/adminpage">
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
               <FaUserCircle className="text-lg" />
-              <span>Kanban Editor</span>
+              <span>Admin Page</span>
             </div>
           </Link>
           : ""
