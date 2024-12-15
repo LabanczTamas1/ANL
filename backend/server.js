@@ -820,6 +820,7 @@ app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
       })
     );
 
+    console.log("Cardssssssssssssssssssssssssssssss",cardDetails);
 
     res.json({ cardDetails,cardIds });
    

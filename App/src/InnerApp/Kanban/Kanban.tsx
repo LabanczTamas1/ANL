@@ -75,7 +75,7 @@ const Kanban: React.FC = () => {
 
   const handleAddCard = async () => {
     if (!selectedColumnId) return;
-
+  
     try {
       const response = await axios.post(
         "http://localhost:3000/api/cards",
@@ -86,23 +86,34 @@ const Kanban: React.FC = () => {
           },
         }
       );
-      console.log("Card Data:", cardData);
-
+  
+      const newCard = {
+        id: response.data.cardId,
+        name: cardData.name,
+        ContactName: cardData.contactName, // Ensure consistent naming
+        businessName: cardData.businessName,
+        phoneNumber: cardData.phoneNumber,
+        email: cardData.email,
+        website: cardData.website,
+        instagram: cardData.instagram,
+        facebook: cardData.facebook,
+        firstContact: cardData.firstContact,
+        isCommented: cardData.isCommented,
+      };
+  
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
           col.id === selectedColumnId
             ? {
                 ...col,
-                cards: [
-                  ...col.cards,
-                  { id: response.data.cardId, ...cardData },
-                ],
+                cards: [...col.cards, newCard],
               }
             : col
         )
       );
-
+  
       setShowCardModal(false);
+  
       setCardData({
         name: "",
         contactName: "",
@@ -119,6 +130,7 @@ const Kanban: React.FC = () => {
       console.error("Error adding card:", error);
     }
   };
+  
 
   const handleDeleteCard = async (columnId: string, cardId: string) => {
     try {
@@ -389,6 +401,7 @@ const Kanban: React.FC = () => {
                 handleAddCard();
               }}
             >
+              
               <input
                 type="text"
                 placeholder="Card Name"
@@ -403,8 +416,62 @@ const Kanban: React.FC = () => {
                 type="text"
                 placeholder="Contact Name"
                 value={cardData.contactName}
-                onChange={(e) =>
-                  setCardData({ ...cardData, contactName: e.target.value })
+                onChange={(e) =>{
+                  setCardData({ ...cardData, contactName: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Business Name"
+                value={cardData.businessName}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, businessName: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Phone number"
+                value={cardData.phoneNumber}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, phoneNumber: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Email"
+                value={cardData.email}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, email: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Website"
+                value={cardData.website}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, website: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Instagram"
+                value={cardData.instagram}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, instagram: e.target.value }); console.log(e.target.value);}
+                }
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              <input
+                type="text"
+                placeholder="Facebook"
+                value={cardData.facebook}
+                onChange={(e) =>{
+                  setCardData({ ...cardData, facebook: e.target.value }); console.log(e.target.value);}
                 }
                 className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
               />

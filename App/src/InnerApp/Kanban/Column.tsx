@@ -6,7 +6,14 @@ interface ColumnProps {
   column: {
     id: string;
     name: string;
-    cards: { id: string; name: string }[]; // Define card structure explicitly
+    cards: { id: string; name: string, ContactName: string; businessName: string;
+      phoneNumber: string;
+      email: string;
+      website: string;
+      instagram: string;
+      facebook: string;
+      firstContact: string;
+      isCommented: boolean;}[]; // Define card structure explicitly
     cardIds: string[]; // Optional if required for additional functionality
   };
   onAddCard: (columnId: string) => void; // Updated to accept `columnId`
@@ -14,6 +21,8 @@ interface ColumnProps {
   onDeleteCard: (columnId: string, cardId: string) => void;
   index: number; // Keeps track of the column's position
 }
+
+
 
 const Column: React.FC<ColumnProps> = ({
   column,
