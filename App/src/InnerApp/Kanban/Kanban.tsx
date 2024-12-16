@@ -8,6 +8,7 @@ const Kanban: React.FC = () => {
   const [showCardModal, setShowCardModal] = useState(false);
   const [showColumnModal, setShowColumnModal] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
+  const [tagColor, setTagColor] = useState("#ffffff");
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [cardData, setCardData] = useState({
     name: "",
@@ -42,7 +43,7 @@ const Kanban: React.FC = () => {
                 },
               }
             );
-
+            console.log("Response Column: ",response.data.columns);
             console.log(`Column Data: ${column.id}`, cardResponse);
 
             const cardsWithIds = cardResponse.data.cardDetails.map(
@@ -100,12 +101,14 @@ const Kanban: React.FC = () => {
         firstContact: cardData.firstContact,
         isCommented: cardData.isCommented,
       };
+      
   
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
           col.id === selectedColumnId
             ? {
                 ...col,
+                cardNumber: col.cardNumber+1,
                 cards: [...col.cards, newCard],
               }
             : col
@@ -173,6 +176,7 @@ const Kanban: React.FC = () => {
         "http://localhost:3000/api/columns",
         {
           columnName: newColumnName,
+          tagColor: tagColor,
           priority: columns.length,
           cardNumbers: 0,
         },
@@ -305,10 +309,10 @@ const Kanban: React.FC = () => {
         setColumns((prevColumns) =>
           prevColumns.map((col) => {
             if (col.id === sourceColumnId) {
-              return { ...col, cards: updatedSourceCards };
+              return { ...col,  cardNumber: col.cardNumber-1, cards: updatedSourceCards };
             }
             if (col.id === destinationColumnId) {
-              return { ...col, cards: updatedDestinationCards };
+              return { ...col,  cardNumber: col.cardNumber+1, cards: updatedDestinationCards };
             }
             return col;
           })
@@ -336,24 +340,75 @@ const Kanban: React.FC = () => {
     }
   };
 
+  const handleCloseColumnModal = (): void => {
+    setShowColumnModal((prev) => !prev);
+  };
+  
+
   return (
     <div className="kanban-board">
-      <div className="flex items-center mb-4">
-        <input
-          type="text"
-          placeholder="Column Name"
-          value={newColumnName}
-          onChange={(e) => setNewColumnName(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 mb-3"
-          required
-        />
-        <button
-          onClick={handleAddColumn}
+      <button
+          onClick={()=>setShowColumnModal(!showColumnModal)}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Add Column
         </button>
+        {showColumnModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-[400px] relative">
+      {/* Modal Header */}
+      <h2 className="text-2xl font-bold text-center mb-4">Add board</h2>
+      <button
+            onClick={handleCloseColumnModal}
+            className="text-black px-4 py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
+
+          >
+            X
+          </button>
+
+      {/* Input for Board Name */}
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Board name</label>
+        <input
+          type="text"
+          placeholder="Enter board name"
+          value={newColumnName}
+          onChange={(e) => setNewColumnName(e.target.value)}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
       </div>
+
+      {/* Color Picker Section */}
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Tag color</label>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            {/* Custom Color Picker */}
+            <input
+              type="color"
+              id="colorPicker"
+              value="#cc458f"
+             onChange={(e) => setTagColor(e.target.value)}
+              className="w-10 h-10 border-none p-0 cursor-pointer"
+            />
+          </div>
+          <button className="bg-pink-500 text-white px-3 py-1 rounded-md text-xs">Trash</button>
+        </div>
+      </div>
+
+      {/* Footer with Add Button */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleAddColumn}
+          className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 transition"
+        >
+          + Add Board
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="columns" direction="horizontal" type="column">
