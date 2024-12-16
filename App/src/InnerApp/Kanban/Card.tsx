@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
+import CardMessageSection from "./CardMessageSection";
 
 interface CardProps {
   card: {
@@ -100,6 +101,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             Close
           </button>
         </div>
+        <CardMessageSection cardId={card.id}/>
       </div>
     </div>
   );

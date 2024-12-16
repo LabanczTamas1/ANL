@@ -6,6 +6,8 @@ interface ColumnProps {
   column: {
     id: string;
     name: string;
+    tagColor: string;
+    cardNumber: string;
     cards: { id: string; name: string, ContactName: string; businessName: string;
       phoneNumber: string;
       email: string;
@@ -40,9 +42,11 @@ const Column: React.FC<ColumnProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
         >
+          <div className="w-[100%] h-[5px]" style={{backgroundColor:column.tagColor}}></div>
           {/* Column Header */}
           <div className="flex justify-between mb-4 items-center">
             <h2 className="text-xl font-semibold">{column.name}</h2>
+            <div className="">{column.cardNumber}</div>
             <button
               onClick={() => onDeleteColumn(column.id)}
               className="text-red-500 hover:text-red-700"
@@ -75,7 +79,8 @@ const Column: React.FC<ColumnProps> = ({
 
           {/* Add Card Button */}
           <button
-            onClick={() => onAddCard(column.id)} // Pass column ID to the callback
+            onClick={() => onAddCard(column.id
+            )} // Pass column ID to the callback
             className="bg-blue-500 text-white px-4 py-2 rounded mt-4 w-full hover:bg-blue-600"
           >
             Add Card

@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const redis = require('redis');
 const { v4: uuidv4 } = require('uuid');
 const ensureAdminAccount = require('./utils/ensureAdminAccount');
-const listAllUsersAdmin = require('./utils/listAllUsersAdmin')
+const listAllUsersAdmin = require('./utils/listAllUsersAdmin');
 require('dotenv').config();
 require('./passport');
 //const redisClient = require('./redisClient');
@@ -509,7 +509,7 @@ app.get("/sentmails/:username", async (req, res) => {
 //Kanban//
 
 app.post("/api/columns", authenticateJWT, async (req, res) => {
-  const { priority, columnName, cardNumbers } = req.body;
+  const { priority, tagColor, columnName, cardNumbers } = req.body;
 
 
   try {
@@ -532,12 +532,13 @@ app.post("/api/columns", authenticateJWT, async (req, res) => {
 
     await redisClient.hSet(`Boards:${columnId}`, {
       ColumnName: columnName,
+      tagColor: tagColor,
       CardNumber: cardNumbers
     });
 
     // Respond with the new columnId
     console.log(req.body);
-    res.json({ columnId, columnName, priority, cardNumbers });
+    res.json({ columnId, tagColor, columnName, priority, cardNumbers });
   } catch (error) {
     console.error("Error saving column:", error);
     res.status(500).json({ error: "Failed to save column" });
@@ -554,6 +555,7 @@ app.get('/api/columns', authenticateJWT, async (req, res) => {
         return {
           id: columnId,
           name: columnData.ColumnName, // Assuming `ColumnName` is the name of the column
+          tagColor: columnData.tagColor,
           cardNumber: parseInt(columnData.CardNumber, 10), // Parse the cardNumber correctly
         };
       })
@@ -658,6 +660,14 @@ app.post("/api/cards", authenticateJWT, async (req, res) => {
 
     // Correct usage of zAdd
     await redisClient.zAdd(BoardKey, [{ score: timestamp, value: cardId }]);
+
+
+    //update the cardNumber
+    const columnData = await redisClient.hGetAll(`Boards:${columnId}`);
+    await redisClient.hSet(`Boards:${columnId}`, {
+      CardNumber:  parseInt(columnData.CardNumber, 10)+1
+    });
+    console.log(parseInt(columnData.CardNumber, 10));
 
     console.log(BoardKey);
 
@@ -780,6 +790,12 @@ app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
     // Optionally, remove the card details if required (if you're storing the card in Redis as well)
     await redisClient.del(cardDetailsKey); // Deletes the card details
 
+    const columnDataDestination = await redisClient.hGetAll(`Boards:${columnId}`);
+    await redisClient.hSet(`Boards:${columnId}`, {
+      CardNumber:  parseInt(columnDataDestination.CardNumber, 10)-1
+    });
+
+
     res.status(200).json({ message: "Card deleted successfully" });
   } catch (error) {
     console.error("Error deleting card:", error.message || error);
@@ -791,20 +807,78 @@ app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
 
 
 //Todo
-app.post("/api/cards/comments", authenticateJWT, async (req, res) => {
+app.post("/api/cards/comments/:cardId", authenticateJWT, async (req, res) => {
   const { userName, body } = req.body;
+  const {cardId} = req.params;
+  console.log(userName,body,cardId);
+
+  const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
 
   const commentId = `${uuidv4()}`;
   const timestamp = Date.now();
 
-  await redisClient.hSet(`Comments:${cardId}`, {
+  await redisClient.hSet(`Comments:${commentId}`, {
     CommentId: commentId,
     UserName: userName,
     DateAdded: timestamp,
     Body: body
   });
 
+  await redisClient.hSet(`CardDetails:${cardId}`, {
+    IsCommented: `true`
+  });
+
+  const CardComments = `CardComments:${cardId}`;
+  await redisClient.sAdd(CardComments, `${commentId}`);
+
+  res.status(200).json({ message: "Comment saved succesfully" });
+
 });
+
+
+
+
+app.get("/api/cards/comments/:cardId", authenticateJWT, async (req, res) => {
+  const {cardId} = req.params;
+
+  const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+  const isCommented = await redisClient.hGet(`CardDetails:${cardId}`, `IsCommented`);
+
+  console.log(isCommented);
+
+  if(isCommented){
+    const CardComments = `CardComments:${cardId}`;
+    commentIds = await redisClient.sMembers(CardComments);
+    console.log(commentIds);
+
+
+    const CommentsDetails = await Promise.all(
+      commentIds.map(async (Id) => {
+        const columnData = await redisClient.hGetAll(`Comments:${Id}`);
+        return columnData;
+      })
+    );
+
+    res.status(200).json({CommentsDetails});
+  }
+  else{
+    res.status(200).json({ message: "No comment found." });
+  }
+
+
+});
+
+
+
+
+
 
 app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
   const {columnId} = req.params;
@@ -820,7 +894,7 @@ app.get('/api/cards/:columnId', authenticateJWT, async (req, res) => {
       })
     );
 
-    console.log("Cardssssssssssssssssssssssssssssss",cardDetails);
+    //console.log("Cardssssssssssssssssssssssssssssss",cardDetails);
 
     res.json({ cardDetails,cardIds });
    
@@ -902,6 +976,16 @@ app.put("/api/cards/priority", authenticateJWT, async (req, res) => {
     await redisClient.hSet(`CardDetails:${cardId}`, {
       ColumnId: destinationColumnId, // Update column ID
       DateOfAdded: timestamp, // Optionally update timestamp
+    });
+
+    const columnData = await redisClient.hGetAll(`Boards:${destinationColumnId}`);
+    await redisClient.hSet(`Boards:${destinationColumnId}`, {
+      CardNumber:  parseInt(columnData.CardNumber, 10)+1
+    });
+
+    const columnDataDestination = await redisClient.hGetAll(`Boards:${sourceColumnId}`);
+    await redisClient.hSet(`Boards:${sourceColumnId}`, {
+      CardNumber:  parseInt(columnDataDestination.CardNumber, 10)-1
     });
 
     console.log(`Updated card ${cardId}: moved to column ${destinationColumnId}`);
