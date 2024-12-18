@@ -36,11 +36,13 @@ const LoginPage: React.FC = () => {
       if (response.ok) {
         const responseData = await response.json();
         alert('Login Successful!');
-        console.log('User:', responseData);
+        console.log('User---------------------------------------------------------------------:', responseData);
 
         localStorage.setItem("authToken", responseData.token);
         localStorage.setItem("name", responseData.user.username);
         localStorage.setItem("userId", responseData.user.userId);
+        localStorage.setItem("firstName", responseData.user.firstName);
+        localStorage.setItem("lastName", responseData.user.lastName);
 
         navigate('/progress');
       } else {

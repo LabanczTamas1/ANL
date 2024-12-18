@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaCog, FaStar, FaSignOutAlt } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import { Link, useNavigate } from 'react-router-dom';

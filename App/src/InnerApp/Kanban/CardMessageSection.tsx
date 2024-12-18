@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 interface Comment {
+  commentId: string;
   userName: string;
   body: string;
   date: string;
@@ -12,52 +13,66 @@ interface CardMessageSectionProps {
 }
 
 const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
-  const [comment, setComment] = useState<string>("");
-  const [commentsList, setCommentsList] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [comment, setComment] = useState<string>(""); // Input field
+  const [commentsList, setCommentsList] = useState<Comment[]>([]); // List of comments
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
 
-    useEffect(() => {
-        const fetchColumns = async () => {
-            try {
-                setLoading(true);
-                const token = localStorage.getItem("authToken"); // Retrieve token for auth
-                const response = await axios.get(
-                  `http://localhost:3000/api/cards/comments/${cardId}`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
-                );
-          
-                if (response.status === 200) {
-                  const newComment: Comment = {
-                    userName: "Peter Parker",
-                    body: comment,
-                    date: new Date().toLocaleString(),
-                  };
-                  setCommentsList((prev) => [...prev, newComment]);
-                  setComment(""); // Clear input field
-                }
-              } catch (error) {
-                console.error("Error adding comment:", error);
-              } finally {
-                setLoading(false);
-              }
-        };
-        fetchColumns();
-    }, []);
+  // Fetch comments on component mount
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("authToken");
+        const response = await axios.get(
+          `http://localhost:3000/api/cards/comments/${cardId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // Check response and map comments if available
+        if (response.status === 200) {
+          const commentsData = response.data.CommentsDetails || [];
+          const mappedComments: Comment[] = commentsData.map((comment: any) => ({
+            commentId: comment.CommentId, // Fix the key to CommentId from commentId
+            userName: comment.UserName,
+            body: comment.Body,
+            date: new Date(parseInt(comment.DateAdded)).toLocaleString(), // Parse timestamp
+          }));
+
+          console.log("Mapped comments:", mappedComments); // Debugging the mapped comments
+          setCommentsList(mappedComments);
+        } else {
+          console.warn("Unexpected response:", response);
+        }
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+        setError("Failed to load comments. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComments();
+  }, [cardId]);
 
   const handleAddComment = async () => {
     if (!comment.trim()) return;
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("authToken"); // Retrieve token for auth
+      const token = localStorage.getItem("authToken");
+      const firstName = localStorage.getItem("firstName");
+      const lastName = localStorage.getItem("lastName");
+      
+      // Safely concatenate firstName and lastName, fallback to "Anonymous" if either is missing
+      const userName = (firstName && lastName) ? `${firstName} ${lastName}` : "Anonymous";
+      
+
       const response = await axios.post(
         `http://localhost:3000/api/cards/comments/${cardId}`,
-        {
-          userName: localStorage.getItem("name"),
-          body: comment,
-        },
+        { userName, body: comment },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -65,60 +80,85 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
       if (response.status === 200) {
         const newComment: Comment = {
-          userName: "Peter Parker",
+          commentId: response.data.commentId, // Get commentId from the backend response
+          userName,
           body: comment,
           date: new Date().toLocaleString(),
         };
+
+        console.log("New comment added:", newComment); // Debugging the new comment
         setCommentsList((prev) => [...prev, newComment]);
         setComment(""); // Clear input field
       }
     } catch (error) {
       console.error("Error adding comment:", error);
+      setError("Failed to add comment. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const token = localStorage.getItem("authToken");
+
+      await axios.delete(`http://localhost:3000/api/cards/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCommentsList((prev) => prev.filter((comment) => comment.commentId !== commentId));
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      setError("Failed to delete comment. Please try again.");
+    }
+  };
+
+  const createMonogram = (name: string): string => {
+    const nameParts = name.split(' ');
+    const firstNameInitial = nameParts[0].charAt(0).toUpperCase();
+    const lastNameInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+    return firstNameInitial + lastNameInitial;
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto p-4 bg-white rounded-lg shadow-md">
-      {/* Comment Card */}
-      <div className="flex items-start gap-3">
-        {/* Avatar */}
-        <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-          PP
-        </div>
+      <h2>Comments List</h2>
+      {loading ? (
+        <p>Loading comments...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : commentsList.length === 0 ? (
+        <p>No comments available.</p>
+      ) : (
+        <ul>
+          {commentsList.map((comment, index) => {
+            console.log("Rendering commentId:", comment.commentId); // Debugging the key
 
-        {/* Comment Content */}
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-1">
-            <span className="font-semibold text-gray-800">Peter Parker</span>
-            <span className="text-sm text-gray-500">
-              {new Date().toLocaleString()}
-            </span>
-          </div>
-          <p className="text-gray-700 mb-2">
-            Your reviews will be posted and used by the company.
-          </p>
-          <p className="text-gray-700">Your reviews will be posted and used.</p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <button
-            className="text-gray-500 hover:text-gray-700 transition duration-150"
-            title="Edit"
-          >
-            ✏️
-          </button>
-          <button
-            className="text-red-500 hover:text-red-700 transition duration-150"
-            title="Delete"
-          >
-            🗑️
-          </button>
-        </div>
-      </div>
+            return (
+              <li key={comment.commentId || index} className="hover:bg-gray-300">
+                <div className="flex flex-row items-baseline justify-between">
+                  <div className="flex flex-row items-baseline">
+                    <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
+                      {createMonogram(comment.userName)}
+                    </div>
+                    <strong>{comment.userName}</strong> - {comment.date}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-red-500 hover:text-red-700 transition duration-150"
+                      title="Delete"
+                      onClick={() => handleDeleteComment(comment.commentId)} // Pass commentId to delete function
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                <p>{comment.body}</p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {/* Add Comment Input */}
       <div className="mt-4">
