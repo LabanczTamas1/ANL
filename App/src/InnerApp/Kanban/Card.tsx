@@ -22,7 +22,7 @@ interface CardProps {
   onDeleteCard: (columnId: string, cardId: string) => void;
 }
 
-type CardKey = keyof CardProps['card']; // Union type of all keys in card
+type CardKey = keyof CardProps["card"]; // Union type of all keys in card
 
 const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,58 +31,73 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setCardData((prev) => ({
       ...prev,
-      [name]: name === "isCommented" ? (e.target as HTMLInputElement).checked : value,
+      [name]:
+        name === "isCommented" ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
   // Modal Content
   const modalContent = (
     <div
-      className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 overflow-auto"
       onClick={handleCloseModal} // Close modal on clicking the overlay
     >
       <div
-        className="bg-white rounded-lg shadow-lg p-6 w-96"
+        className="bg-white rounded-lg shadow-lg p-6 w-[40vw] max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
       >
         <h2 className="text-xl font-bold mb-4">Edit Card Details</h2>
         <div className="space-y-4">
-          {Object.keys(cardData).slice(0, 10).map((key) => {
-            const cardKey = key as CardKey; // Safely type cast
+          {Object.keys(cardData)
+            .slice(10, 11)
+            .map((key) => {
+              const cardKey = key as CardKey; // Safely type cast
+              console.log("Key2", key, cardData[cardKey]);
+              return null;
+            })}
+          ;
+          {Object.keys(cardData)
+            .slice(0, 10)
+            .map((key) => {
+              const cardKey = key as CardKey; // Safely type cast
+              //console.log("Key", key);
 
-            return key === "id" ? null : key === "isCommented" ? (
-              <div key={cardKey}>
-                <label className="block text-sm font-medium text-gray-700">
-                  {cardKey.charAt(0).toUpperCase() + cardKey.slice(1)}
-                </label>
-                <input
-                  type="checkbox"
-                  name={cardKey}
-                  checked={cardData[cardKey] as boolean} // Explicitly cast the value
-                  onChange={handleInputChange}
-                  className="mt-1"
-                />
-              </div>
-            ) : (
-              
-              <div key={cardKey}>
-                <label className="block text-sm font-medium text-gray-700">
-                  {cardKey.charAt(0).toUpperCase() + cardKey.slice(1)}
-                </label>
-                <input
-                  type="text"
-                  name={cardKey}
-                  value={cardData[cardKey] as string} // Explicitly cast the value
-                  onChange={handleInputChange}
-                  className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
-                />
-              </div>
-            );
-          })}
+              return key === "id" ? null : key === "isCommented" ? (
+                <div key={cardKey}>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {cardKey.charAt(0).toUpperCase() + cardKey.slice(1)}
+                    {cardKey}
+                  </label>
+                  <input
+                    type="checkbox"
+                    name={cardKey}
+                    checked={cardData[cardKey] as boolean}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                  />
+                </div>
+              ) : (
+                <div key={cardKey}>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {cardKey.charAt(0).toUpperCase() + cardKey.slice(1)}
+                    {cardKey}
+                  </label>
+                  <input
+                    type="text"
+                    name={cardKey}
+                    value={cardData[cardKey] as string} // Explicitly cast the value
+                    onChange={handleInputChange}
+                    className="mt-1 p-2 block w-full border border-gray-300 rounded-md"
+                  />
+                </div>
+              );
+            })}
         </div>
         <div className="flex justify-between mt-4">
           <button
@@ -101,14 +116,21 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             Close
           </button>
         </div>
-        <CardMessageSection cardId={card.id}/>
+        <CardMessageSection cardId={card.id} />
       </div>
     </div>
   );
 
+  console.log("Ez a mostani kartya adat", card);
+  console.log(card.isCommented);
+
   return (
     <>
-      <Draggable draggableId={card.id} index={index} isDragDisabled={isModalOpen}>
+      <Draggable
+        draggableId={card.id}
+        index={index}
+        isDragDisabled={isModalOpen}
+      >
         {(provided, snapshot) => (
           <div
             className={`bg-white shadow-lg rounded-lg p-4 mb-4 w-full space-y-2 hover:shadow-xl ${
@@ -125,6 +147,15 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
           >
             <p className="text-lg font-semibold text-gray-800 truncate">
               Contact Name: {card.ContactName}
+              
+              <p> {Object.keys(cardData)
+                .slice(10, 11) // Slicing to get the 11th key only
+                .map((key) => {
+                  const cardKey = key as CardKey; // Safely type cast to CardKey
+                  console.log("wow",cardData[cardKey]);
+                  return cardData[cardKey]==="false" ? "no" : "message"; // Ternary operator inside map
+                })}</p>
+             
             </p>
           </div>
         )}

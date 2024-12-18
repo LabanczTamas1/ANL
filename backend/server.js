@@ -257,7 +257,7 @@ app.post('/login', async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
-      user: { username: user.username, email: user.email ,userId: userId },
+      user: { username: user.username, email: user.email ,userId: userId, firstName: user.firstName, lastName: user.lastName },
     });
 
   } catch (error) {
@@ -357,12 +357,15 @@ app.get('/user/:username', async (req, res) => {
     if (!user || Object.keys(user).length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",user);
 
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 app.post("/api/save-email", authenticateJWT, async (req, res) => {
   const { subject, recipient, body , name} = req.body;
@@ -873,6 +876,60 @@ app.get("/api/cards/comments/:cardId", authenticateJWT, async (req, res) => {
   }
 
 
+});
+
+
+app.delete("/api/cards/comments/:commentId", authenticateJWT, async (req, res) => {
+  const { commentId } = req.params;
+
+  // Retrieve the comment details to find the associated card
+  const commentData = await redisClient.hGetAll(`Comments:${commentId}`);
+  
+  if (!commentData || Object.keys(commentData).length === 0) {
+    return res.status(404).json({ error: "Comment not found" });
+  }
+
+  const { UserName, Body } = commentData;
+
+  // Find the card associated with this comment
+  const cardKeys = await redisClient.keys("CardComments:*");
+  let associatedCardId = null;
+
+  for (const cardKey of cardKeys) {
+    const isMember = await redisClient.sIsMember(cardKey, commentId);
+    if (isMember) {
+      associatedCardId = cardKey.split(":")[1]; // Extract cardId
+      break;
+    }
+  }
+
+  if (!associatedCardId) {
+    return res.status(404).json({ error: "Associated card not found for the comment" });
+  }
+
+  // Delete the comment from the Comments hash
+  await redisClient.del(`Comments:${commentId}`);
+
+  // Remove the comment from the CardComments set
+  await redisClient.sRem(`CardComments:${associatedCardId}`, commentId);
+
+  // Check if the card has any remaining comments
+  const remainingComments = await redisClient.sCard(`CardComments:${associatedCardId}`);
+  if (remainingComments === 0) {
+    // Update the card to reflect that it no longer has comments
+    await redisClient.hSet(`CardDetails:${associatedCardId}`, {
+      IsCommented: `false`
+    });
+  }
+
+  res.status(200).json({
+    message: "Comment deleted successfully",
+    deletedComment: {
+      commentId,
+      userName: UserName,
+      body: Body,
+    },
+  });
 });
 
 

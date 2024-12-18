@@ -189,7 +189,7 @@ const Kanban: React.FC = () => {
 
       setColumns([
         ...columns,
-        { id: response.data.columnId, name: newColumnName, cards: [] },
+        { id: response.data.columnId, name: newColumnName, tagColor: tagColor, cards: [] },
       ]);
 
       setShowColumnModal(false);
