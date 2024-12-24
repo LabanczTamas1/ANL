@@ -754,6 +754,45 @@ app.put("/api/cardsnot/:cardId", authenticateJWT, async (req, res) => {
   }
 });
 
+app.put("/api/cards/:cardId", authenticateJWT, async (req, res) => {
+  const { name, updatedValue} = req.body;
+  const {cardId} = req.params;
+
+  console.log(name, updatedValue);
+
+  if (!name || !updatedValue) {
+    return res.status(400).json({ error: "Input field id and value are missing$" });
+  }
+
+  try {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, 'yourSecretKey');
+    } catch (error) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const userId = decoded.userId;
+    const timestamp = Date.now();
+
+    
+    
+    await redisClient.hSet(`CardDetails:${cardId}`, name, updatedValue);
+
+
+    res.status(200).json({ message: "Update was successfull", cardId });
+  } catch (error) {
+    console.error("Error saving card:", error);
+    res.status(500).json({ error: "Failed to save card" });
+  }
+  
+});
+
 app.delete("/api/cards/:cardId", authenticateJWT, async (req, res) => {
   const { cardId } = req.params;
   const { columnId } = req.body;

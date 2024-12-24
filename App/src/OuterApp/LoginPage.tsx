@@ -73,7 +73,7 @@ const LoginPage: React.FC = () => {
         ></div>
       </div>
       <Navbar />
-      <div className="relative h-[100vh] flex justify-center text-white">
+      <div className="relative h-[75vh] flex justify-center text-white">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 rounded-lg shadow-lg w-full max-w-md"
