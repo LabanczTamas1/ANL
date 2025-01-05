@@ -17,6 +17,8 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
   const [commentsList, setCommentsList] = useState<Comment[]>([]); // List of comments
   const [loading, setLoading] = useState<boolean>(false); // Loading state
   const [error, setError] = useState<string | null>(null); // Error state
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null); // Comment ID being edited
+  const [editingBody, setEditingBody] = useState<string>(""); // Temporary body for editing
 
   // Fetch comments on component mount
   useEffect(() => {
@@ -31,23 +33,18 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
           }
         );
 
-        // Check response and map comments if available
         if (response.status === 200) {
           const commentsData = response.data.CommentsDetails || [];
           const mappedComments: Comment[] = commentsData.map((comment: any) => ({
-            commentId: comment.CommentId, // Fix the key to CommentId from commentId
+            commentId: comment.CommentId,
             userName: comment.UserName,
             body: comment.Body,
-            date: new Date(parseInt(comment.DateAdded)).toLocaleString(), // Parse timestamp
+            date: new Date(parseInt(comment.DateAdded)).toLocaleString(),
           }));
 
-          console.log("Mapped comments:", mappedComments); // Debugging the mapped comments
           setCommentsList(mappedComments);
-        } else {
-          console.warn("Unexpected response:", response);
         }
       } catch (error) {
-        console.error("Error fetching comments:", error);
         setError("Failed to load comments. Please try again.");
       } finally {
         setLoading(false);
@@ -65,10 +62,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
       const token = localStorage.getItem("authToken");
       const firstName = localStorage.getItem("firstName");
       const lastName = localStorage.getItem("lastName");
-      
-      // Safely concatenate firstName and lastName, fallback to "Anonymous" if either is missing
-      const userName = (firstName && lastName) ? `${firstName} ${lastName}` : "Anonymous";
-      
+      const userName = firstName && lastName ? `${firstName} ${lastName}` : "Anonymous";
 
       const response = await axios.post(
         `http://localhost:3000/api/cards/comments/${cardId}`,
@@ -80,18 +74,16 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
       if (response.status === 200) {
         const newComment: Comment = {
-          commentId: response.data.commentId, // Get commentId from the backend response
+          commentId: response.data.commentId,
           userName,
           body: comment,
           date: new Date().toLocaleString(),
         };
 
-        console.log("New comment added:", newComment); // Debugging the new comment
         setCommentsList((prev) => [...prev, newComment]);
-        setComment(""); // Clear input field
+        setComment("");
       }
     } catch (error) {
-      console.error("Error adding comment:", error);
       setError("Failed to add comment. Please try again.");
     } finally {
       setLoading(false);
@@ -108,13 +100,44 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
       setCommentsList((prev) => prev.filter((comment) => comment.commentId !== commentId));
     } catch (error) {
-      console.error("Error deleting comment:", error);
       setError("Failed to delete comment. Please try again.");
     }
   };
 
+  const handleUpdateComment = async () => {
+    if (!editingBody.trim() || !editingCommentId) return;
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("authToken");
+
+      await axios.put(
+        `http://localhost:3000/api/cards/comments/${editingCommentId}`,
+        { body: editingBody },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setCommentsList((prev) =>
+        prev.map((comment) =>
+          comment.commentId === editingCommentId
+            ? { ...comment, body: editingBody, date: new Date().toLocaleString() }
+            : comment
+        )
+      );
+
+      setEditingCommentId(null);
+      setEditingBody("");
+    } catch (error) {
+      setError("Failed to update comment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createMonogram = (name: string): string => {
-    const nameParts = name.split(' ');
+    const nameParts = name.split(" ");
     const firstNameInitial = nameParts[0].charAt(0).toUpperCase();
     const lastNameInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
     return firstNameInitial + lastNameInitial;
@@ -131,32 +154,64 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
         <p>No comments available.</p>
       ) : (
         <ul>
-          {commentsList.map((comment, index) => {
-            console.log("Rendering commentId:", comment.commentId); // Debugging the key
-
-            return (
-              <li key={comment.commentId || index} className="hover:bg-gray-300">
-                <div className="flex flex-row items-baseline justify-between">
-                  <div className="flex flex-row items-baseline">
-                    <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                      {createMonogram(comment.userName)}
-                    </div>
-                    <strong>{comment.userName}</strong> - {comment.date}
+          {commentsList.map((comment) => (
+            <li key={comment.commentId} className="hover:bg-gray-300">
+              <div className="flex flex-row items-baseline justify-between">
+                <div className="flex flex-row items-baseline">
+                  <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
+                    {createMonogram(comment.userName)}
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      className="text-red-500 hover:text-red-700 transition duration-150"
-                      title="Delete"
-                      onClick={() => handleDeleteComment(comment.commentId)} // Pass commentId to delete function
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  <strong>{comment.userName}</strong> - {comment.date}
                 </div>
+                <div className="flex gap-2">
+                  <button
+                    className="text-red-500 hover:text-red-700 transition duration-150"
+                    title="Delete"
+                    onClick={() => handleDeleteComment(comment.commentId)}
+                  >
+                    🗑️
+                  </button>
+                  <button
+                    className="text-blue-500 hover:text-blue-700 transition duration-150"
+                    title="Edit"
+                    onClick={() => {
+                      setEditingCommentId(comment.commentId);
+                      setEditingBody(comment.body);
+                    }}
+                  >
+                    ✏️
+                  </button>
+                </div>
+              </div>
+              {editingCommentId === comment.commentId ? (
+                <div className="mt-2">
+                  <textarea
+                    className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
+                    value={editingBody}
+                    onChange={(e) => setEditingBody(e.target.value)}
+                  />
+                  <button
+                    className="mt-2 px-4 py-2 rounded text-white bg-blue-500 hover:bg-blue-700 transition duration-200"
+                    onClick={handleUpdateComment}
+                  >
+                    Update
+                  </button>
+                  <button
+                    className="mt-2 px-4 py-2 rounded text-white bg-gray-500 hover:bg-gray-700 transition duration-200 ml-2"
+                    onClick={() => {
+                      setEditingCommentId(null);
+                      setEditingBody("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
                 <p>{comment.body}</p>
-              </li>
-            );
-          })}
+              )}
+            </li>
+          ))}
         </ul>
       )}
 

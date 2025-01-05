@@ -67,19 +67,19 @@ const Column: React.FC<ColumnProps> = ({
     <Draggable draggableId={column.id} index={index}>
       {(provided) => (
         <div
-          className="kanban-column w-64 bg-gray-100 rounded-lg shadow-lg mr-4"
+        className="kanban-column w-1/4 bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg mr-4"
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
         >
           <div
-            className="w-[100%] h-[5px]"
+            className="w-[100%] h-[17px] rounded-lg border-2 dark:border-[#1D2431]"
             style={{ backgroundColor: column.tagColor }}
           ></div>
           {/* Column Header */}
-          <div className="flex justify-between mb-4 items-center">
+          <div className="flex flex-col justify-between mb-4 items-center">
             <h2 className="text-xl font-semibold">{column.name}</h2>
-            <div className="">{column.cardNumber}</div>
+            <div className="">{column.cardNumber} cards</div>
             <button
               onClick={() => onDeleteColumn(column.id)}
               className="text-red-500 hover:text-red-700"
@@ -94,7 +94,7 @@ const Column: React.FC<ColumnProps> = ({
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="space-y-4 min-h-[1vh] max-h-[50vh] overflow-y-auto"
+                className="space-y-1 min-h-[1vh] max-h-[50vh] overflow-y-auto mx-2"
               >
                 {currentCards.map((card, index) => (
                   <Card
@@ -142,7 +142,7 @@ const Column: React.FC<ColumnProps> = ({
             />
             <button
               onClick={handleGoToPage}
-              className="ml-2 px-2 py-1 text-sm text-white bg-blue-500 rounded hover:bg-blue-600"
+              className="ml-2 px-2 py-1 text-sm text-white bg-[#65558F] rounded hover:bg-blue-600"
             >
               Go
             </button>
@@ -151,7 +151,7 @@ const Column: React.FC<ColumnProps> = ({
           {/* Add Card Button */}
           <button
             onClick={() => onAddCard(column.id)}
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-4 w-full hover:bg-blue-600"
+            className="bg-[#65558F] text-white px-4 py-2 rounded mt-4 w-full hover:bg-blue-600"
           >
             Add Card
           </button>

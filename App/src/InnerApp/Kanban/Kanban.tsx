@@ -328,9 +328,10 @@ const Kanban: React.FC = () => {
 
           console.log("Payload for updating card priority:", payload);
 
-          await axios.put("http://localhost:3000/api/cards/priority", payload, {
+          await axios.put("http://localhost:3000/api/cards/change/priority", payload, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              "Content-Type": "application/json",
             },
           });
         } catch (error) {
@@ -349,7 +350,7 @@ const Kanban: React.FC = () => {
     <div className="kanban-board">
       <button
           onClick={()=>setShowColumnModal(!showColumnModal)}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="text-white px-4 py-2 rounded dark:text-white bg-[#65558F] hover:bg-blue-600"
         >
           Add Column
         </button>
@@ -374,7 +375,7 @@ const Kanban: React.FC = () => {
           placeholder="Enter board name"
           value={newColumnName}
           onChange={(e) => setNewColumnName(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-md px-3 py-2 dark:text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           required
         />
       </div>

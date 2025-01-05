@@ -1,4 +1,6 @@
+import axios from "axios";
 import React, { useState, useEffect } from "react";
+import { FiDownload, FiUpload } from "react-icons/fi";
 import { useLocation, Link } from "react-router-dom";
 
 const ProgressBar = () => {
@@ -30,9 +32,78 @@ const ProgressBar = () => {
 
   const breadcrumbs = generateBreadcrumbs();
 
+  const showUploadFile = location.pathname === "/home/kanban";
+
+  const handleFileUpload = (event: any) => {
+    const file = event.target.files[0];
+  
+    if (file) {
+      console.log('Selected file:', file);
+  
+      // Use FileReader to read the JSON file content
+      const reader = new FileReader();
+  
+      reader.onload = (e: any) => {
+        try {
+          // Parse the file content as JSON
+          const jsonData = JSON.parse(e.target.result);
+          console.log('Parsed JSON Data:', jsonData); // Log the parsed JSON data
+  
+          // Now send the JSON data to the backend if needed
+          const formData = new FormData();
+          formData.append('file', file);
+  
+          fetch('http://localhost:3000/api/upload', {
+            method: 'POST',
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log('File uploaded successfully:', data);
+            })
+            .catch((error) => {
+              console.error('Error uploading file:', error);
+            });
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+        }
+      };
+  
+      // Trigger file reading
+      reader.readAsText(file);
+    } else {
+      console.log('No file selected.');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/export");
+      const exportData = response.data;
+
+      console.log("Exported Data:", exportData);
+
+      // Convert JSON data to a file and trigger download
+      const dataStr = JSON.stringify(exportData, null, 2); // Pretty-print JSON
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "exported_data.json";
+      link.click();
+
+      console.log("Data exported successfully!");
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  };
+  
+  
+
   return (
     <div
-      className={`flex flex-row justify-between mr-5 border-b-[1px] p-3 pr-0 dark:border-gray-300 `} // Apply admin-specific styles
+      className={`flex flex-row justify-between mr-5 border-b-[1px] p-3 pr-0 dark:border-gray-300 `}
     >
       {/* Breadcrumbs Section */}
       <div className="flex flex-col">
@@ -53,6 +124,34 @@ const ProgressBar = () => {
 
       {/* User Info Section */}
       <div className="flex flex-row items-center space-x-4">
+      {showUploadFile && (
+  <div className="flex items-center space-x-2">
+  <label
+    htmlFor="uploadInput"
+    className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
+  >
+    <span className="text-sm dark:text-white font-medium">Choose File</span>
+    <FiUpload className="text-sm dark:text-white" />
+  </label>
+  <input
+    id="uploadInput"
+    type="file"
+    accept="application/json" // Restrict file type to JSON
+    className="hidden" // Hide the default file input
+    onChange={handleFileUpload}
+  />
+  <button
+    onClick={handleExport}
+    className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100"
+  >
+    <span className="text-sm dark:text-white font-medium">Export</span>
+    <FiDownload className="text-sm dark:text-white" />
+  </button>
+</div>
+
+)}
+
+
       {!isAdmin ? (
   <div className={`dark:text-white font-bold`}>
     Hello, {username}!
