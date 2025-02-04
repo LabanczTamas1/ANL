@@ -2,6 +2,7 @@ import React from 'react';
 import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
+import lightLogo from "/public/light-logo.png";
 import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar: React.FC = () => {
@@ -17,28 +18,34 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col bg-[#1D2431] text-white w-[300px] p-4 h-full">
+    <div className="flex flex-col bg-[#1D2431] text-white w-[300px] p-4 h-full overflow-y-auto">
       {/* Logo */}
       <div className="text-xl font-bold mb-6">
-        <span className="text-white">ANL</span> Ads and Leads
+        <span className="flex text-white items-center"><img src={lightLogo} alt="logo" className='w-16'/> Ads and Leads </span>
       </div>
 
       {/* Menu Section */}
       <div className="flex flex-col gap-3">
         <div className="font-bold text-sm">Menu</div>
         <div className="flex flex-col gap-3">
+        <Link to="/home/progress-tracker">
           <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
             <FaInbox className="text-lg" />
             <span>Progress Tracker</span>
           </div>
+          </Link>
+          <Link to="/home/booking/availability">
           <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
             <FaEnvelope className="text-lg" />
-            <span>Calendar</span>
+            <span>Availability</span>
           </div>
+          </Link>
+          <Link to='/home/booking'>
           <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
             <FaEnvelope className="text-lg" />
             <span>Book a meeting</span>
           </div>
+          </Link>
         </div>
       </div>
 

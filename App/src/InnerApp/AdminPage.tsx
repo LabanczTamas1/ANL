@@ -65,7 +65,7 @@ const AdminPage: React.FC = () => {
         throw new Error('Failed to update user role');
       }
 
-      // Update local state to reflect role change
+     
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.username === userId ? { ...user, role: newRole } : user
@@ -77,18 +77,18 @@ const AdminPage: React.FC = () => {
         )
       );
 
-      // Set flash message state to show the success message
+
       setFlashMessage({
         message: `User role updated successfully to ${newRole!}`,
         type: "success",
-        duration: 3000, // The message will disappear after 3 seconds
+        duration: 3000,
       });
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     }
   };
 
-  // Clear flash message after the specified duration
+  
   useEffect(() => {
     if (flashMessage) {
       const timer = setTimeout(() => {

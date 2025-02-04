@@ -2,11 +2,15 @@ import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { FiDownload, FiUpload } from "react-icons/fi";
 import { useLocation, Link } from "react-router-dom";
+import { FaSignOutAlt } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const ProgressBar = () => {
   const username = localStorage.getItem("name");
   const [darkMode, setDarkMode] = useState(false);
   const location = useLocation(); // Get the current location
+
+  const navigate = useNavigate();
 
   // Check if the logged-in user is an admin
   const isAdmin = username === "admin";
@@ -97,6 +101,12 @@ const ProgressBar = () => {
     } catch (error) {
       console.error("Export failed:", error);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('name');
+    navigate('/login');
   };
   
   
@@ -206,8 +216,8 @@ const ProgressBar = () => {
         </button>
 
         {/* Logout Section */}
-        <div className="text-sm text-gray-800 dark:text-white cursor-pointer">
-          Logout
+        <div onClick={handleLogout} className="text-sm text-gray-800 dark:text-white cursor-pointer">
+          <FaSignOutAlt className="text-lg" />
         </div>
       </div>
     </div>

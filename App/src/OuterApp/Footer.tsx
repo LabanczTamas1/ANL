@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
 import lightLogo from "/public/light-logo.png";
+import darkLogo from "/public/dark-logo.png";
 import facebookIcon from "/public/socialMedia/Facebook.svg";
 import instagramIcon from "/public/socialMedia/Instagram.svg";
 import linkedinIcon from "/public/socialMedia/Linkedin.svg";
@@ -8,7 +9,11 @@ import youtubeIcon from "/public/socialMedia/Youtube.svg";
 import whatsAppIcon from "/public/socialMedia/WhatsApp.svg";
 import { Link } from "react-router-dom";
 
-const Footer: React.FC = () => {
+interface FooterProps{
+  darkMode?: boolean;
+}
+
+const Footer: React.FC<FooterProps> = ({darkMode}) => {
   const [isTermsOpen, setIsTermsOpen] = useState<boolean>(false);
   const [isCompanyOpen, setIsCompanyOpen] = useState<boolean>(false);
   const [isLanguagesOpen, setIsLanguagesOpen] = useState<boolean>(false);
@@ -46,12 +51,15 @@ const Footer: React.FC = () => {
     }
   }, [isLanguagesOpen]);
 
+  console.log(darkMode);
   return (
-    <footer className="flex flex-col md:flex-row justify-center gap-5 bg-black p-5 text-[0.875em] h-auto md:h-[16rem] text-white mt-5">
+    <footer className={`flex flex-col md:flex-row justify-center lg:gap-20 p-5 text-[0.875em] h-auto md:h-[16rem] ${
+      darkMode ? "bg-black text-white" : "bg-white text-black border-t-2 border-t-gray-500 shadow-md shadow-gray-500 mt-4"
+    }`}>
       {/* Company Information */}
       <div className="text-[#A5A5A5] w-full md:w-[15em] text-center md:text-left mr-10">
         <div className="flex flex-row justify-center md:justify-start items-center text-white gap-2">
-          <img src={lightLogo} alt="Logo" className="w-18 h-10" />
+          <img src={darkMode ? lightLogo : darkLogo} alt="Logo" className="w-18 h-10" />
           <span>Ads and Leads srl.</span>
         </div>
         <p className="mt-2">
@@ -98,9 +106,9 @@ const Footer: React.FC = () => {
               isTermsOpen ? "block" : "hidden"
             } md:block md:flex md:flex-col flex flex-col text-[#A5A5A5] gap-2 mt-2`}
           >
-            <Link to="/">Cookies</Link>
+            <Link to="/information">Cookies</Link>
             <Link to="/">Terms and conditions</Link>
-            <Link to="/">Privacy Policy</Link>
+            <Link to="/information/privacy-policy">Privacy Policy</Link>
           </div>
         </div>
       </div>
@@ -129,6 +137,7 @@ const Footer: React.FC = () => {
           >
             <Link to="/">About Us</Link>
             <Link to="/">Our Team</Link>
+            <Link to="/contact">Contact Us</Link>
           </div>
         </div>
       </div>
