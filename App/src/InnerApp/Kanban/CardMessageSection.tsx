@@ -19,6 +19,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
   const [error, setError] = useState<string | null>(null); // Error state
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null); // Comment ID being edited
   const [editingBody, setEditingBody] = useState<string>(""); // Temporary body for editing
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch comments on component mount
   useEffect(() => {
@@ -27,7 +28,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
         setLoading(true);
         const token = localStorage.getItem("authToken");
         const response = await axios.get(
-          `http://localhost:3000/api/cards/comments/${cardId}`,
+          `${API_BASE_URL}/api/cards/comments/${cardId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -65,7 +66,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
       const userName = firstName && lastName ? `${firstName} ${lastName}` : "Anonymous";
 
       const response = await axios.post(
-        `http://localhost:3000/api/cards/comments/${cardId}`,
+        `${API_BASE_URL}/api/cards/comments/${cardId}`,
         { userName, body: comment },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -94,7 +95,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
     try {
       const token = localStorage.getItem("authToken");
 
-      await axios.delete(`http://localhost:3000/api/cards/comments/${commentId}`, {
+      await axios.delete(`${API_BASE_URL}/api/cards/comments/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -112,7 +113,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
       const token = localStorage.getItem("authToken");
 
       await axios.put(
-        `http://localhost:3000/api/cards/comments/${editingCommentId}`,
+        `${API_BASE_URL}/api/cards/comments/${editingCommentId}`,
         { body: editingBody },
         {
           headers: { Authorization: `Bearer ${token}` },

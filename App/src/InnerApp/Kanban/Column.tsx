@@ -67,7 +67,7 @@ const Column: React.FC<ColumnProps> = ({
     <Draggable draggableId={column.id} index={index}>
       {(provided) => (
         <div
-        className="kanban-column w-1/4 bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg mr-4"
+        className="kanban-column w-1/4 h-full bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg mr-4"
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
@@ -76,6 +76,7 @@ const Column: React.FC<ColumnProps> = ({
             className="w-[100%] h-[17px] rounded-lg border-2 dark:border-[#1D2431]"
             style={{ backgroundColor: column.tagColor }}
           ></div>
+          <div className="p-2">
           {/* Column Header */}
           <div className="flex flex-col justify-between mb-4 items-center">
             <h2 className="text-xl font-semibold">{column.name}</h2>
@@ -109,7 +110,7 @@ const Column: React.FC<ColumnProps> = ({
               </div>
             )}
           </Droppable>
-
+            <div className="">
           {/* Pagination Controls */}
           <div className="flex justify-center items-center mt-4">
             <button
@@ -155,6 +156,8 @@ const Column: React.FC<ColumnProps> = ({
           >
             Add Card
           </button>
+          </div>
+          </div>
         </div>
       )}
     </Draggable>

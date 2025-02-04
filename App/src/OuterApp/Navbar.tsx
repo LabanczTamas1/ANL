@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion"; // Added for animations
 import lightLogo from "/public/light-logo.png";
 import { Link } from "react-router-dom";
 
@@ -13,16 +14,25 @@ const Navbar = () => {
   // Listen to scroll event
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
+      const scrollThreshold = 50;
+      if (window.scrollY > scrollThreshold) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    // Debounce scroll event to improve performance
+    let debounceTimeout: number | null = null;
+    const debouncedHandleScroll = () => {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      debounceTimeout = window.setTimeout(handleScroll, 50);
+    };
+
+    window.addEventListener("scroll", debouncedHandleScroll);
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      window.removeEventListener("scroll", debouncedHandleScroll);
     };
   }, []);
 
@@ -34,10 +44,10 @@ const Navbar = () => {
     >
       {/* Navbar container */}
       <div
-  className={`flex items-center justify-between text-white lg:py-4 ${
-    isScrolled ? "" : "lg:border-t-2 lg:border-white"
-  }`}
->
+        className={`flex items-center justify-between text-white lg:py-4 ${
+          isScrolled ? "" : "lg:border-t-2 lg:border-white"
+        }`}
+      >
         <Link to="/" className="pl-5">
           <img
             src={lightLogo}
@@ -60,12 +70,24 @@ const Navbar = () => {
             About
           </Link>
           <Link to="/login">
-            <div className="bg-[#343E4C] text-white p-5 px-20 rounded hover:bg-sky-700">
+            <div className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">
               Login
             </div>
           </Link>
           <Link to="/register">
-            <div className="bg-[#343E4C] text-white p-5 px-20 rounded hover:bg-sky-700">
+            <div className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">
+              Sign in
+            </div>
+          </Link>
+        </div>
+        <div className="lg:hidden flex gap-5">
+          <Link to="/login">
+            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700">
+              Login
+            </div>
+          </Link>
+          <Link to="/register">
+            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700">
               Sign in
             </div>
           </Link>
@@ -73,7 +95,7 @@ const Navbar = () => {
 
         {/* Hamburger Menu Button */}
         <button
-          className="lg:hidden text-white focus:outline-none pr-3"
+          className="lg:hidden text-white focus:outline-none pr-3 md:pl-3 md:pl-[62px]"
           onClick={toggleMenu}
         >
           <svg
@@ -94,32 +116,31 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="lg:hidden flex flex-col space-y-4 text-xl font-inter font-extrabold text-white p-5 rounded-md">
-          <Link to="/register" className="hover:text-gray-300">
-            Contact
-          </Link>
-          <Link to="/register" className="hover:text-gray-300">
-            Services
-          </Link>
-          <Link to="/register" className="hover:text-gray-300">
-            About
-          </Link>
-          <Link to="/register" className="hover:text-gray-300">
-            Blog
-          </Link>
-          <Link to="/login">
-            <div className="bg-[#343E4C] text-white py-2 px-4 rounded hover:bg-sky-500 hover:text-white">
-              Login
-            </div>
-          </Link>
-          <Link to="/register">
-            <div className="bg-[#343E4C] text-white py-2 px-4 rounded hover:bg-sky-500 hover:text-white">
-              Sign In
-            </div>
-          </Link>
-        </div>
-      )}
+      <AnimatePresence>
+        {/* Added AnimatePresence for animation */}
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }} // Animation start state
+            animate={{ opacity: 1, y: 0 }} // Animation end state
+            exit={{ opacity: 0, y: -20 }} // Exit animation
+            transition={{ duration: 0.3 }} // Animation duration
+            className="lg:hidden absolute z-10 w-full flex flex-col space-y-4 text-xl font-inter font-extrabold text-white p-5 rounded-md bg-[#080A0D]"
+          >
+            <Link to="/contact" className="hover:text-gray-300">
+              Contact
+            </Link>
+            <Link to="/register" className="hover:text-gray-300">
+              Services
+            </Link>
+            <Link to="/register" className="hover:text-gray-300">
+              About
+            </Link>
+            <Link to="/register" className="hover:text-gray-300">
+              Blog
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

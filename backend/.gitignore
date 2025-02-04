@@ -1,2 +1,6 @@
 # Environment variables
 .env
+credentials.json
+backend/credentials.json
+
+node_modules
