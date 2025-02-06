@@ -10,18 +10,21 @@ const fs = require("fs");
 const path = require("path");
 const ensureAdminAccount = require("./utils/ensureAdminAccount");
 const listAllUsersAdmin = require("./utils/listAllUsersAdmin");
-const { handleContactSubmission } = require('./utils/mail_utils/contact');
+const { handleContactSubmission } = require("./utils/mail_utils/contact");
 require("dotenv").config();
 require("./passport");
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 //const redisClient = require('./redisClient');
 const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
 
-
-const allowedOrigins = ["http://localhost:5173", "http://192.168.0.134:5173", "http://192.168.0.156:5173"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://192.168.0.134:5173",
+  "http://192.168.0.156:5173",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -35,7 +38,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true, // Allow cookies to be sent across domains
 };
-
 
 app.use(cors(corsOptions));
 console.log("server.js-----------------");
@@ -84,7 +86,7 @@ redisClient.on("connect", () => {
 })();
 
 ensureAdminAccount();
-app.post('/api/contact', handleContactSubmission);
+app.post("/api/contact", handleContactSubmission);
 
 // Google authentication route
 app.get(
@@ -180,6 +182,7 @@ app.post("/register", async (req, res) => {
     await redisClient.hSet(`${userKey}`, "username", username);
     await redisClient.hSet(`${userKey}`, "hashedPassword", hashedPassword);
     await redisClient.hSet(`${userKey}`, "role", `user`);
+    await redisClient.hSet(`${userKey}`, "progress", 0);
 
     console.log("User saved to Redis successfully");
 
@@ -305,7 +308,7 @@ app.get("/profile", authenticateJWT, (req, res) => {
 
 app.get("/listAllUsersAdmin", authenticateJWT, async (req, res) => {
   try {
-    // Fetch all users (this assumes the listAllUsers function is modified to return data instead of saving to a file)
+    // Fetch all users
     const users = await listAllUsersAdmin();
 
     // Return the list of users as JSON
@@ -956,7 +959,6 @@ app.put("/api/cards/comments/:commentId", authenticateJWT, async (req, res) => {
   res.status(200).json({ message: "Comment updated successfully" });
 });
 
-
 app.delete(
   "/api/cards/comments/:commentId",
   authenticateJWT,
@@ -1204,52 +1206,45 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         const lines = card.desc.split("\n");
 
         // Extract text after the colon and store in an array
-        const result = lines
-          .map((line) => {
-            const parts = line.split(":"); // Split by colon
-            return parts.length > 1 ? parts.slice(1).join(":").trim() : ""; // Get text after colon
-          })
-          ;
-          //result[2]=result[1];
-          if(result[2]!=[]){
-
-        const timestamp = Date.now();
-
-        const BoardKey = `SortedCards:${card.idList}`;
-
-        // Correct usage of zAdd
-        await redisClient.zAdd(BoardKey, [
-          { score: timestamp, value: card.id },
-        ]);
-
-        //update the cardNumber
-        const columnData = await redisClient.hGetAll(`Boards:${card.idList}`);
-        const increasedInt = parseInt(columnData.CardNumber, 10) + 1;
-        
-        await redisClient.hIncrBy(`Boards:${card.idList}`, "CardNumber", 1);
-       
-
-        //console.log(card.desc);
-        
-
-        //console.log(result);
-
-      
-        
-        await redisClient.hSet(`CardDetails:${card.id}`, {
-          ColumnId: card.idList,
-          ContactName: result[0] || "Unknown", // Default to "Unknown" if not available
-          BusinessName: result[2], // Already ensured above
-          DateOfAdded: timestamp,
-          FirstContact: "none",
-          PhoneNumber: result[3] || "N/A", // Default to "N/A" if not available
-          Email: result[5] || "N/A",
-          Website: result[14] || "N/A",
-          Instagram: result[16] || "N/A",
-          Facebook: result[18] || "N/A",
-          IsCommented: String(false),
+        const result = lines.map((line) => {
+          const parts = line.split(":"); // Split by colon
+          return parts.length > 1 ? parts.slice(1).join(":").trim() : ""; // Get text after colon
         });
-      }
+        //result[2]=result[1];
+        if (result[2] != []) {
+          const timestamp = Date.now();
+
+          const BoardKey = `SortedCards:${card.idList}`;
+
+          // Correct usage of zAdd
+          await redisClient.zAdd(BoardKey, [
+            { score: timestamp, value: card.id },
+          ]);
+
+          //update the cardNumber
+          const columnData = await redisClient.hGetAll(`Boards:${card.idList}`);
+          const increasedInt = parseInt(columnData.CardNumber, 10) + 1;
+
+          await redisClient.hIncrBy(`Boards:${card.idList}`, "CardNumber", 1);
+
+          //console.log(card.desc);
+
+          //console.log(result);
+
+          await redisClient.hSet(`CardDetails:${card.id}`, {
+            ColumnId: card.idList,
+            ContactName: result[0] || "Unknown", // Default to "Unknown" if not available
+            BusinessName: result[2], // Already ensured above
+            DateOfAdded: timestamp,
+            FirstContact: "none",
+            PhoneNumber: result[3] || "N/A", // Default to "N/A" if not available
+            Email: result[5] || "N/A",
+            Website: result[14] || "N/A",
+            Instagram: result[16] || "N/A",
+            Facebook: result[18] || "N/A",
+            IsCommented: String(false),
+          });
+        }
       });
     } else {
       console.log("No cards found in the uploaded JSON.");
@@ -1265,7 +1260,11 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 app.get("/api/export", async (req, res) => {
   try {
     // Retrieve KanbanTable
-    const kanbanTable = await redisClient.zRangeWithScores("KanbanTable", 0, -1);
+    const kanbanTable = await redisClient.zRangeWithScores(
+      "KanbanTable",
+      0,
+      -1
+    );
 
     // Prepare `lists` array
     const lists = [];
@@ -1284,7 +1283,11 @@ app.get("/api/export", async (req, res) => {
     for (const board of kanbanTable) {
       const boardId = board.value;
       const sortedCardsKey = `SortedCards:${boardId}`;
-      const sortedCards = await redisClient.zRangeWithScores(sortedCardsKey, 0, -1);
+      const sortedCards = await redisClient.zRangeWithScores(
+        sortedCardsKey,
+        0,
+        -1
+      );
 
       for (const card of sortedCards) {
         const cardId = card.value;
@@ -1314,110 +1317,135 @@ app.get("/api/export", async (req, res) => {
   }
 });
 
-
 //Availability
 
-async function checkCustomAvailability(date, standardAvailabilityArr, openClosedFlag){
+async function checkCustomAvailability(
+  date,
+  standardAvailabilityArr,
+  openClosedFlag
+) {
   console.log("Checking custom availability on this day", date);
   console.log(openClosedFlag);
   console.log(standardAvailabilityArr);
-  if(openClosedFlag === "both"){
-    let addedTimes = await redisClient.zRange(`AddedTimes:${date}`,0,-1);
-    addedTimes = addedTimes.map(item => Number(item));
-    let deletedTimes = await redisClient.zRange(`DeletedTimes:${date}`,0,-1);
-    deletedTimes = deletedTimes.map(item => Number(item));
+  if (openClosedFlag === "both") {
+    let addedTimes = await redisClient.zRange(`AddedTimes:${date}`, 0, -1);
+    addedTimes = addedTimes.map((item) => Number(item));
+    let deletedTimes = await redisClient.zRange(`DeletedTimes:${date}`, 0, -1);
+    deletedTimes = deletedTimes.map((item) => Number(item));
     console.log("Added Times: ", addedTimes);
-    let allSet  = new Set([ ...standardAvailabilityArr, ...addedTimes] );
+    let allSet = new Set([...standardAvailabilityArr, ...addedTimes]);
     let allAvailableTimes = [...allSet];
-    allAvailableTimes = allAvailableTimes.filter(item => !deletedTimes.includes(item));
+    allAvailableTimes = allAvailableTimes.filter(
+      (item) => !deletedTimes.includes(item)
+    );
     console.log("Merged Array: ", allAvailableTimes);
   }
   return standardAvailabilityArr;
-
 }
 
-app.patch("/api/availability/standard-availability", authenticateJWT, async (req, res) => {
-  const { availableTimes } = req.body;
+app.patch(
+  "/api/availability/standard-availability",
+  authenticateJWT,
+  async (req, res) => {
+    const { availableTimes } = req.body;
 
-  console.log("Received availableTimes:", availableTimes);
+    console.log("Received availableTimes:", availableTimes);
 
-  // Validate the presence of availableTimes
-  if (!Array.isArray(availableTimes)) {
-    return res.status(400).json({ error: "Invalid input: availableTimes must be an array" });
+    // Validate the presence of availableTimes
+    if (!Array.isArray(availableTimes)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid input: availableTimes must be an array" });
+    }
+
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    try {
+      // Use Promise.all to handle asynchronous operations properly
+      await Promise.all(
+        availableTimes.map(async (entry) => {
+          // Ensure all values are present before saving
+          if (!entry.day || !entry.openingTime || !entry.closingTime) {
+            throw new Error(`Missing data for day: ${entry.day}`);
+          }
+
+          // Log the entry for debugging
+          console.log(`Saving availability for: ${entry.day}`, entry);
+          console.log(entry.isDayOff);
+          // Ensure property names are properly capitalized for Redis keys
+          await redisClient.hSet(`StandardAvailability:${entry.day}`, {
+            OpeningTime: entry.openingTime, // Ensure consistency with input field name
+            ClosingTime: entry.closingTime, // Ensure consistency with input field name
+            IsDayOff: entry.isDayOff.toString(), // Store boolean as string
+          });
+        })
+      );
+
+      res.status(200).json({ message: "Availability updated successfully" });
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      res
+        .status(500)
+        .json({ error: `Failed to update availability: ${error.message}` });
+    }
   }
+);
 
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
+app.get(
+  "/api/availability/standard-availability",
+  authenticateJWT,
+  async (req, res) => {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const daysOfWeek = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+
+    try {
+      const standardAvailability = await Promise.all(
+        daysOfWeek.map(async (day) => {
+          const availability = await redisClient.hGetAll(
+            `StandardAvailability:${day}`
+          );
+          return {
+            day,
+            openingTime: availability.OpeningTime,
+            closingTime: availability.ClosingTime,
+            isDayOff: availability.IsDayOff === "true",
+          };
+        })
+      );
+
+      console.log(JSON.stringify(standardAvailability, null, 2)); // Properly log the resolved data
+      res.status(200).json(standardAvailability);
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-
-  try {
-    // Use Promise.all to handle asynchronous operations properly
-    await Promise.all(
-      availableTimes.map(async (entry) => {
-        // Ensure all values are present before saving
-        if (!entry.day || !entry.openingTime || !entry.closingTime) {
-          throw new Error(`Missing data for day: ${entry.day}`);
-        }
-
-        // Log the entry for debugging
-        console.log(`Saving availability for: ${entry.day}`, entry);
-        console.log(entry.isDayOff);
-        // Ensure property names are properly capitalized for Redis keys
-        await redisClient.hSet(`StandardAvailability:${entry.day}`, {
-          OpeningTime: entry.openingTime, // Ensure consistency with input field name
-          ClosingTime: entry.closingTime, // Ensure consistency with input field name
-          IsDayOff: entry.isDayOff.toString(), // Store boolean as string
-        });
-      })
-    );
-
-    res.status(200).json({ message: "Availability updated successfully" });
-  } catch (error) {
-    console.error("Error updating availability:", error);
-    res.status(500).json({ error: `Failed to update availability: ${error.message}` });
-  }
-});
-
-
-
-app.get("/api/availability/standard-availability", authenticateJWT, async (req, res) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  try {
-    const standardAvailability = await Promise.all(
-      daysOfWeek.map(async (day) => {
-        const availability = await redisClient.hGetAll(`StandardAvailability:${day}`);
-        return {
-          day,
-          openingTime: availability.OpeningTime,
-          closingTime: availability.ClosingTime,
-          isDayOff: availability.IsDayOff === "true"
-        };
-      })
-    );
-
-    console.log(JSON.stringify(standardAvailability, null, 2)); // Properly log the resolved data
-    res.status(200).json(standardAvailability);
-  } catch (error) {
-    console.error("Error fetching availability:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+);
 
 function timeToMinutes(time) {
-  const [hours, minutes] = time.split(':').map(Number);
-  return (hours * 60) + minutes;
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
 }
 
 function getAvailableTimes(start, end, increment) {
   const result = [];
-  for (let i = start; i < end; i += increment) {  // Use < for exclusive end
+  for (let i = start; i < end; i += increment) {
+    // Use < for exclusive end
     result.push(i);
   }
   return result;
@@ -1425,111 +1453,152 @@ function getAvailableTimes(start, end, increment) {
 
 function getUnavailableTimes(availableStart, availableEnd) {
   // Create a list of all available hours (0 to 23)
-  const allAvailableHours = getAvailableTimes(0,1440,60);  // All hours from 0 to 23
+  const allAvailableHours = getAvailableTimes(0, 1440, 60); // All hours from 0 to 23
   //console.log(allAvailableHours);
   // Filter out hours that fall within the available time range (exclusive of availableEnd)
-  const unavailableHours = allAvailableHours.filter(hour => {
-    return hour < availableStart || hour >= availableEnd;  // Filter out available hours
+  const unavailableHours = allAvailableHours.filter((hour) => {
+    return hour < availableStart || hour >= availableEnd; // Filter out available hours
   });
 
   return unavailableHours;
 }
 
+app.get(
+  "/api/availability/add-availability/:rawDate",
+  authenticateJWT,
+  async (req, res) => {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    const { rawDate } = req.params;
+    console.log("RawDate", rawDate);
 
-
-app.get("/api/availability/add-availability/:rawDate", authenticateJWT, async (req, res) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  const { rawDate } = req.params;
-  console.log("RawDate", rawDate);
-
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  try {
-    const date = new Date(rawDate);
-    const dayNumber = date.getDay();
-
-    const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const dayName = weekdays[dayNumber];
-
-    //console.log(dayNumber); // 2
-    //console.log(dayName);   // "Tuesday"
-    
-    const availability = await redisClient.hGetAll(`StandardAvailability:${dayName}`);
-    //console.log(availability);
-    //console.log(typeof availability.IsDayOff);
-
-    // Check if it's a day off and return immediately if true
-    if (availability.IsDayOff.toLowerCase() === 'true') {
-        return res.status(200).json({ message: "DayOff" });
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
     }
 
-    const startHour = parseInt(timeToMinutes(availability.OpeningTime));
-    const endHour = parseInt(timeToMinutes(availability.ClosingTime));
-    //console.log(startHour);
+    try {
+      const date = new Date(rawDate);
+      const dayNumber = date.getDay();
 
-    // Generate available times
-    const allAvailableTimes = getAvailableTimes(startHour, endHour, 60);
-    const allUnavailableTimes = getUnavailableTimes(startHour, endHour, startHour, endHour);
+      const weekdays = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+      const dayName = weekdays[dayNumber];
 
-    console.log(allAvailableTimes, "\nunavailable", allUnavailableTimes);
-    console.log(getUnavailableTimes(2, 6, 0, 240));
-    
-    // Send the available times after all checks are done
-    return res.status(200).json({ unavailableTimes: allUnavailableTimes });
-   } catch (error) {
-    console.error("Error fetching availability:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+      //console.log(dayNumber); // 2
+      //console.log(dayName);   // "Tuesday"
 
-app.get("/api/availability/delete-availability/:rawDate", authenticateJWT, async (req, res) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  const { rawDate } = req.params;
-  console.log("RawDate", rawDate);
+      const availability = await redisClient.hGetAll(
+        `StandardAvailability:${dayName}`
+      );
+      //console.log(availability);
+      //console.log(typeof availability.IsDayOff);
 
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  try {
-    const date = new Date(rawDate);
-    const dayNumber = date.getDay();
-
-    const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const dayName = weekdays[dayNumber];
-
-    console.log(dayNumber); // 2
-    console.log(dayName);   // "Tuesday"
-    
-    const availability = await redisClient.hGetAll(`StandardAvailability:${dayName}`);
-    console.log(availability);
-    console.log(typeof availability.IsDayOff);
-
-    // Check if it's a day off and return immediately if true
-    if (availability.IsDayOff.toLowerCase() === 'true') {
+      // Check if it's a day off and return immediately if true
+      if (availability.IsDayOff.toLowerCase() === "true") {
         return res.status(200).json({ message: "DayOff" });
+      }
+
+      const startHour = parseInt(timeToMinutes(availability.OpeningTime));
+      const endHour = parseInt(timeToMinutes(availability.ClosingTime));
+      //console.log(startHour);
+
+      // Generate available times
+      const allAvailableTimes = getAvailableTimes(startHour, endHour, 60);
+      const allUnavailableTimes = getUnavailableTimes(
+        startHour,
+        endHour,
+        startHour,
+        endHour
+      );
+
+      console.log(allAvailableTimes, "\nunavailable", allUnavailableTimes);
+      console.log(getUnavailableTimes(2, 6, 0, 240));
+
+      // Send the available times after all checks are done
+      return res.status(200).json({ unavailableTimes: allUnavailableTimes });
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+app.get(
+  "/api/availability/delete-availability/:rawDate",
+  authenticateJWT,
+  async (req, res) => {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    const { rawDate } = req.params;
+    console.log("RawDate", rawDate);
+
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
     }
 
-    const startHour = parseInt(timeToMinutes(availability.OpeningTime));
-    const endHour = parseInt(timeToMinutes(availability.ClosingTime));
-    console.log(startHour);
+    try {
+      const date = new Date(rawDate);
+      const dayNumber = date.getDay();
 
-    // Generate available times
-    const allAvailableTimes = getAvailableTimes(startHour, endHour, 60);
-    const allUnavailableTimes = getUnavailableTimes(startHour, endHour, startHour, endHour);
+      const weekdays = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+      const dayName = weekdays[dayNumber];
 
-    console.log("availabletimes ",allAvailableTimes,"un: ", allUnavailableTimes);
-    console.log(getUnavailableTimes(2, 6, 0, 240));
-    
-    // Send the available times after all checks are done
-    return res.status(200).json({ availableTimes: allAvailableTimes });
-   } catch (error) {
-    console.error("Error fetching availability:", error);
-    res.status(500).json({ error: "Internal server error" });
+      console.log(dayNumber); // 2
+      console.log(dayName); // "Tuesday"
+
+      const availability = await redisClient.hGetAll(
+        `StandardAvailability:${dayName}`
+      );
+      console.log(availability);
+      console.log(typeof availability.IsDayOff);
+
+      // Check if it's a day off and return immediately if true
+      if (availability.IsDayOff.toLowerCase() === "true") {
+        return res.status(200).json({ message: "DayOff" });
+      }
+
+      const startHour = parseInt(timeToMinutes(availability.OpeningTime));
+      const endHour = parseInt(timeToMinutes(availability.ClosingTime));
+      console.log(startHour);
+
+      // Generate available times
+      const allAvailableTimes = getAvailableTimes(startHour, endHour, 60);
+      const allUnavailableTimes = getUnavailableTimes(
+        startHour,
+        endHour,
+        startHour,
+        endHour
+      );
+
+      console.log(
+        "availabletimes ",
+        allAvailableTimes,
+        "un: ",
+        allUnavailableTimes
+      );
+      console.log(getUnavailableTimes(2, 6, 0, 240));
+
+      // Send the available times after all checks are done
+      return res.status(200).json({ availableTimes: allAvailableTimes });
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 app.post(
   "/api/availability/add-availability-to-the-database",
@@ -1540,7 +1609,8 @@ app.post(
     // Validate the request payload
     if (!date || !Array.isArray(times) || times.length === 0) {
       return res.status(400).json({
-        error: "Invalid data. Please provide a valid date and an array of times.",
+        error:
+          "Invalid data. Please provide a valid date and an array of times.",
       });
     }
 
@@ -1550,12 +1620,10 @@ app.post(
         return res.status(401).json({ error: "No token provided" });
       }
 
-
       console.log(`Selected Date: ${date}`);
       console.log(`Selected Times: ${times}`);
 
-          redisClient.sAdd('CustomDatesAdded', date);
-
+      redisClient.sAdd("CustomDatesAdded", date);
 
       await Promise.all(
         times.map((time) =>
@@ -1572,7 +1640,8 @@ app.post(
     } catch (err) {
       console.error("Error while saving availability:", err.message);
       res.status(500).json({
-        error: "An error occurred while saving availability. Please try again later.",
+        error:
+          "An error occurred while saving availability. Please try again later.",
       });
     }
   }
@@ -1587,7 +1656,8 @@ app.delete(
     // Validate the request payload
     if (!date || !Array.isArray(times) || times.length === 0) {
       return res.status(400).json({
-        error: "Invalid data. Please provide a valid date and an array of times.",
+        error:
+          "Invalid data. Please provide a valid date and an array of times.",
       });
     }
 
@@ -1597,11 +1667,10 @@ app.delete(
         return res.status(401).json({ error: "No token provided" });
       }
 
-
       console.log(`Selected Date: ${date}`);
       console.log(`Selected Times: ${times}`);
 
-      redisClient.sAdd('CustomDatesDeleted', date);
+      redisClient.sAdd("CustomDatesDeleted", date);
       await Promise.all(
         times.map((time) =>
           redisClient.zAdd(`DeletedTimes:${date}`, [
@@ -1611,13 +1680,13 @@ app.delete(
             },
           ])
         )
-
       );
       res.status(200).json({ message: "Availability saved successfully" });
     } catch (err) {
       console.error("Error while saving availability:", err.message);
       res.status(500).json({
-        error: "An error occurred while saving availability. Please try again later.",
+        error:
+          "An error occurred while saving availability. Please try again later.",
       });
     }
   }
@@ -1625,62 +1694,80 @@ app.delete(
 
 //Booking
 
-app.get("/api/availability/show-available-times/:rawDate", authenticateJWT, async (req, res) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  const { rawDate } = req.params;
-  console.log("RawDate", rawDate);
-  const currentTime = req.query.current_time;
+app.get(
+  "/api/availability/show-available-times/:rawDate",
+  authenticateJWT,
+  async (req, res) => {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    const { rawDate } = req.params;
+    console.log("RawDate", rawDate);
+    const currentTime = req.query.current_time;
 
-  if (currentTime) {
-    const [day, UTC, exactTime] = currentTime
-      .replace('[', '')
-      .replace(']', '')
-      .split(', ')
-      .map(item => item.trim());
+    if (currentTime) {
+      const [day, UTC, exactTime] = currentTime
+        .replace("[", "")
+        .replace("]", "")
+        .split(", ")
+        .map((item) => item.trim());
 
-    console.log(`Day: ${day}, UTC: ${UTC}, Exact Time: ${exactTime}`);
-  }
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  try {
-    const date = new Date(rawDate);
-    const dayNumber = date.getDay();
-
-    const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const dayName = weekdays[dayNumber];
-
-    console.log(dayNumber); // 2
-    console.log(dayName);   // "Tuesday"
-    
-    const availability = await redisClient.hGetAll(`StandardAvailability:${dayName}`);
-    console.log(availability);
-    console.log(typeof availability.IsDayOff);
-
-    // Check if it's a day off and return immediately if true
-    if (availability.IsDayOff.toLowerCase() === 'true') {
-        return res.status(200).json({ message: "DayOff" });
+      console.log(`Day: ${day}, UTC: ${UTC}, Exact Time: ${exactTime}`);
+    }
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
     }
 
-    const startHour = parseInt(timeToMinutes(availability.OpeningTime));
-    const endHour = parseInt(timeToMinutes(availability.ClosingTime));
-    console.log(startHour);
+    try {
+      const date = new Date(rawDate);
+      const dayNumber = date.getDay();
 
-    // Generate available times
-    const availableTimes = getAvailableTimes(startHour, endHour, 60);
+      const weekdays = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+      const dayName = weekdays[dayNumber];
 
-    const allAvailableTimes = await checkCustomAvailability(rawDate, availableTimes, "both")
+      console.log(dayNumber); // 2
+      console.log(dayName); // "Tuesday"
 
-    console.log("availabletimes ",allAvailableTimes);
-    
-    // Send the available times after all checks are done
-    return res.status(200).json({ availableTimes: allAvailableTimes });
-   } catch (error) {
-    console.error("Error fetching availability:", error);
-    res.status(500).json({ error: "Internal server error" });
+      const availability = await redisClient.hGetAll(
+        `StandardAvailability:${dayName}`
+      );
+      console.log(availability);
+      console.log(typeof availability.IsDayOff);
+
+      // Check if it's a day off and return immediately if true
+      if (availability.IsDayOff.toLowerCase() === "true") {
+        return res.status(200).json({ message: "DayOff" });
+      }
+
+      const startHour = parseInt(timeToMinutes(availability.OpeningTime));
+      const endHour = parseInt(timeToMinutes(availability.ClosingTime));
+      console.log(startHour);
+
+      // Generate available times
+      const availableTimes = getAvailableTimes(startHour, endHour, 60);
+
+      const allAvailableTimes = await checkCustomAvailability(
+        rawDate,
+        availableTimes,
+        "both"
+      );
+
+      console.log("availabletimes ", allAvailableTimes);
+
+      // Send the available times after all checks are done
+      return res.status(200).json({ availableTimes: allAvailableTimes });
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 const { google } = require("googleapis");
 const { authenticate } = require("@google-cloud/local-auth");
@@ -1693,7 +1780,6 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/calendar.events",
 ];
-
 
 async function createGoogleMeetEvent() {
   try {
@@ -1739,7 +1825,7 @@ async function createGoogleMeetEvent() {
 
     console.log("Meeting Created!");
     console.log("Join URL:", response.data.hangoutLink);
-    return(response.data.hangoutLink);
+    return response.data.hangoutLink;
   } catch (error) {
     console.error("Error creating Google Meet event:", error.message);
   }
@@ -1748,42 +1834,50 @@ async function createGoogleMeetEvent() {
 const transporter = nodemailer.createTransport({
   service: "gmail", // Replace with your email provider if not Gmail
   auth: {
-    user: 'deid.unideb@gmail.com', // Your email address
-    pass: 'ytke aiwa pzin kmwc', // Your email password or app password
+    user: "deid.unideb@gmail.com", // Your email address
+    pass: "ytke aiwa pzin kmwc", // Your email password or app password
   },
 });
 
-app.post("/api/availability/booking/add-booking", authenticateJWT, async (req, res) => {
-  try {
-    // Call the createGoogleMeetEvent function
-    const googleMeetEventLink = await createGoogleMeetEvent();
+app.post(
+  "/api/availability/booking/add-booking",
+  authenticateJWT,
+  async (req, res) => {
+    try {
+      // Call the createGoogleMeetEvent function
+      const googleMeetEventLink = await createGoogleMeetEvent();
 
-    // Email details
-    const mailOptions = {
-      from: 'deid.unideb@gmail.com', // Sender email address
-      to: 'deid.unideb@gmail.com', // Recipient email address (assuming it's provided in the request body)
-      subject: "Your Google Meet Event Details",
-      text: `Here is your Google Meet event link: ${googleMeetEventLink}`,
-    };
+      // Email details
+      const mailOptions = {
+        from: "deid.unideb@gmail.com", // Sender email address
+        to: "deid.unideb@gmail.com", // Recipient email address (assuming it's provided in the request body)
+        subject: "Your Google Meet Event Details",
+        text: `Here is your Google Meet event link: ${googleMeetEventLink}`,
+      };
 
-    // Send the email
-    await transporter.sendMail(mailOptions);
+      // Send the email
+      await transporter.sendMail(mailOptions);
 
-    await redisClient.hSet(`Meetings:client4`,{"link": googleMeetEventLink, "at": 730, "type": "Kick Off Meeting"});
-    // Respond with success
-    res.status(200).json({
-      message: "Booking created and email sent successfully.",
-      eventLink: googleMeetEventLink,
-    });
-  } catch (error) {
-    console.error("Error creating booking or sending email:", error);
-    res.status(500).json({
-      message: "Failed to create booking or send email.",
-      error: error.message,
-      error: error.stack,
-    });
+      await redisClient.hSet(`Meetings:client4`, {
+        link: googleMeetEventLink,
+        at: 730,
+        type: "Kick Off Meeting",
+      });
+      // Respond with success
+      res.status(200).json({
+        message: "Booking created and email sent successfully.",
+        eventLink: googleMeetEventLink,
+      });
+    } catch (error) {
+      console.error("Error creating booking or sending email:", error);
+      res.status(500).json({
+        message: "Failed to create booking or send email.",
+        error: error.message,
+        error: error.stack,
+      });
+    }
   }
-});
+);
 
 function utcToMinutes(gmtString) {
   const match = gmtString.match(/UTC([+-])(\d+)/);
@@ -1795,3 +1889,98 @@ function utcToMinutes(gmtString) {
   return sign * hours * 60;
 }
 
+app.patch(
+  "/api/changeUserProgress/:userId",
+  authenticateJWT,
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { progressStep } = req.body;
+      console.log("here it is the progress number", progressStep);
+
+      const userKey = `user:${userId}`;
+      const userData = await redisClient.hGetAll(userKey);
+      console.log(userData);
+
+      if (!userData) {
+        return res.status(404).json({ error: "User ID not found in Redis." });
+      }
+
+      if (!userData || Object.keys(userData).length === 0) {
+        return res
+          .status(404)
+          .json({ error: `User data not found for userId: ${userIdReal}` });
+      }
+
+      await redisClient.hSet(userKey, "progress", progressStep);
+      console.log(progressStep);
+
+      res.status(200).json({
+        message: `Progress for user ${userId} successfully updated to ${progressStep}.`,
+      });
+    } catch (error) {
+      console.error("Error updating user progress:", error);
+      res.status(500).json({
+        message: "Failed to update user progress. Please try again later.",
+        error: error.message,
+      });
+    }
+  }
+);
+
+app.get("/api/allUsersProgress", authenticateJWT, async (req, res) => {
+  try {
+    const users = await redisClient.sMembers("users"); // Get all user IDs
+    console.log("Users:", users);
+
+    const allUserData = await Promise.all(
+      users.map(async (user) => {
+        const userData = await redisClient.hGetAll(`user:${user}`); // Get user data from Redis
+
+        if (userData.role === "user") {
+          // Check if the role is 'user'
+          return {
+            id: user,
+            name: `${userData.firstName || ""} ${
+              userData.lastName || ""
+            }`.trim(),
+            company: userData.username || "",
+            step: parseInt(userData.step || "0", 10),
+          };
+        }
+
+        return null; // Return null if the role is not 'user'
+      })
+    );
+
+    // Filter out null values from the final response
+    const filteredUserData = allUserData.filter((user) => user !== null);
+
+    console.log("Filtered User Data:", filteredUserData);
+
+    res.status(200).json({ allUserData: filteredUserData });
+  } catch (error) {
+    console.error("Error fetching all user progress:", error);
+    res.status(500).json({
+      message: "Failed to fetch user progress. Please try again later.",
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/userData/:userId", authenticateJWT, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const userData = await redisClient.hGetAll(`user:${userId}`);
+    console.log(userData);
+
+    res.status(200).json({ userData: userData });
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    res.status(500).json({
+      message: "Failed to fetch user data. Please try again later.",
+      error: error.message,
+    });
+  }
+});

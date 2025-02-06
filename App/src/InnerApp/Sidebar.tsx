@@ -78,10 +78,12 @@ const Sidebar: React.FC = () => {
               <span>My Account</span>
             </div>
           </Link>
+          <Link to="user-management">
           <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
             <FaUserCircle className="text-lg" />
-            <span>Change details</span>
+            <span>User Management</span>
           </div>
+          </Link>
           <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
             <FaStar className="text-lg" />
             <span>Spends</span>
