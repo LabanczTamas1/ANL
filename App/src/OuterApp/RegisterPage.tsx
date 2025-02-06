@@ -18,6 +18,7 @@ interface RegisterFormInputs {
 
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate(); // Initialize navigate
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const {
     register,
@@ -28,7 +29,7 @@ const RegisterForm: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormInputs) => {
     try {
-      const response = await fetch('http://localhost:3000/register', {
+      const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

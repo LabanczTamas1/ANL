@@ -17,13 +17,14 @@ const AdminPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('users');
   const [flashMessage, setFlashMessage] = useState<{ message: string; type: 'success' | 'error'; duration: number } | null>(null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch users from backend when the component is mounted
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch('http://localhost:3000/listAllUsersAdmin', {
+        const response = await fetch(`${API_BASE_URL}/listAllUsersAdmin`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -52,7 +53,7 @@ const AdminPage: React.FC = () => {
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:3000/updateUserRole/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/updateUserRole/${userId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

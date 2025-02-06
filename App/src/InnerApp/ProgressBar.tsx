@@ -122,11 +122,11 @@ const ProgressBar = () => {
             <span key={breadcrumb.path}>
               <Link
                 to={breadcrumb.path}
-                className="text-black dark:text-white hover:underline"
+                className="text-blue-600 hover:underline"
               >
                 {breadcrumb.name}
               </Link>
-              {index < breadcrumbs.length - 1 && " > "} {/* Add separator */}
+              {index < breadcrumbs.length - 1 && " / "} {/* Add separator */}
             </span>
           ))}
         </div>

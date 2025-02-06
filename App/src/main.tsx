@@ -28,6 +28,7 @@ import ProgressTracker from "./InnerApp/ProgressTracker/ProgressTracker.tsx";
 import BookingSuccess from "./InnerApp/Booking/BookingSuccess.tsx";
 import { HelmetProvider } from "react-helmet-async";
 import Onboarding from "./InnerApp/Onboarding/Onboarding.tsx";
+import UserManagement from "./InnerApp/UserManagement/UserManagement.tsx";
 
 const router = createBrowserRouter([
   {
@@ -100,6 +101,10 @@ const router = createBrowserRouter([
       {
         path: "booking/availability/delete-availability",
         element: <DeleteAvailability />,
+      },
+      {
+        path: "user-management",
+        element: <UserManagement/>,
       },
     ],
   },
