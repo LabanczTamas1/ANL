@@ -18,7 +18,6 @@ export default {
         'h-md': { 'raw': '(min-height: 641px) and (max-height: 1024px)' }, // Between 641px and 1024px
         'h-lg': { 'raw': '(min-height: 1025px)' }, // Screen height >= 1025px
       },
-     
       colors: {
         light: {
           bg: '#ffffff', // Light mode background
@@ -30,6 +29,13 @@ export default {
           text: '#ffffff', // Dark mode text
           backgroundImage: 'linear-gradient(to bottom, rgb(206, 13, 13) 0%, rgb(173, 25, 25) 78%, rgb(18, 18, 194) 100%)',
         },
+      },
+      transform: ['motion-safe'],
+      rotate: {
+        'y-180': 'rotateY(180deg)',
+      },
+      perspective: {
+        DEFAULT: '1000px',
       },
     },
   },

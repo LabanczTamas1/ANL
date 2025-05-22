@@ -10,26 +10,30 @@ redisClient.connect().then(() => console.log('Redis connected in listAllUsers.js
 
 const listAllUsers = async () => {
   try {
-    // Get all user IDs from Redis
-    const userIds = await redisClient.sMembers('users');
+    // Get all keys matching the pattern 'user:*' but not 'user:email:*'
+    const userKeys = await redisClient.keys('user:*');
+    
+    // Filter out email reference keys
+    const actualUserKeys = userKeys.filter(key => !key.startsWith('user:email:'));
+    
     const users = [];
 
-    for (const userId of userIds) {
-      const userKey = `user:${userId}`;
+    for (const userKey of actualUserKeys) {
       const userData = await redisClient.hGetAll(userKey);
 
       if (userData && Object.keys(userData).length > 0) {
-        users.push(userData); // Push the user data to the array
+        // Don't include the password in the returned data for security
+        const { password, ...safeUserData } = userData;
+        users.push(safeUserData);
       }
     }
 
-    console.log('Successfully listed all users:', users);
-    return users; // Return the list of users
+    console.log(`Successfully listed all users: ${users.length} found`);
+    return users;
   } catch (error) {
     console.error('Error listing all users:', error);
     return []; // Return an empty array in case of error
   }
 };
 
-// Correct export: export listAllUsers, not listAllUsersAdmin
 module.exports = listAllUsers;

@@ -13,6 +13,8 @@ const LastOutComing = () => {
 
     const [inboxData, setInboxData] = useState<InboxItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const token = localStorage.getItem("authToken");
   
     useEffect(() => {
       const fetchInboxData = async () => {
@@ -23,7 +25,7 @@ const LastOutComing = () => {
           return;
         }
         try {
-          const response = await fetch(`http://localhost:3000/sentmails/${username}`);
+          const response = await fetch(`${API_BASE_URL}/sentmails/${username}`);
           if (response.ok) {
             const data: InboxItem[] = await response.json();
             setInboxData(data);
@@ -37,7 +39,7 @@ const LastOutComing = () => {
       };
   
       fetchInboxData();
-    }, []);
+    }, [token]);
 
     const formatDate = (timestamp: string | null): string => {
         if (!timestamp) return "No date available";
@@ -81,7 +83,7 @@ const LastOutComing = () => {
                     className="flex flex-row justify-between px-2 py-2 border-2 border-[#E5E6E7] rounded-lg hover:bg-[#808080]"
                   >
                     <div className="flex-2">
-                      <input type="checkbox" aria-label="Select message" />
+                      
                     </div>
                     <div className="flex-1 px-2">
                       {item.fromEmail || "No email available"}

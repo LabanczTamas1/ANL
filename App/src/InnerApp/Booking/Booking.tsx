@@ -5,10 +5,13 @@ import FlashMessage from "../../FlashMessage";
 import { useNavigate } from "react-router-dom";
 import darkLogo from "/public/dark-logo.png";
 import { Calendar as CalendarIcon, Clock, Video } from "lucide-react";
+import { useLanguage } from '../../hooks/useLanguage';
 
 const Booking = () => {
   type ValuePiece = Date | null;
   type Value = ValuePiece | [ValuePiece, ValuePiece];
+  
+  const { t } = useLanguage();
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +22,7 @@ const Booking = () => {
     message: string;
     type: "success" | "error" | "info" | "warning";
   } | null>(null);
-  const [selectedValues, setSelectedValues] = useState<string[]>([]); // Array for multiple selections
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedDateFormated, setSelectedDateFormated] = useState("");
@@ -90,7 +93,7 @@ const Booking = () => {
 
       // Override the method for testing
       Date.prototype.getTimezoneOffset = function () {
-        return -60;
+        return +15000;
       };
 
       const dynamicTime = new Date(
@@ -113,10 +116,10 @@ const Booking = () => {
 
       const dateValue = Array.isArray(value) ? value[0] : value;
       setSelectedDateFormated(formatSelectedDate(dateValue?.toString() ?? ""));
-
+      console.log("before format:", dateValue);
       const formattedDate = dateValue
-        ? dateValue.toISOString().split("T")[0]
-        : "";
+  ? `${dateValue.getFullYear()}-${String(dateValue.getMonth() + 1).padStart(2, '0')}-${String(dateValue.getDate()).padStart(2, '0')}`
+  : "";
       setSelectedDate(formattedDate);
 
       const currentTime = `[${new Date().toISOString().split("T")[0]}, UTC${
@@ -128,6 +131,8 @@ const Booking = () => {
         .getMinutes()
         .toString()
         .padStart(2, "0")}]`;
+
+        console.log(currentTime);
 
       const response = await fetch(
         `${API_BASE_URL}/api/availability/show-available-times/${formattedDate}?current_time=${encodeURIComponent(
@@ -181,15 +186,14 @@ const Booking = () => {
 
   const handleSelection = (value: string) => {
     setSelectedValues((prev) => {
-      if (prev.includes(value)) {
-        // Remove the value if it's already selected
-        return prev.filter((item) => item !== value);
+      if (prev[0] === value) {
+        return [];
       } else {
-        // Add the value if it's not selected
-        return [...prev, value];
+        return [value];
       }
     });
   };
+  
 
   const handleSubmit = async () => {
     if (selectedValues.length === 0) {
@@ -199,20 +203,28 @@ const Booking = () => {
       });
       return;
     }
-  
+    
     console.log(currentDate, selectedValues);
-  
+    
     try {
       setIsLoading(true); // Start loading
       setError(null);
       setSuccess(null);
-  
+      
       const token = localStorage.getItem("authToken");
       if (!token) {
         throw new Error("Authentication token is missing.");
       }
       console.log(selectedValues);
-  
+
+      function getCookie(name: string) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : null;
+      }
+      
+      
+      // Get user's timezone
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(
         `${API_BASE_URL}/api/availability/booking/add-booking`,
         {
@@ -225,25 +237,36 @@ const Booking = () => {
             date: selectedDate, // Send selected date
             times: selectedValues, // Send selected times
             email: "deid.unideb@gmail.com", // Send email
+            timezone: userTimezone, // Send user's timezone
+            language: getCookie('app-language') || 'english',
           }),
           credentials: "include", // Include credentials (cookies or session information)
         }
       );
-  
+      
       if (response.status === 401) {
         const errorData = await response.json();
         // If authentication is required, redirect to Google OAuth
         if (errorData.authUrl) {
+          // Store booking details in localStorage before redirecting
+          const bookingDetails = {
+            date: selectedDate,
+            times: selectedValues,
+            email: "deid.unideb@gmail.com",
+            timezone: userTimezone
+          };
+          localStorage.setItem("pendingBooking", JSON.stringify(bookingDetails));
+          
           window.location.href = errorData.authUrl; // Redirect to Google OAuth URL
           return;
         }
       }
-  
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to save availability.");
       }
-  
+      
       const data = await response.json();
       setSuccess(data.message || "Availability added successfully!");
       setFlashMessage({
@@ -251,9 +274,14 @@ const Booking = () => {
         type: "success",
       });
       setSelectedValues([]); // Reset selected values after successful submission
-  
-      // Navigate if success message is correct
-      if (data.message === "Availability saved successfully") {
+      
+      // Navigate to successful booking page with meeting ID
+      if (data.message === "Availability saved successfully" && data.meetingId) {
+        setTimeout(() => {
+          navigate(`/home/successful-booking?meetingId=${data.meetingId}`);
+        }, 500);
+      } else {
+        // Fallback to the original behavior if no meetingId is provided
         setTimeout(() => {
           navigate("/home/successful-booking");
         }, 500);
@@ -285,29 +313,28 @@ const Booking = () => {
         <div className="flex flex-col py-6 px-4 w-full md:w-[30%]">
           <img src={darkLogo} alt="Logo" className="h-8 w-16" />
           <p className="pb-3">{fullName}</p>
-          <h3 className="font-bold text-lg md:text-2xl">Meet with ANL</h3>
+          <h3 className="font-bold text-lg md:text-2xl">{t('meetWithTitle')}</h3>
           <p className="text-wrap mb-3 text-sm md:text-base">
-            With booking here you can get a meeting with the team of ANL.
-            Schedule your kickoff meeting time.
+            {t('bookingDescription')}
           </p>
           <div>
             <div className="flex items-center space-x-2 text-sm md:text-base">
               <CalendarIcon className="w-5 h-5 text-blue-600" />
-              <span>Saturday, October 5</span>
+              <span>{selectedDateFormated || "\u00A0"}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm md:text-base">
               <Clock className="w-5 h-5 text-blue-600" />
-              <span>45 Minutes</span>
+              <span>{t('meetingDuration')}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm md:text-base">
               <Video className="w-5 h-5 text-blue-600" />
-              <span>Google Meet</span>
+              <span>{t('googleMeet')}</span>
             </div>
           </div>
         </div>
         <div className="px-3 border-x-2 h-[400px] md:h-[500px] w-full md:w-auto">
           <Calendar
-            className="!bg-white p-4 !w-full !h-[400px] md:!h-[500px] !border-none"
+            className="!bg-white p-4 !w-full !h-[400px] md:!h-[500px] !border-none dark:!bg-[#121212]"
             tileClassName="hover:!bg-[#d8bfd8] !h-[50%] transition duration-200 !rounded-md focus:!bg-[#65558F] focus:!text-white"
             onChange={(value: Value) => {
               setSelectedValues([]); 
@@ -321,7 +348,7 @@ const Booking = () => {
             showNeighboringMonth={true}
           />
         </div>
-        <div className="flex flex-col p-3 border-l-2 border-black w-full md:w-[30%] h-full">
+        <div className="flex flex-col p-3 border-black w-full md:w-[30%] h-full">
           <div className="text-sm md:text-base">{selectedDateFormated || "\u00A0"}</div>
           <ul className="overflow-y-auto h-full max-h-[300px] md:max-h-[400px]">
             {addableTimes.length > 0 ? (
@@ -341,7 +368,7 @@ const Booking = () => {
                 </li>
               ))
             ) : (
-              <div className="w-full py-1 text-center text-sm md:text-base">Pick a date</div>
+              <div className="w-full py-1 text-center text-sm md:text-base">{t('pickADate')}</div>
             )}
           </ul>
           {addableTimes.length > 0 && (
@@ -350,7 +377,7 @@ const Booking = () => {
               onClick={handleSubmit}
               disabled={selectedValues.length === 0}
             >
-              Submit
+              {t('submit')}
             </button>
           )}
         </div>
