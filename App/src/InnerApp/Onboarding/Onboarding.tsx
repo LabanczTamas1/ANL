@@ -10,14 +10,13 @@ import Tooltip from "./Tooltip";
 import { ClassNames } from "@emotion/react";
 
 const videos: string[] = [
-  "https://www.youtube.com/watch?v=00_tIrUeLkA",
-  "https://youtu.be/1iflO5k6frY?si=Z7TnRU07IqT8Ki2J",
-  "https://www.w3schools.com/html/movie.mp4",
-  "https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4",
-  "https://samplelib.com/lib/preview/mp4/sample-5s.mp4",
-  "https://samplelib.com/lib/preview/mp4/sample-10s.mp4",
-  "https://samplelib.com/lib/preview/mp4/sample-20s.mp4",
-  "https://samplelib.com/lib/preview/mp4/sample-30s.mp4",
+  "https://youtu.be/EIdeD5W0WiU",
+  "https://youtu.be/YuOauVKGD_0",
+  "https://youtu.be/nroV2BgbvRE",
+  "https://youtu.be/KgnB-Cai9Yk",
+  "https://youtu.be/JuzkUdSzO18",
+  "https://youtu.be/KygPo7Axfz4",
+  "https://youtu.be/y3v3M-TElnc",
 ];
 
 const steps: string[] = [

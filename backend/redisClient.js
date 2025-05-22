@@ -2,8 +2,7 @@ const redis = require('redis');
 
 // Create a Redis client instance
 const redisClient = redis.createClient({
-  host: '127.0.0.1',
-  port: 6380,
+  url: "redis://localhost:6380",
 });
 
 // Handle Redis connection events

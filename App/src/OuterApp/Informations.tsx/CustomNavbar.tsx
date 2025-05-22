@@ -70,12 +70,12 @@ const CustomNavbar: React.FC = () => {
             About
           </Link>
           <Link to="/login">
-            <div className="bg-[#343E4C] text-white p-5 px-20 rounded hover:bg-sky-700">
+            <div className="bg-[#343E4C] text-white p-4 px-20 rounded hover:bg-sky-700">
               Login
             </div>
           </Link>
           <Link to="/register">
-            <div className="bg-[#343E4C] text-white p-5 px-20 rounded hover:bg-sky-700">
+            <div className="bg-[#343E4C] text-white p-4 px-20 rounded hover:bg-sky-700">
               Sign in
             </div>
           </Link>

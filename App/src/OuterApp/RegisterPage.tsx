@@ -17,7 +17,7 @@ interface RegisterFormInputs {
 }
 
 const RegisterForm: React.FC = () => {
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const {
@@ -29,17 +29,45 @@ const RegisterForm: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormInputs) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
+      // Format the data to match backend expectations
+      const payload = {
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        password: data.password,
+        username: data.username
+      };
+
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
   
       if (response.ok) {
+        const responseData = await response.json();
+        
+        // Store ALL necessary data in localStorage
+        localStorage.setItem('authToken', responseData.token);
+        localStorage.setItem('userId', responseData.userId);
+        localStorage.setItem('userName', data.username);
+        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('fullName', `${data.firstName} ${data.lastName}`);
+        localStorage.setItem('firstName', data.firstName);
+        localStorage.setItem('lastName', data.lastName);
+        
+        // Log to verify storage is working
+        console.log('Saved to localStorage:', {
+          authToken: responseData.token,
+          userId: responseData.userId,
+          userName: data.username,
+          userEmail: data.email,
+          fullName: `${data.firstName} ${data.lastName}`
+        });
+        
         alert('Registration Successful!');
-        navigate('/progress');  // Redirect to /progress after success
+        navigate('/progress');
       } else {
         const errorData = await response.json();
         alert(`Registration failed: ${errorData.error}`);
@@ -50,6 +78,10 @@ const RegisterForm: React.FC = () => {
     }
   };
   
+  // Handle Google OAuth login
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_BASE_URL}/auth/google`;
+  };
 
   return (
     <>
@@ -69,10 +101,18 @@ const RegisterForm: React.FC = () => {
       >
         <h2 className="text-[4rem] font-bold mb-6 text-center">Register</h2>
 
-        <button className='w-full flex justify-center mb-4 p-2 rounded border border-white'><img src={googleLogo} alt="Google Logo" className="h-6 mr-3" />Continue with Google</button>
-        <button className='w-full flex justify-center p-2 rounded border border-white'><img src={FacebookLogo} alt="Facebook Logo" className="h-6 mr-3" />Continue with Facebook</button>
-          <div className='text-center my-5'>or</div>
-        {/* First Name */}
+        <button 
+          type="button"
+          onClick={handleGoogleLogin}
+          className='w-full flex justify-center mb-4 p-2 rounded border border-white'
+        >
+          <img src={googleLogo} alt="Google Logo" className="h-6 mr-3" />Continue with Google
+        </button>
+        <button type="button" className='w-full flex justify-center p-2 rounded border border-white'>
+          <img src={FacebookLogo} alt="Facebook Logo" className="h-6 mr-3" />Continue with Facebook
+        </button>
+        <div className='text-center my-5'>or</div>
+        {/* Rest of the form remains unchanged */}
         <div className='flex lg:flex-row flex-col justify-center'>
         <div className="mb-4 lg:pr-2">
           <input
@@ -97,7 +137,6 @@ const RegisterForm: React.FC = () => {
           )}
         </div>
 
-        {/* Last Name */}
         <div className="mb-4 lg:pl-2">
           <input
             id="lastName"
@@ -122,7 +161,6 @@ const RegisterForm: React.FC = () => {
         </div>
         </div>
 
-        {/* Email */}
         <div className="mb-4">
           <input
             id="email"
@@ -146,7 +184,6 @@ const RegisterForm: React.FC = () => {
           )}
         </div>
 
-        {/* Username */}
         <div className="mb-4">
           <input
             id="username"
@@ -166,7 +203,6 @@ const RegisterForm: React.FC = () => {
           )}
         </div>
 
-        {/* Password */}
         <div className="mb-4">
           <input
             id="password"
@@ -190,7 +226,6 @@ const RegisterForm: React.FC = () => {
           )}
         </div>
 
-        {/* Confirm Password */}
         <div className="mb-4">
           <input
             id="confirmPassword"
@@ -212,7 +247,6 @@ const RegisterForm: React.FC = () => {
           )}
         </div>
 
-        {/* Terms */}
         <div className="mb-4">
           <label className="flex items-center">
             <input

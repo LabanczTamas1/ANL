@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import facebook from '/public/LandingPage/facebook-transparent.png';
 import personalized from '/public/LandingPage/personalized.png';
 
 const ScrollingCarousel = () => {
-    const sectionRef = useRef(null);
+    const sectionRef = useRef<HTMLDivElement>(null);
     const [scrollProgress, setScrollProgress] = useState(0);
 
     useEffect(() => {
@@ -51,32 +50,30 @@ const ScrollingCarousel = () => {
             >
                 {/* Carousel Cards */}
                 
-                    <div
-                        className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                    >
-                        <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Personalized ads</h4>
-                        <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                    </div>
-                    <div
-                        className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                    >
-                        <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
-                        <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                    </div>
-                    <div
-                        className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                    >
-                        <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
-                        <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                    </div>
-                    <div
-                        className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                    >
-                        <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Grown</h4>
-                        <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                    </div>
-                   
-                    
+                <div
+                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
+                >
+                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Personalized ads</h4>
+                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
+                </div>
+                <div
+                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
+                >
+                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
+                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
+                </div>
+                <div
+                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
+                >
+                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
+                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
+                </div>
+                <div
+                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
+                >
+                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Grown</h4>
+                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
+                </div>
             </div>
         </div>
     );

@@ -1,19 +1,40 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 import { FiDownload, FiUpload } from "react-icons/fi";
-import { useLocation, Link } from "react-router-dom";
-import { FaSignOutAlt } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
+import { FaSignOutAlt } from "react-icons/fa";
+import Breadcrumbs from "./components/Breadcrumbs";
+import MobileNavbar from "./components/MobileNavbar";
+import HamburgerMenu from "./components/HamburgerMenu";
+import { useLogout } from "./../hooks/useLogout";
 
 const ProgressBar = () => {
-  const username = localStorage.getItem("name");
-  const [darkMode, setDarkMode] = useState(false);
-  const location = useLocation(); // Get the current location
+  const username = localStorage.getItem("role") || localStorage.getItem("userName");
+  console.log(username);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const roles = ["user", "owner", "admin"];
+  const [role, setRole] = useState(
+    () => localStorage.getItem("superRole") || "user"
+  );
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const navigate = useNavigate();
+  // Use the custom logout hook
+  const logout = useLogout();
 
-  // Check if the logged-in user is an admin
-  const isAdmin = username === "admin";
+  // Initialize darkMode state from localStorage or system preference
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check if theme preference exists in localStorage
+    const savedTheme = localStorage.getItem("darkMode");
+
+    if (savedTheme !== null) {
+      // If theme preference exists in localStorage, use it
+      return savedTheme === "true";
+    } else {
+      // Otherwise, use system preference
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+  });
 
   useEffect(() => {
     // Apply the dark class to the HTML tag
@@ -22,67 +43,81 @@ const ProgressBar = () => {
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    // Save the theme preference to localStorage
+    localStorage.setItem("darkMode", darkMode.toString());
   }, [darkMode]);
 
-  const generateBreadcrumbs = () => {
-    const pathnames = location.pathname.split("/").filter((x) => x); // Split path and remove empty parts
-    return [
-      ...pathnames.map((name, index) => {
-        const path = `/${pathnames.slice(0, index + 1).join("/")}`;
-        return { name: name.charAt(0).toUpperCase() + name.slice(1), path };
-      }),
-    ];
-  };
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-  const breadcrumbs = generateBreadcrumbs();
+    const handleChange = (e: MediaQueryListEvent) => {
+      // Only update if user hasn't set a preference yet
+      if (localStorage.getItem("darkMode") === null) {
+        setDarkMode(e.matches);
+      }
+    };
+
+    // Add event listener for theme change
+    mediaQuery.addEventListener("change", handleChange);
+
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
+
+  // Check if the logged-in user is an admin
+  const isAdmin = username === "admin";
 
   const showUploadFile = location.pathname === "/home/kanban";
 
   const handleFileUpload = (event: any) => {
     const file = event.target.files[0];
-  
+
     if (file) {
-      console.log('Selected file:', file);
-  
+      console.log("Selected file:", file);
+
       // Use FileReader to read the JSON file content
       const reader = new FileReader();
-  
+
       reader.onload = (e: any) => {
         try {
           // Parse the file content as JSON
           const jsonData = JSON.parse(e.target.result);
-          console.log('Parsed JSON Data:', jsonData); // Log the parsed JSON data
-  
+          console.log("Parsed JSON Data:", jsonData); // Log the parsed JSON data
+
           // Now send the JSON data to the backend if needed
           const formData = new FormData();
-          formData.append('file', file);
-  
-          fetch('http://localhost:3000/api/upload', {
-            method: 'POST',
+          formData.append("file", file);
+
+          fetch(`${API_BASE_URL}/api/upload`, {
+            method: "POST",
             body: formData,
           })
             .then((response) => response.json())
             .then((data) => {
-              console.log('File uploaded successfully:', data);
+              console.log("File uploaded successfully:", data);
             })
             .catch((error) => {
-              console.error('Error uploading file:', error);
+              console.error("Error uploading file:", error);
             });
         } catch (error) {
-          console.error('Error parsing JSON:', error);
+          console.error("Error parsing JSON:", error);
         }
       };
-  
+
       // Trigger file reading
       reader.readAsText(file);
     } else {
-      console.log('No file selected.');
+      console.log("No file selected.");
     }
   };
 
   const handleExport = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/export");
+      const response = await axios.get(`${API_BASE_URL}/api/export`);
       const exportData = response.data;
 
       console.log("Exported Data:", exportData);
@@ -103,79 +138,82 @@ const ProgressBar = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('name');
-    navigate('/login');
+  const handleRoleChange = (newRole: any) => {
+    if (role !== newRole) {
+      localStorage.setItem("superRole", newRole);
+      setRole(newRole);
+      setTimeout(() => window.location.reload(), 0); // Ensures state updates before reload
+    }
   };
-  
-  
+
+  const handleToggleDarkMode = () => {
+    setDarkMode((prev) => !prev);
+  };
 
   return (
-    <div
-      className={`flex flex-row justify-between mr-5 border-b-[1px] p-3 pr-0 dark:border-gray-300 `}
+    <div 
+      className={`flex flex-row justify-between pr-5 border-b-[1px] p-3 pr-0 dark:border-gray-300 ${isMenuOpen ? "bg-[#1D2431]" : ""}`}
     >
       {/* Breadcrumbs Section */}
-      <div className="flex flex-col">
-        <div className="font-semibold text-lg dark:text-white">
-          {breadcrumbs.map((breadcrumb, index) => (
-            <span key={breadcrumb.path}>
-              <Link
-                to={breadcrumb.path}
-                className="text-blue-600 hover:underline"
-              >
-                {breadcrumb.name}
-              </Link>
-              {index < breadcrumbs.length - 1 && " / "} {/* Add separator */}
-            </span>
-          ))}
-        </div>
+      <div className="hidden md:block">
+        <Breadcrumbs />
       </div>
 
+      {/* Show hamburger icon only on mobile (below md) */}
+      <HamburgerMenu isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen}/>
+      {isMenuOpen && <MobileNavbar setIsMenuOpen={setIsMenuOpen} />}
+      
       {/* User Info Section */}
       <div className="flex flex-row items-center space-x-4">
-      {showUploadFile && (
-  <div className="flex items-center space-x-2">
-  <label
-    htmlFor="uploadInput"
-    className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
-  >
-    <span className="text-sm dark:text-white font-medium">Choose File</span>
-    <FiUpload className="text-sm dark:text-white" />
-  </label>
-  <input
-    id="uploadInput"
-    type="file"
-    accept="application/json" // Restrict file type to JSON
-    className="hidden" // Hide the default file input
-    onChange={handleFileUpload}
-  />
-  <button
-    onClick={handleExport}
-    className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100"
-  >
-    <span className="text-sm dark:text-white font-medium">Export</span>
-    <FiDownload className="text-sm dark:text-white" />
-  </button>
-</div>
+        {showUploadFile && (
+          <div className="flex items-center space-x-2">
+            <label
+              htmlFor="uploadInput"
+              className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
+            >
+              <span className="text-sm dark:text-white font-medium">
+                Choose File
+              </span>
+              <FiUpload className="text-sm dark:text-white" />
+            </label>
+            <input
+              id="uploadInput"
+              type="file"
+              accept="application/json" // Restrict file type to JSON
+              className="hidden" // Hide the default file input
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={handleExport}
+              className="inline-flex flex-row items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100"
+            >
+              <span className="text-sm dark:text-white font-medium">
+                Export
+              </span>
+              <FiDownload className="text-sm dark:text-white" />
+            </button>
+          </div>
+        )}
 
-)}
-
-
-      {!isAdmin ? (
-  <div className={`dark:text-white font-bold`}>
-    Hello, {username}!
-  </div>
-) : (
-  <div className={`dark:text-white bg-[#FF5B61] rounded-lg px-2`}>
-    {username.charAt(0).toUpperCase() + username.slice(1)} view!
-  </div>
-)}
-
+        {!isAdmin ? (
+          <div className={`dark:text-white font-bold`}>Hello, {username}!</div>
+        ) : (
+          <select
+            value={role}
+            onChange={(e) => handleRoleChange(e.target.value)}
+            className="dark:text-white bg-[#FF5B61] rounded-xl px-2 h-[24px] px-2"
+          >
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Toggle Button for Dark/Light Mode */}
         <button
-          onClick={() => setDarkMode((prev) => !prev)}
+          onClick={handleToggleDarkMode}
           className="flex items-center w-16 h-6 rounded-full bg-gray-200 dark:bg-gray-700"
         >
           <span
@@ -216,7 +254,10 @@ const ProgressBar = () => {
         </button>
 
         {/* Logout Section */}
-        <div onClick={handleLogout} className="text-sm text-gray-800 dark:text-white cursor-pointer">
+        <div
+          onClick={logout}
+          className="text-sm text-gray-800 dark:text-white cursor-pointer"
+        >
           <FaSignOutAlt className="text-lg" />
         </div>
       </div>

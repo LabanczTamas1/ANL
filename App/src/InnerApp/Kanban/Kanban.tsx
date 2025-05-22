@@ -5,11 +5,14 @@ import Column from "./Column";
 
 const Kanban: React.FC = () => {
   const [columns, setColumns] = useState<any[]>([]);
+  const [filteredColumns, setFilteredColumns] = useState<any[]>([]);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showColumnModal, setShowColumnModal] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
-  const [tagColor, setTagColor] = useState("#ffffff");
+  const [tagColor, setTagColor] = useState("#cc458f");
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [cardData, setCardData] = useState({
     name: "",
@@ -21,9 +24,9 @@ const Kanban: React.FC = () => {
     instagram: "",
     facebook: "",
     firstContact: "",
+    dateOfAdded: "",
     isCommented: false,
   });
-
 
   useEffect(() => {
     console.log(`${API_BASE_URL}`);
@@ -67,6 +70,7 @@ const Kanban: React.FC = () => {
 
         // Ensure columns are populated correctly before setting state
         setColumns(updatedColumns);
+        setFilteredColumns(updatedColumns);
         console.log("Updated Columns: ", updatedColumns);
       } catch (error) {
         console.error("Error fetching columns:", error);
@@ -75,6 +79,39 @@ const Kanban: React.FC = () => {
 
     fetchColumns();
   }, []);
+
+  // Filter columns and cards based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredColumns(columns);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = columns.map((column) => {
+      // Filter cards in each column
+      const filteredCards = column.cards.filter(
+        (card: any) =>
+          card.Name?.toLowerCase().includes(query) ||
+          card.ContactName?.toLowerCase().includes(query) ||
+          card.contactName?.toLowerCase().includes(query) ||
+          card.BusinessName?.toLowerCase().includes(query) ||
+          card.PhoneNumber?.toLowerCase().includes(query) ||
+          card.Email?.toLowerCase().includes(query) ||
+          card.Website?.toLowerCase().includes(query) ||
+          card.Instagram?.toLowerCase().includes(query) ||
+          card.Facebook?.toLowerCase().includes(query)
+      );
+
+      // Return column with filtered cards
+      return {
+        ...column,
+        cards: filteredCards,
+      };
+    });
+
+    setFilteredColumns(filtered);
+  }, [searchQuery, columns]);
 
   const handleAddCard = async () => {
     if (!selectedColumnId) return;
@@ -92,17 +129,20 @@ const Kanban: React.FC = () => {
 
       const newCard = {
         id: response.data.cardId,
-        name: cardData.name,
+        Name: cardData.name,
         ContactName: cardData.contactName, // Ensure consistent naming
-        businessName: cardData.businessName,
-        phoneNumber: cardData.phoneNumber,
-        email: cardData.email,
-        website: cardData.website,
-        instagram: cardData.instagram,
-        facebook: cardData.facebook,
-        firstContact: cardData.firstContact,
-        isCommented: cardData.isCommented,
+        BusinessName: cardData.businessName,
+        PhoneNumber: cardData.phoneNumber,
+        Email: cardData.email,
+        IsCommented: cardData.isCommented,
+        Website: cardData.website,
+        Instagram: cardData.instagram,
+        Facebook: cardData.facebook,
+        FirstContact: cardData.firstContact,
+        DateOfAdded: cardData.dateOfAdded,
       };
+
+      console.log("New caaaaaaaaaaaaaard:", newCard);
 
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
@@ -127,6 +167,7 @@ const Kanban: React.FC = () => {
         website: "",
         instagram: "",
         facebook: "",
+        dateOfAdded: Math.floor(Date.now() / 1000).toString(),
         firstContact: "",
         isCommented: false,
       });
@@ -147,9 +188,6 @@ const Kanban: React.FC = () => {
           },
         }
       );
-      console.log(`Deleted card ${cardId}:`, response.data);
-
-      console.log("-----------------", columns);
       // Update the state to remove the card from the specified column
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
@@ -215,6 +253,12 @@ const Kanban: React.FC = () => {
       setColumns((prevColumns) =>
         prevColumns.filter((col) => col.id !== columnId)
       );
+
+      setIsDeleteMode(false);
+      const contentElement = document.querySelector(".main-content") as HTMLElement;
+    if (contentElement) {
+      contentElement.style.backgroundColor = !isDeleteMode ? "rgba(21, 225, 38, 0.4)" : "";
+    }
     } catch (error) {
       console.error("Error deleting column:", error);
     }
@@ -230,6 +274,21 @@ const Kanban: React.FC = () => {
 
     // Check if destination is valid
     if (!destination) return;
+
+    // Handle trash bin deletion in delete mode
+    if (
+      isDeleteMode &&
+      destination.droppableId === "trash" &&
+      type === "column"
+    ) {
+      // Find the column by its draggableId (column.id)
+      const columnToDelete = columns.find((col) => col.id === draggableId);
+
+      if (columnToDelete) {
+        await handleDeleteColumn(columnToDelete.id);
+        return;
+      }
+    }
 
     // Handle column reordering
     if (type === "column") {
@@ -341,16 +400,12 @@ const Kanban: React.FC = () => {
 
         console.log("Payload for updating card priority:", payload);
 
-        await axios.put(
-          `${API_BASE_URL}/api/cards/change/priority`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        await axios.put(`${API_BASE_URL}/api/cards/change/priority`, payload, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            "Content-Type": "application/json",
+          },
+        });
       } catch (error) {
         console.error("Error updating card position:", error);
       }
@@ -361,29 +416,78 @@ const Kanban: React.FC = () => {
     setShowColumnModal((prev) => !prev);
   };
 
+  const toggleDeleteMode = (): void => {
+    setIsDeleteMode((prev) => !prev);
+    const contentElement = document.querySelector(".main-content") as HTMLElement;
+    if (contentElement) {
+      contentElement.style.backgroundColor = !isDeleteMode ? "rgba(171, 0, 0, 0.4)" : "";
+    }
+  };
+
   return (
-    <div className="kanban-board">
-      <button
-        onClick={() => setShowColumnModal(!showColumnModal)}
-        className="text-white px-4 py-2 rounded dark:text-white bg-[#65558F] hover:bg-blue-600"
-      >
-        Add Column
-      </button>
+    <div
+      className={`kanban-board w-full relative`}
+    >
+      {/* Header section with responsive adjustments */}
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 border-b pb-2 gap-3">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setShowColumnModal(!showColumnModal)}
+            className="text-white px-4 py-2 rounded dark:text-white bg-[#65558F] hover:bg-blue-600 flex-grow sm:flex-grow-0"
+          >
+            Add Column
+          </button>
+
+          <button
+            onClick={toggleDeleteMode}
+            className={`px-4 py-2 rounded ${
+              isDeleteMode
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
+            } flex-grow sm:flex-grow-0`}
+          >
+            {isDeleteMode ? "Exit Delete Mode" : "Delete Column"}
+          </button>
+        </div>
+
+        {/* Search Input - full width on mobile */}
+        <div className="relative w-full sm:w-64 mt-2 sm:mt-0">
+          <input
+            type="text"
+            placeholder="Search cards..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65558F] dark:bg-[#1e1e1e] dark:text-white"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Add Column Modal */}
       {showColumnModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[400px] relative">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-[400px] relative">
             {/* Modal Header */}
-            <h2 className="text-2xl font-bold text-center mb-4">Add board</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-center mb-4">
+              Add column
+            </h2>
             <button
               onClick={handleCloseColumnModal}
-              className="text-black px-4 py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
+              className="text-black px-3 py-1 sm:px-4 sm:py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
             >
               X
             </button>
 
             {/* Input for Board Name */}
             <div className="mb-4">
-              <label className="block font-semibold mb-1">Board name</label>
+              <label className="block font-semibold mb-1">Column name</label>
               <input
                 type="text"
                 placeholder="Enter board name"
@@ -403,7 +507,7 @@ const Kanban: React.FC = () => {
                   <input
                     type="color"
                     id="colorPicker"
-                    value="#cc458f"
+                    value= {tagColor || "#cc458f"}
                     onChange={(e) => setTagColor(e.target.value)}
                     className="w-10 h-10 border-none p-0 cursor-pointer"
                   />
@@ -424,19 +528,21 @@ const Kanban: React.FC = () => {
         </div>
       )}
 
+      {/* Drag and Drop Context */}
       <DragDropContext onDragEnd={handleDragEnd}>
+        {/* Original columns layout - preserved exactly as in the original code */}
         <Droppable droppableId="columns" direction="horizontal" type="column">
           {(provided) => (
             <div
-              className="flex"
+            className="flex overflow-x-auto pb-4 gap-4 px-2 [&>*]:min-w-[350px]"
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
-              {columns.length > 0 &&
-                columns.map((column, index) => {
+              {filteredColumns.length > 0 &&
+                filteredColumns.map((column, index) => {
                   if (!column || !column.id) {
-                    console.error("Invalid column data:", column); // Log invalid columns for debugging
-                    return null; // Skip invalid columns
+                    console.error("Invalid column data:", column);
+                    return null;
                   }
 
                   return (
@@ -450,6 +556,7 @@ const Kanban: React.FC = () => {
                       onDeleteColumn={handleDeleteColumn}
                       onDeleteCard={handleDeleteCard}
                       index={index}
+                      className="min-w-[280px] sm:min-w-[300px]"
                     />
                   );
                 })}
@@ -458,22 +565,77 @@ const Kanban: React.FC = () => {
             </div>
           )}
         </Droppable>
+
+        {/* Fixed Trash Bin at bottom of the page - only shown in delete mode */}
+        {isDeleteMode && (
+          <Droppable droppableId="trash" type="column">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center h-20 w-64 border-2 border-dashed rounded-lg z-40 ${
+                  snapshot.isDraggingOver
+                    ? "bg-red-200 border-red-500"
+                    : "bg-red-100 border-red-300"
+                } transition-all duration-300`}
+                style={{
+                  boxShadow: snapshot.isDraggingOver
+                    ? `
+                  0 0 200px 40px rgba(239, 68, 68, 0.4),
+                  0 0 600px 80px rgba(239, 68, 68, 0.3),
+                  0 0 1200px 120px rgba(239, 68, 68, 0.2),
+                  0 0 1800px 160px rgba(239, 68, 68, 0.1)
+                `
+                    : "0 -6px 16px rgba(252, 165, 165, 0.4)",
+                }}
+              >
+                {/* Fixed content that won't move when dragging over */}
+                <div className="flex items-center justify-center pointer-events-none">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6 text-red-500 mr-2"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                  </svg>
+                  <p className="text-sm text-red-700">
+                    Drop column here to delete
+                  </p>
+                </div>
+
+                {/* This invisible element receives the dropped item */}
+                <div className="absolute inset-0">{provided.placeholder}</div>
+              </div>
+            )}
+          </Droppable>
+        )}
       </DragDropContext>
 
+      {/* Add Card Modal */}
       {showCardModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white dark:bg-[#1e1e1e] dark:text-white p-6 rounded-lg border-4 border-[#E5E6E7] shadow-lg max-w-[723px] w-1/2 max-h-[610px] h-[80%] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4 text-center">Add Card</h3>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+          <div className="bg-white dark:bg-[#1e1e1e] dark:text-white p-4 sm:p-6 rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg sm:text-xl font-bold mb-4 text-center">
+              Add Card
+            </h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleAddCard();
               }}
             >
-              <div className="mb-4 flex items-center">
+              {/* Responsive form fields */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
                   htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Card Name:
                 </label>
@@ -488,143 +650,159 @@ const Kanban: React.FC = () => {
                   className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2"
                 />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Contact Name */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="contact-name"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Contact Name:
                 </label>
                 <input
+                  id="contact-name"
                   type="text"
                   placeholder="Contact Name"
                   value={cardData.contactName}
                   onChange={(e) => {
                     setCardData({ ...cardData, contactName: e.target.value });
-                    console.log(e.target.value);
                   }}
                   className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
                 />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Business Name */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="business-name"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Business Name:
                 </label>
-              <input
-                type="text"
-                placeholder="Business Name"
-                value={cardData.businessName}
-                onChange={(e) => {
-                  setCardData({ ...cardData, businessName: e.target.value });
-                  console.log(e.target.value);
-                }}
-                className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="business-name"
+                  type="text"
+                  placeholder="Business Name"
+                  value={cardData.businessName}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, businessName: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Phone Number */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="phone-number"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Phone number:
                 </label>
-              <input
-                type="text"
-                placeholder="Phone number"
-                value={cardData.phoneNumber}
-                onChange={(e) => {
-                  setCardData({ ...cardData, phoneNumber: e.target.value });
-                  console.log(e.target.value);
-                }}
-                className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="phone-number"
+                  type="text"
+                  placeholder="Phone number"
+                  value={cardData.phoneNumber}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, phoneNumber: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Email */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="email"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Email:
                 </label>
-              <input
-                type="text"
-                placeholder="Email"
-                value={cardData.email}
-                onChange={(e) => {
-                  setCardData({ ...cardData, email: e.target.value });
-                  console.log(e.target.value);
-                }}
-               className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="email"
+                  type="text"
+                  placeholder="Email"
+                  value={cardData.email}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, email: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Website */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="website"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Website:
                 </label>
-              <input
-                type="text"
-                placeholder="Website"
-                value={cardData.website}
-                onChange={(e) => {
-                  setCardData({ ...cardData, website: e.target.value });
-                  console.log(e.target.value);
-                }}
-                className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="website"
+                  type="text"
+                  placeholder="Website"
+                  value={cardData.website}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, website: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Instagram */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="instagram"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Instagram:
                 </label>
-              <input
-                type="text"
-                placeholder="Instagram"
-                value={cardData.instagram}
-                onChange={(e) => {
-                  setCardData({ ...cardData, instagram: e.target.value });
-                  console.log(e.target.value);
-                }}
-                className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="instagram"
+                  type="text"
+                  placeholder="Instagram"
+                  value={cardData.instagram}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, instagram: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="mb-4 flex items-center">
+
+              {/* Facebook */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
                 <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white w-28"
+                  htmlFor="facebook"
+                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
                 >
                   Facebook:
                 </label>
-              <input
-                type="text"
-                placeholder="Facebook"
-                value={cardData.facebook}
-                onChange={(e) => {
-                  setCardData({ ...cardData, facebook: e.target.value });
-                  console.log(e.target.value);
-                }}
-                className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-              />
+                <input
+                  id="facebook"
+                  type="text"
+                  placeholder="Facebook"
+                  value={cardData.facebook}
+                  onChange={(e) => {
+                    setCardData({ ...cardData, facebook: e.target.value });
+                  }}
+                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+                />
               </div>
-              <div className="flex justify-between">
+
+              {/* Form buttons */}
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
                 <button
                   type="submit"
-                  className="bg-[#65558F] text-white px-4 py-2 rounded hover:bg-[#65558F]"
+                  className="bg-[#65558F] text-white px-4 py-2 rounded hover:bg-[#65558F] order-2 sm:order-1"
                 >
                   Add Card
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCardModal(false)}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-800"
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-800 order-1 sm:order-2"
                 >
                   Cancel
                 </button>
