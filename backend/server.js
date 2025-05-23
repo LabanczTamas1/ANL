@@ -25,6 +25,7 @@ app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://192.168.0.134:5174",
   "http://192.168.0.134:5173",
   "http://192.168.0.120:5173",
   "http://192.168.0.137:5173",
@@ -72,7 +73,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const redisClient = redis.createClient({
-  url: "redis://localhost:6380",
+  url: 'redis://default:jzA40kSsOunBOxoox33qCrXv6d4vkUp9@redis-12518.c293.eu-central-1-1.ec2.redns.redis-cloud.com:12518',
 });
 
 // Redis Client event listeners

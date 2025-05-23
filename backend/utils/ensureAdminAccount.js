@@ -4,7 +4,7 @@ const redis = require('redis');
 
 // Initialize Redis client
 const redisClient = redis.createClient({
-  url: 'redis://localhost:6380',
+  url: 'redis://default:jzA40kSsOunBOxoox33qCrXv6d4vkUp9@redis-12518.c293.eu-central-1-1.ec2.redns.redis-cloud.com:12518',
 });
 
 redisClient.on('error', (err) => console.error('Redis Client Error:', err));
