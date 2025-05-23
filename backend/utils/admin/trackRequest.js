@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Using the existing Redis client configuration
 const redisClient = redis.createClient({
-  url: "redis://localhost:6380",
+  url: "rediss://default:<your-password>@redis-12518.c293.eu-central-1-1.ec2.redns.redis-cloud.com:12518",
   socket: {
     connectTimeout: 5000, // 5 seconds timeout
     reconnectStrategy: (retries) => Math.min(retries * 100, 3000) // Exponential backoff
