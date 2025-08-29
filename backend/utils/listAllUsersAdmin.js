@@ -2,7 +2,7 @@ const redis = require('redis');
 
 // Initialize Redis client
 const redisClient = redis.createClient({
-  url: 'redis://default:jzA40kSsOunBOxoox33qCrXv6d4vkUp9@redis-12518.c293.eu-central-1-1.ec2.redns.redis-cloud.com:12518',
+   url: "redis://default:wmtQc7PXbdMhjwPGgw8MjpfLe2sZVwbv@redis-18638.c55.eu-central-1-1.ec2.redns.redis-cloud.com:18638",
 });
 
 redisClient.on('error', (err) => console.error('Redis Client Error:', err));
