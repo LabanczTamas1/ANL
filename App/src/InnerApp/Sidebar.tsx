@@ -32,7 +32,7 @@ const Sidebar: React.FC = () => {
     <div className="flex flex-col bg-[#1D2431] text-white w-[300px] p-4 h-full overflow-y-auto">
       {/* Logo */}
       <div className="text-xl font-bold mb-6">
-        <span className="flex text-white items-center"><img src={lightLogo} alt="logo" className='w-16'/> {t('sidebar.logo')} </span>
+        <Link to={'/home'}><span className="flex text-white items-center"><img src={lightLogo} alt="logo" className='w-16'/> {t('sidebar.logo')} </span></Link>
       </div>
 
       {/* Menu Section */}

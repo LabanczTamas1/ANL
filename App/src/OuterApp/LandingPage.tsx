@@ -9,6 +9,7 @@ import Timeline from "./Timeline";
 import { Helmet } from "react-helmet-async";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
+import Starfield from "./Stars";
 
 const LandingPage = () => {
   const { t } = useLanguage();
@@ -25,7 +26,10 @@ const LandingPage = () => {
       {/* Background SVG */}
       <div
         className="absolute h-[112vh] inset-0 bg-no-repeat bg-cover bg-center z-0"
-        style={{ backgroundImage: `url(${stars})`, opacity: 1 }}
+        style={{
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(8, 10, 13, 1) 100%), url(${stars})`,
+          opacity: 1,
+        }}
       ></div>
 
       {/* Navbar */}
@@ -56,6 +60,9 @@ const LandingPage = () => {
       </section>
       <section className="">
         <Timeline />
+      </section>
+      <section className="bg-[black]">
+        <Starfield />
       </section>
 
       <section className="h-[0vh]"></section>
