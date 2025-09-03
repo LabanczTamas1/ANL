@@ -10,6 +10,7 @@ import { Helmet } from "react-helmet-async";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
+import AmoebaShape from "./components/MovingAnimation";
 
 const LandingPage = () => {
   const { t } = useLanguage();
@@ -61,10 +62,13 @@ const LandingPage = () => {
       <section className="">
         <Timeline />
       </section>
-      <section className="bg-[black]">
+      <section className="bg-black overflow-hidden">
         <Starfield />
       </section>
 
+      <section className="bg-black w-full h-screen overflow-hidden">
+        <AmoebaShape />
+      </section>
       <section className="h-[0vh]"></section>
 
       <Footer darkMode={true} />
