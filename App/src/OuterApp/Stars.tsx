@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from "react";
 
 interface Star {
   x: number;
@@ -8,14 +8,13 @@ interface Star {
   color: string;
 }
 
-// Configurable constants
 const STAR_COUNT = 200;
 const STAR_MIN_LENGTH = 1;
-const STAR_MAX_LENGTH = 40; // 1 + 3
+const STAR_MAX_LENGTH = 40;
 const STAR_MIN_SPEED = 0.5;
-const STAR_MAX_SPEED = 5.5; // 0.5 + 2
-const STAR_COLOR_LIGHT = 'rgba(173, 216, 230,'; // light blue
-const STAR_COLOR_PINK = 'rgba(255, 182, 193,'; // light pink
+const STAR_MAX_SPEED = 5.5;
+const STAR_COLOR_LIGHT = "rgba(173, 216, 230,";
+const STAR_COLOR_PINK = "rgba(255, 182, 193,";
 
 const Starfield: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,8 +22,8 @@ const Starfield: React.FC = () => {
 
   const randomColor = () =>
     Math.random() > 0.5
-      ? `${STAR_COLOR_LIGHT} ${Math.random()})`
-      : `${STAR_COLOR_PINK} ${Math.random()})`;
+      ? `${STAR_COLOR_LIGHT}${Math.random()})`
+      : `${STAR_COLOR_PINK}${Math.random()})`;
 
   const initStars = (width: number, height: number) => {
     const stars: Star[] = [];
@@ -32,8 +31,10 @@ const Starfield: React.FC = () => {
       stars.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        length: STAR_MIN_LENGTH + Math.random() * (STAR_MAX_LENGTH - STAR_MIN_LENGTH),
-        speed: STAR_MIN_SPEED + Math.random() * (STAR_MAX_SPEED - STAR_MIN_SPEED),
+        length:
+          STAR_MIN_LENGTH + Math.random() * (STAR_MAX_LENGTH - STAR_MIN_LENGTH),
+        speed:
+          STAR_MIN_SPEED + Math.random() * (STAR_MAX_SPEED - STAR_MIN_SPEED),
         color: randomColor(),
       });
     }
@@ -44,23 +45,30 @@ const Starfield: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      initStars(canvas.width, canvas.height);
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+
+      initStars(width, height);
     };
 
-    window.addEventListener('resize', resize);
-    resize(); // initial setup
+    window.addEventListener("resize", resize);
+    resize();
 
     let animationFrameId: number;
 
     const drawStars = () => {
-      if (!ctx) return;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (const star of starsRef.current) {
@@ -74,21 +82,20 @@ const Starfield: React.FC = () => {
         star.x += star.speed;
         star.y += star.speed;
 
-       if (star.x > canvas.width || star.y > canvas.height) {
-  // respawn anywhere along the top or left
-  const spawnFromTop = Math.random() > 0.5;
-  if (spawnFromTop) {
-    star.x = Math.random() * canvas.width;
-    star.y = -star.length; // above the screen
-  } else {
-    star.x = -star.length; // left of the screen
-    star.y = Math.random() * canvas.height;
-  }
+        if (star.x > window.innerWidth || star.y > window.innerHeight) {
+          const spawnFromTop = Math.random() > 0.5;
+          if (spawnFromTop) {
+            star.x = Math.random() * window.innerWidth;
+            star.y = -star.length;
+          } else {
+            star.x = -star.length;
+            star.y = Math.random() * window.innerHeight;
+          }
 
-  star.color = randomColor();
-  star.speed = STAR_MIN_SPEED + Math.random() * (STAR_MAX_SPEED - STAR_MIN_SPEED);
-}
-
+          star.color = randomColor();
+          star.speed =
+            STAR_MIN_SPEED + Math.random() * (STAR_MAX_SPEED - STAR_MIN_SPEED);
+        }
       }
 
       animationFrameId = requestAnimationFrame(drawStars);
@@ -97,12 +104,17 @@ const Starfield: React.FC = () => {
     drawStars();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  return <canvas ref={canvasRef} style={{ display: 'block' }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ display: "block", width: "100%", height: "100%" }}
+    />
+  );
 };
 
 export default Starfield;

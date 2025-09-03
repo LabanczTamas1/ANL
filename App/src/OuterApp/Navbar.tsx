@@ -144,10 +144,10 @@ const Navbar: React.FC = () => {
           </div>
 
           <Link to="/login">
-            <div className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">{t.login}</div>
+            <button className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">{t.login}</button>
           </Link>
           <Link to="/register">
-            <div className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">{t.signIn}</div>
+            <button className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700 whitespace-nowrap">{t.signIn}</button>
           </Link>
         </div>
       </div>
@@ -212,7 +212,7 @@ const Navbar: React.FC = () => {
             <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700">{t.login}</div>
           </Link>
           <Link to="/register">
-            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700">{t.signIn}</div>
+            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700 whitespace-nowrap">{t.signIn}</div>
           </Link>
           <button className="text-white focus:outline-none pr-3" onClick={toggleMenu}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
