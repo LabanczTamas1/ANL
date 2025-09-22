@@ -19,6 +19,7 @@ require("./passport");
 const nodemailer = require("nodemailer");
 //const redisClient = require('./redisClient');
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const app = express();
 app.use(express.json());
@@ -407,7 +408,7 @@ const transporter = nodemailer.createTransport({
 app.post("/auth/register", async (req, res) => {
   try {
     console.log("[AUTH] Processing registration request");
-    const { email, password, name } = req.body;
+    const { email, password, name, username } = req.body;
 
     // Validate input
     if (!email || !password || !name) {
@@ -422,41 +423,175 @@ app.post("/auth/register", async (req, res) => {
 
     // Generate a unique ID for the new user
     const userId = uuidv4();
-    
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Store user data in Redis
+
+    // Store user data in Redis with a flag "verified: false"
     await redisClient.hSet(`user:${userId}`, {
       id: userId,
       email,
       name,
       password: hashedPassword,
       role: "user",
-      createdAt: new Date().toISOString()
+      verified: "false",
+      createdAt: new Date().toISOString(),
     });
-    
+
+    console.log(`[AUTH] New user registered: ${userId}, email: ${email}`);
+
     // Create email reference for lookup
     await redisClient.set(`user:email:${email}`, userId);
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        id: userId,
-        email,
-        role: "user"
+    await redisClient.set(`user:username:${username}`, userId);
+
+    // Generate a verification code (6 digits)
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+    // Store verification code in Redis (expire in 15 mins)
+    await redisClient.set(`verify:email:${email}`, verificationCode, {
+      EX: 15 * 60,
+    });
+
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-    
-    console.log(`[AUTH] User registered: ${userId}, email: ${email}`);
-    
-    // Return token to client
-    res.status(201).json({ token, userId });
+    });
+
+    //Later change back the 'to' to email
+    const mailOptions = {
+      from: `"MyApp" <${process.env.SMTP_USER}>`,
+      to: 'deid.unideb@gmail.com', // Change back to email
+      subject: "Verify your email",
+      text: `Your verification code is: ${verificationCode}`,
+      html: `<p>Your verification code is: <strong>${verificationCode}</strong></p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log(`[AUTH] User registered (verification sent): ${userId}, email: ${email}`);
+
+    // Respond with success message
+    res.status(201).json({ message: "Registration successful. Please check your email for the verification code.", userId });
   } catch (error) {
     console.error("[AUTH] Registration error:", error);
     res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+app.post("/auth/verify-email", async (req, res) => {
+  try {
+    console.log("[AUTH] Processing email verification request");
+    const { email, code } = req.body;
+
+    // Validate input
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email and code are required" });
+    }
+
+    // Retrieve the verification code from Redis
+    const storedCode = await redisClient.get(`verify:email:${email}`);
+
+    if (!storedCode) {
+      return res.status(400).json({ error: "Verification code expired or not found" });
+    }
+
+    // Check if the codes match
+    if (storedCode !== code) {
+      return res.status(400).json({ error: "Invalid verification code" });
+    }
+
+    // Get the user ID from the email reference
+    const userId = await redisClient.get(`user:email:${email}`);
+    if (!userId) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update user as verified
+    await redisClient.hSet(`user:${userId}`, {
+      verified: "true",
+      verifiedAt: new Date().toISOString(),
+    });
+
+    // Delete the verification code from Redis since it's used
+    await redisClient.del(`verify:email:${email}`);
+
+    console.log(`[AUTH] Email verified for user: ${userId}, email: ${email}`);
+
+    res.status(200).json({ message: "Email successfully verified", userId });
+  } catch (error) {
+    console.error("[AUTH] Email verification error:", error);
+    res.status(500).json({ error: "Email verification failed" });
+  }
+});
+
+app.post("/auth/resend-verification", async (req, res) => {
+  try {
+    console.log("[AUTH] Processing resend verification request");
+    const { email } = req.body;
+
+    // Validate input
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Get user ID from email
+    const userId = await redisClient.get(`user:email:${email}`);
+    if (!userId) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get user data
+    const user = await redisClient.hGetAll(`user:${userId}`);
+    if (!user) {
+      return res.status(404).json({ error: "User data not found" });
+    }
+
+    // Check if user is already verified
+    if (user.verified === "true") {
+      return res.status(400).json({ error: "User already verified" });
+    }
+
+    // Generate a new verification code (6 digits)
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+    // Store verification code in Redis (expire in 15 mins)
+    await redisClient.set(`verify:email:${email}`, verificationCode, {
+      EX: 15 * 60,
+    });
+
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"MyApp" <${process.env.SMTP_USER}>`,
+      to: email, // Send to user's email
+      subject: "Verify your email",
+      text: `Your new verification code is: ${verificationCode}`,
+      html: `<p>Your new verification code is: <strong>${verificationCode}</strong></p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log(`[AUTH] Verification code resent for user: ${userId}, email: ${email}`);
+
+    res.status(200).json({ message: "Verification code resent. Please check your email." });
+  } catch (error) {
+    console.error("[AUTH] Resend verification error:", error);
+    res.status(500).json({ error: "Failed to resend verification code" });
   }
 });
 
@@ -464,44 +599,84 @@ app.post("/auth/login", async (req, res) => {
   try {
     console.log("[AUTH] Processing login request");
     const { email, password } = req.body;
-    
+    console.log("[AUTH] Login attempt for:", email);
+
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return res.status(400).json({ error: "Email/Username and password are required" });
+    }
+
+    let userId;
+
+    if (email.includes('@')) {
+      userId = await redisClient.get(`user:email:${email}`);
+    } else {
+      userId = await redisClient.get(`user:username:${email}`);
+    }
+
+    const usernameKeys = await redisClient.keys("user:username:*");
+    
+    if (usernameKeys.length === 0) {
+      return res.status(404).json({ message: "No usernames found." });
     }
     
-    // Check if user exists by email
-    const userId = await redisClient.get(`user:email:${email}`);
+    const userList = [];
+    for (const key of usernameKeys) {
+      const username = key.split(":")[2]; // Extract the username from the key string
+      const userId = await redisClient.get(key);
+      userList.push({ username, userId });
+    }
+    
+    console.log("All usernames and user IDs:", userList);
+    console.log(await redisClient.get(`user:username`));
+
+     console.log(userId, '\n');
+
     if (!userId) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    
+
     // Get user data
     const userData = await redisClient.hGetAll(`user:${userId}`);
     if (!userData) {
       return res.status(404).json({ error: "User data not found" });
     }
-    
+
     // Verify password
     const passwordValid = await bcrypt.compare(password, userData.password);
     if (!passwordValid) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    
+
     // Generate JWT token
     const token = jwt.sign(
       {
         id: userId,
         email: userData.email,
-        role: userData.role || "user"
+        role: userData.role || "user",
+        username: userData.name
       },
       JWT_SECRET,
       { expiresIn: "24h" }
     );
-    
-    console.log(`[AUTH] User authenticated: ${userId}, email: ${email}`);
-    
-    res.json({ token, userId });
+
+    console.log(`[AUTH] User authenticated: ${userId}, email: ${userData.email}`);
+
+    // --- FIX START ---
+    // Respond with the token, userId, and user data
+    res.json({
+      token,
+      userId,
+      user: {
+        id: userId,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        verified: userData.verified,
+      }
+    });
+    // --- FIX END ---
+
   } catch (error) {
     console.error("[AUTH] Login error:", error);
     res.status(500).json({ error: "Login failed" });

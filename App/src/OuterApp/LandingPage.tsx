@@ -11,6 +11,7 @@ import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
 import AmoebaShape from "./components/MovingAnimation";
+import ANLShape from "./components/MovingAnimation";
 
 const LandingPage = () => {
   const { t } = useLanguage();
@@ -62,13 +63,16 @@ const LandingPage = () => {
       <section className="">
         <Timeline />
       </section>
-      <section className="bg-black overflow-hidden">
+      <section className="relative bg-black overflow-hidden w-full h-screen">
         <Starfield />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ANLShape size="2xl" />
+        </div>
       </section>
 
-      <section className="bg-black w-full h-screen overflow-hidden">
+      {/* <section className="bg-black w-full h-screen overflow-hidden">
         <AmoebaShape />
-      </section>
+      </section> */}
       <section className="h-[0vh]"></section>
 
       <Footer darkMode={true} />
