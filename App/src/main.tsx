@@ -40,6 +40,7 @@ import { LanguageProvider } from './hooks/useLanguage';
 import { translations } from './translations/translations';
 import { NotificationProvider } from './contexts/NotificationContext';
 import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
+import EmailVerification from "./OuterApp/EmailVerification.tsx";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -75,6 +76,10 @@ const router = createBrowserRouter([
   {
     path: "/oauth-callback",
     element: <OAuthCallback />,
+  },
+   {
+    path: "/check-email",
+    element: <EmailVerification />,
   },
   {
     path: "/progress",

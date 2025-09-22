@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import Navbar from "./Navbar";
-import BackgroundWrapper from "./components/BackgroundWrapper";
 import SocialLoginButtons from "./components/SocialLoginButtons";
 import FormInput from "./components/FormInput";
 import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
+import StaticNavbar from "./StaticNavbar";
+import InfiniteBackgroundWrapper from "./components/InfiniteBackgroundWrapper";
 
 interface RegisterFormInputs {
   firstName: string;
@@ -27,18 +27,14 @@ const RegisterForm: React.FC = () => {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<RegisterFormInputs>({
-    mode: "onBlur",
-  });
+  } = useForm<RegisterFormInputs>({ mode: "onBlur" });
 
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
-  // Password visibility states
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const togglePassword = () => setShowPassword((prev) => !prev);
   const toggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
 
@@ -62,13 +58,15 @@ const RegisterForm: React.FC = () => {
       });
 
       if (res.status === 201) {
+        localStorage.setItem("email", payload.email);
         setInfoMessage(
-          "Registration successful — please check your inbox to verify your email before logging in."
+          "Registration successful — please check your inbox to verify your email."
         );
         setTimeout(() => navigate("/check-email"), 1000);
       } else {
         const body = await res.json().catch(() => ({}));
-        const err = body?.error || body?.message || `Registration failed (status ${res.status})`;
+        const err =
+          body?.error || body?.message || `Registration failed (status ${res.status})`;
         setGlobalError(err);
       }
     } catch (err) {
@@ -79,19 +77,18 @@ const RegisterForm: React.FC = () => {
     }
   };
 
-  // OAuth redirects
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/oauth/google`;
   };
-
   const handleFacebookLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/oauth/facebook`;
   };
 
   return (
-    <BackgroundWrapper>
-      <Navbar />
-      <div className="relative h-screen flex justify-center items-start pt-16 px-4 text-white">
+    <InfiniteBackgroundWrapper>
+      <StaticNavbar />
+
+      <div className="relative flex justify-center items-start px-4 py-10 text-white">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 rounded-lg shadow-lg w-full max-w-md bg-white/5 backdrop-blur"
@@ -115,10 +112,7 @@ const RegisterForm: React.FC = () => {
                 register={register("firstName", {
                   required: "First name is required",
                   minLength: { value: 2, message: "Too short" },
-                  pattern: {
-                    value: /^[\p{L}\p{M}'-]{2,}$/u,
-                    message: "Invalid name characters",
-                  },
+                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: "Invalid name" },
                 })}
                 error={errors.firstName}
               />
@@ -132,10 +126,7 @@ const RegisterForm: React.FC = () => {
                 register={register("lastName", {
                   required: "Last name is required",
                   minLength: { value: 2, message: "Too short" },
-                  pattern: {
-                    value: /^[\p{L}\p{M}'-]{2,}$/u,
-                    message: "Invalid name characters",
-                  },
+                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: "Invalid name" },
                 })}
                 error={errors.lastName}
               />
@@ -150,10 +141,7 @@ const RegisterForm: React.FC = () => {
               placeholder="Email"
               register={register("email", {
                 required: "Email is required",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Invalid email address",
-                },
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email" },
                 maxLength: { value: 254, message: "Email too long" },
               })}
               error={errors.email}
@@ -170,10 +158,7 @@ const RegisterForm: React.FC = () => {
                 required: "Username is required",
                 minLength: { value: 3, message: "At least 3 characters" },
                 maxLength: { value: 50, message: "Too long" },
-                pattern: {
-                  value: /^[a-zA-Z0-9._-]{3,50}$/,
-                  message: "Use letters, numbers, ., _, -",
-                },
+                pattern: { value: /^[a-zA-Z0-9._-]{3,50}$/, message: "Invalid username" },
               })}
               error={errors.username}
             />
@@ -190,13 +175,12 @@ const RegisterForm: React.FC = () => {
                 minLength: { value: 12, message: "At least 12 characters" },
                 validate: (v) => {
                   const checks = [
-                    /[A-Z]/.test(v) || "Add an uppercase letter",
-                    /[a-z]/.test(v) || "Add a lowercase letter",
-                    /[0-9]/.test(v) || "Add a number",
-                    /[^A-Za-z0-9]/.test(v) || "Add a symbol",
+                    /[A-Z]/.test(v) || "Add uppercase",
+                    /[a-z]/.test(v) || "Add lowercase",
+                    /[0-9]/.test(v) || "Add number",
+                    /[^A-Za-z0-9]/.test(v) || "Add symbol",
                   ];
-                  const fail = checks.find((c) => typeof c === "string");
-                  return fail === undefined ? true : String(fail);
+                  return checks.find((c) => typeof c === "string") || true;
                 },
               })}
               error={errors.password}
@@ -208,7 +192,7 @@ const RegisterForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Confirm Password input */}
+          {/* Confirm Password */}
           <div className="mb-4">
             <FormInput
               id="confirmPassword"
@@ -216,7 +200,7 @@ const RegisterForm: React.FC = () => {
               placeholder="Confirm Password"
               register={register("confirmPassword", {
                 required: "Please confirm your password",
-                validate: (value) => value === watch("password") || "Passwords do not match",
+                validate: (v) => v === watch("password") || "Passwords do not match",
               })}
               error={errors.confirmPassword}
               showPassword={showConfirmPassword}
@@ -224,24 +208,17 @@ const RegisterForm: React.FC = () => {
             />
           </div>
 
-          {/* Terms checkbox */}
+          {/* Terms */}
           <div className="mb-4">
             <CheckboxInput
-              register={register("terms", {
-                required: "You must accept the terms and conditions",
-              })}
+              register={register("terms", { required: "You must accept the terms" })}
               error={errors.terms}
               label={
                 <div>
                   Yes, I accept the{" "}
-                  <a href="/terms" className="text-purple-400 underline" target="_blank" rel="noreferrer">
-                    Terms of Use
-                  </a>{" "}
+                  <a href="/terms" className="text-purple-400 underline" target="_blank" rel="noreferrer">Terms of Use</a>{" "}
                   and{" "}
-                  <a href="/privacy" className="text-purple-400 underline" target="_blank" rel="noreferrer">
-                    Privacy Policy
-                  </a>
-                  .
+                  <a href="/privacy" className="text-purple-400 underline" target="_blank" rel="noreferrer">Privacy Policy</a>.
                 </div>
               }
             />
@@ -254,21 +231,13 @@ const RegisterForm: React.FC = () => {
 
           <div className="text-sm text-gray-300 mt-4">
             Already have an account?{" "}
-            <button type="button" onClick={() => navigate("/login")} className="underline">
-              Sign in
-            </button>
+            <button type="button" onClick={() => navigate("/login")} className="underline">Sign in</button>
             {" — "}
-            <button
-              type="button"
-              onClick={() => navigate("/forgot-password")}
-              className="underline"
-            >
-              Forgot password?
-            </button>
+            <button type="button" onClick={() => navigate("/forgot-password")} className="underline">Forgot password?</button>
           </div>
         </form>
       </div>
-    </BackgroundWrapper>
+    </InfiniteBackgroundWrapper>
   );
 };
 

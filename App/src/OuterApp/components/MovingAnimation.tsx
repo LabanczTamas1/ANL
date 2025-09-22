@@ -1,12 +1,29 @@
 import React from "react";
 
-const ANLShape: React.FC = () => {
+type Size = "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
+
+interface ANLShapeProps {
+  size?: Size;
+}
+
+const sizeMap: Record<Size, { width: number; height: number; fontSize: number }> = {
+  xs: { width: 80, height: 40, fontSize: 24 },
+  sm: { width: 120, height: 60, fontSize: 36 },
+  md: { width: 150, height: 75, fontSize: 45 },
+  lg: { width: 200, height: 100, fontSize: 60 },
+  xl: { width: 250, height: 125, fontSize: 75 },
+  "2xl": { width: 200, height: 150, fontSize: 90 },
+};
+
+const ANLShape: React.FC<ANLShapeProps> = ({ size = "md" }) => {
+  const { width, height, fontSize } = sizeMap[size];
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="150"
-      height="75"
-      viewBox="0 0 150 75"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
     >
       <defs>
         <linearGradient
@@ -25,21 +42,21 @@ const ANLShape: React.FC = () => {
           <animateTransform
             attributeName="gradientTransform"
             type="translate"
-            from="-150 0"
-            to="150 0"
+            from={`-${width} 0`}
+            to={`${width} 0`}
             dur="5s"
             repeatCount="indefinite"
           />
         </linearGradient>
       </defs>
 
-      <rect width="150" height="75" fill="#111" />
+      <rect width={width} height={height} fill="transparent" />
 
       <style>
         {`
           .animated-text {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 45px;
+            font-size: ${fontSize}px;
             font-weight: bold;
             fill: none;
             stroke: url(#rainbow-gradient);
@@ -60,11 +77,7 @@ const ANLShape: React.FC = () => {
         `}
       </style>
 
-      <text
-        x="12"
-        y="50"
-        className="animated-text"
-      >
+      <text x={width * 0.08} y={height * 0.67} className="animated-text">
         ANL
       </text>
     </svg>
