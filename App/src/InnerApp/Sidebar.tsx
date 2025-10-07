@@ -82,7 +82,7 @@ const Sidebar: React.FC = () => {
            <Link to="/home/mail/last-outgoing">
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg relative">
               <FaInbox className="text-lg" />
-              <span>{t('sidebar.sent')}<NotificationBadge count={unreadEmailCount} /></span>
+              <span>{t('sidebar.sent')}</span>
               
             </div>
           </Link>
