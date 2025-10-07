@@ -35,13 +35,12 @@ const LoginPage: React.FC = () => {
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log("Login response:", responseData);
 
         // Store all necessary data in localStorage
         localStorage.setItem("authToken", responseData.token);
         localStorage.setItem("userId", responseData.userId);
         localStorage.setItem(
-          "userName",
+          "username",
           responseData.user?.username || data.email.split("@")[0]
         );
         localStorage.setItem(
@@ -60,24 +59,10 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("firstName", firstName);
         localStorage.setItem("lastName", lastName);
 
-        // Special role handling
-        if (responseData.user?.role === "admin") {
-          localStorage.setItem("superRole", "admin");
-        }
-
-        // Log what was stored
-        console.log("Stored in localStorage:", {
-          authToken: responseData.token,
-          userId: responseData.userId,
-          userName: localStorage.getItem("userName"),
-          userEmail: localStorage.getItem("userEmail"),
-          fullName: localStorage.getItem("fullName"),
-          firstName: localStorage.getItem("firstName"),
-          lastName: localStorage.getItem("lastName"),
-        });
+        localStorage.setItem("superRole", `${responseData.user?.role || "user"}`);
 
         alert(t("loginSuccessful"));
-        navigate("/progress");
+        navigate("/home/progress-tracker");
       } else {
         const errorData = await response.json();
         alert(`${t("loginFailed")} ${errorData.error}`);
@@ -88,12 +73,12 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Updated to use the correct Google OAuth endpoint
+  // Google OAuth
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  // You can keep this if you have Facebook auth set up
+  // Facebook OAuth : TODO
   const facebook = () => window.open(`${API_BASE_URL}/auth/facebook`, "_self");
 
   return (

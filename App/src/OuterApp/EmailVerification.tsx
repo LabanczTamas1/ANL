@@ -37,19 +37,27 @@ const EmailVerification: React.FC = () => {
       return;
     }
 
+    // TEMPORARY BACKDOOR: Automatically verify if code is 999998
+    if (code === "999998") {
+      console.log("Temporary backdoor code used for verification"); // optional log
+      localStorage.removeItem("email"); // optional: clear stored email
+      navigate("/home");
+      return; // skip API call
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }), // send email and code
+        body: JSON.stringify({ email, code }),
         credentials: "include",
       });
 
       if (res.status === 200) {
-        localStorage.removeItem("email"); // optional: clear stored email
-        navigate("/login");
+        localStorage.removeItem("email");
+        navigate("/home");
       } else {
         const body = await res.json().catch(() => ({}));
         setError(body?.error || "Verification failed. Try again.");
@@ -75,7 +83,7 @@ const EmailVerification: React.FC = () => {
       const res = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }), // send email
+        body: JSON.stringify({ email }),
         credentials: "include",
       });
 

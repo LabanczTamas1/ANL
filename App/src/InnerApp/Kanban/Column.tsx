@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import Card from "./Card";
@@ -27,6 +27,7 @@ interface ColumnProps {
   onDeleteColumn: (columnId: string) => void;
   onDeleteCard: (columnId: string, cardId: string) => void;
   index: number;
+  className?: string;
 }
 
 // Confirmation Modal Component
@@ -78,7 +79,6 @@ const Column: React.FC<ColumnProps> = ({
   const cardsPerPage = 10; // Number of cards per page
 
   const totalPages = Math.ceil(column.cards.length / cardsPerPage);
-  console.log("Columns cards", column.cards);
   const currentCards = column.cards.slice(
     (currentPage - 1) * cardsPerPage,
     currentPage * cardsPerPage

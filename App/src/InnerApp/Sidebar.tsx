@@ -79,6 +79,13 @@ const Sidebar: React.FC = () => {
               <span>{t('sidebar.sendMail')}</span>
             </div>
           </Link>
+           <Link to="/home/mail/last-outgoing">
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg relative">
+              <FaInbox className="text-lg" />
+              <span>{t('sidebar.sent')}<NotificationBadge count={unreadEmailCount} /></span>
+              
+            </div>
+          </Link>
         </div>
       </div>
 

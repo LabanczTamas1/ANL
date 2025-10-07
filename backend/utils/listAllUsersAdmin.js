@@ -1,8 +1,9 @@
+require('dotenv').config();
 const redis = require('redis');
 
 // Initialize Redis client
 const redisClient = redis.createClient({
-   url: "redis://default:wmtQc7PXbdMhjwPGgw8MjpfLe2sZVwbv@redis-18638.c55.eu-central-1-1.ec2.redns.redis-cloud.com:18638",
+   url: process.env.REDIS_URL,
 });
 
 redisClient.on('error', (err) => console.error('Redis Client Error:', err));
@@ -10,21 +11,34 @@ redisClient.connect().then(() => console.log('Redis connected in listAllUsers.js
 
 const listAllUsers = async () => {
   try {
-    // Get all keys matching the pattern 'user:*' but not 'user:email:*'
+    console.log('Listing all users from Redis...');
+    
+    // Get all keys matching the pattern 'user:*'
     const userKeys = await redisClient.keys('user:*');
-    
-    // Filter out email reference keys
-    const actualUserKeys = userKeys.filter(key => !key.startsWith('user:email:'));
-    
+
+    // Filter out email and username reference keys
+    const actualUserKeys = userKeys.filter(
+      key => !key.startsWith('user:email:') && !key.startsWith('user:username:')
+    );
+
+    console.log(`Found user keys: ${actualUserKeys}`);
+
     const users = [];
 
     for (const userKey of actualUserKeys) {
-      const userData = await redisClient.hGetAll(userKey);
+      const type = await redisClient.type(userKey);
 
-      if (userData && Object.keys(userData).length > 0) {
-        // Don't include the password in the returned data for security
-        const { password, ...safeUserData } = userData;
-        users.push(safeUserData);
+      // Only process hash keys
+      if (type === 'hash') {
+        const userData = await redisClient.hGetAll(userKey);
+
+        if (userData && Object.keys(userData).length > 0) {
+          // Exclude password for security
+          const { password, ...safeUserData } = userData;
+          users.push(safeUserData);
+        }
+      } else {
+        console.log(`Skipping ${userKey} (type=${type})`);
       }
     }
 

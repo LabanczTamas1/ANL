@@ -44,7 +44,8 @@ const RegisterForm: React.FC = () => {
     setLoading(true);
     try {
       const payload = {
-        name: `${data.firstName.trim()} ${data.lastName.trim()}`,
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
         email: data.email.trim().toLowerCase(),
         password: data.password,
         username: data.username.trim(),

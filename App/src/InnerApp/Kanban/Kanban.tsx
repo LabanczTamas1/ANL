@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import Column from "./Column";
+import KanbanHeader from './KanbanHeader';
+import AddColumnModal from './AddColumnModal';
+import AddCardModal from './AddCardModal';
+import TrashBin from './TrashBin';
 
 const Kanban: React.FC = () => {
   const [columns, setColumns] = useState<any[]>([]);
@@ -255,10 +259,14 @@ const Kanban: React.FC = () => {
       );
 
       setIsDeleteMode(false);
-      const contentElement = document.querySelector(".main-content") as HTMLElement;
-    if (contentElement) {
-      contentElement.style.backgroundColor = !isDeleteMode ? "rgba(21, 225, 38, 0.4)" : "";
-    }
+      const contentElement = document.querySelector(
+        ".main-content"
+      ) as HTMLElement;
+      if (contentElement) {
+        contentElement.style.backgroundColor = !isDeleteMode
+          ? "rgba(21, 225, 38, 0.4)"
+          : "";
+      }
     } catch (error) {
       console.error("Error deleting column:", error);
     }
@@ -418,115 +426,37 @@ const Kanban: React.FC = () => {
 
   const toggleDeleteMode = (): void => {
     setIsDeleteMode((prev) => !prev);
-    const contentElement = document.querySelector(".main-content") as HTMLElement;
+    const contentElement = document.querySelector(
+      ".main-content"
+    ) as HTMLElement;
     if (contentElement) {
-      contentElement.style.backgroundColor = !isDeleteMode ? "rgba(171, 0, 0, 0.4)" : "";
+      contentElement.style.backgroundColor = !isDeleteMode
+        ? "rgba(171, 0, 0, 0.4)"
+        : "";
     }
   };
 
   return (
-    <div
-      className={`kanban-board w-full relative`}
-    >
+    <div className={`kanban-board w-full relative`}>
       {/* Header section with responsive adjustments */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 border-b pb-2 gap-3">
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShowColumnModal(!showColumnModal)}
-            className="text-white px-4 py-2 rounded dark:text-white bg-[#65558F] hover:bg-blue-600 flex-grow sm:flex-grow-0"
-          >
-            Add Column
-          </button>
-
-          <button
-            onClick={toggleDeleteMode}
-            className={`px-4 py-2 rounded ${
-              isDeleteMode
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
-            } flex-grow sm:flex-grow-0`}
-          >
-            {isDeleteMode ? "Exit Delete Mode" : "Delete Column"}
-          </button>
-        </div>
-
-        {/* Search Input - full width on mobile */}
-        <div className="relative w-full sm:w-64 mt-2 sm:mt-0">
-          <input
-            type="text"
-            placeholder="Search cards..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65558F] dark:bg-[#1e1e1e] dark:text-white"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
+      <KanbanHeader
+        isDeleteMode={isDeleteMode}
+        onAddColumn={() => setShowColumnModal(true)}
+        onToggleDeleteMode={toggleDeleteMode}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
       {/* Add Column Modal */}
-      {showColumnModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-[400px] relative">
-            {/* Modal Header */}
-            <h2 className="text-xl sm:text-2xl font-bold text-center mb-4">
-              Add column
-            </h2>
-            <button
-              onClick={handleCloseColumnModal}
-              className="text-black px-3 py-1 sm:px-4 sm:py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
-            >
-              X
-            </button>
-
-            {/* Input for Board Name */}
-            <div className="mb-4">
-              <label className="block font-semibold mb-1">Column name</label>
-              <input
-                type="text"
-                placeholder="Enter board name"
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 dark:text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {/* Color Picker Section */}
-            <div className="mb-4">
-              <label className="block font-semibold mb-1">Tag color</label>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  {/* Custom Color Picker */}
-                  <input
-                    type="color"
-                    id="colorPicker"
-                    value= {tagColor || "#cc458f"}
-                    onChange={(e) => setTagColor(e.target.value)}
-                    className="w-10 h-10 border-none p-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Footer with Add Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleAddColumn}
-                className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 transition"
-              >
-                + Add Board
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddColumnModal
+        show={showColumnModal}
+        onClose={handleCloseColumnModal}
+        newColumnName={newColumnName}
+        setNewColumnName={setNewColumnName}
+        tagColor={tagColor}
+        setTagColor={setTagColor}
+        onAddColumn={handleAddColumn}
+      />
 
       {/* Drag and Drop Context */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -534,7 +464,7 @@ const Kanban: React.FC = () => {
         <Droppable droppableId="columns" direction="horizontal" type="column">
           {(provided) => (
             <div
-            className="flex overflow-x-auto pb-4 gap-4 px-2 [&>*]:min-w-[350px]"
+              className="flex overflow-x-auto pb-4 gap-4 px-2 [&>*]:min-w-[350px]"
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
@@ -569,248 +499,19 @@ const Kanban: React.FC = () => {
         {/* Fixed Trash Bin at bottom of the page - only shown in delete mode */}
         {isDeleteMode && (
           <Droppable droppableId="trash" type="column">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center h-20 w-64 border-2 border-dashed rounded-lg z-40 ${
-                  snapshot.isDraggingOver
-                    ? "bg-red-200 border-red-500"
-                    : "bg-red-100 border-red-300"
-                } transition-all duration-300`}
-                style={{
-                  boxShadow: snapshot.isDraggingOver
-                    ? `
-                  0 0 200px 40px rgba(239, 68, 68, 0.4),
-                  0 0 600px 80px rgba(239, 68, 68, 0.3),
-                  0 0 1200px 120px rgba(239, 68, 68, 0.2),
-                  0 0 1800px 160px rgba(239, 68, 68, 0.1)
-                `
-                    : "0 -6px 16px rgba(252, 165, 165, 0.4)",
-                }}
-              >
-                {/* Fixed content that won't move when dragging over */}
-                <div className="flex items-center justify-center pointer-events-none">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-6 h-6 text-red-500 mr-2"
-                  >
-                    <path d="M3 6h18"></path>
-                    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
-                    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-                  </svg>
-                  <p className="text-sm text-red-700">
-                    Drop column here to delete
-                  </p>
-                </div>
-
-                {/* This invisible element receives the dropped item */}
-                <div className="absolute inset-0">{provided.placeholder}</div>
-              </div>
-            )}
+            {(provided, snapshot) => <TrashBin provided={provided} snapshot={snapshot} />}
           </Droppable>
         )}
       </DragDropContext>
 
       {/* Add Card Modal */}
-      {showCardModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-          <div className="bg-white dark:bg-[#1e1e1e] dark:text-white p-4 sm:p-6 rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg sm:text-xl font-bold mb-4 text-center">
-              Add Card
-            </h3>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleAddCard();
-              }}
-            >
-              {/* Responsive form fields */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="card-name"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Card Name:
-                </label>
-                <input
-                  id="card-name"
-                  type="text"
-                  placeholder="Card Name"
-                  value={cardData.name}
-                  onChange={(e) =>
-                    setCardData({ ...cardData, name: e.target.value })
-                  }
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2"
-                />
-              </div>
-
-              {/* Contact Name */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="contact-name"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Contact Name:
-                </label>
-                <input
-                  id="contact-name"
-                  type="text"
-                  placeholder="Contact Name"
-                  value={cardData.contactName}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, contactName: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Business Name */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="business-name"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Business Name:
-                </label>
-                <input
-                  id="business-name"
-                  type="text"
-                  placeholder="Business Name"
-                  value={cardData.businessName}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, businessName: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Phone Number */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="phone-number"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Phone number:
-                </label>
-                <input
-                  id="phone-number"
-                  type="text"
-                  placeholder="Phone number"
-                  value={cardData.phoneNumber}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, phoneNumber: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Email */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="email"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Email:
-                </label>
-                <input
-                  id="email"
-                  type="text"
-                  placeholder="Email"
-                  value={cardData.email}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, email: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Website */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="website"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Website:
-                </label>
-                <input
-                  id="website"
-                  type="text"
-                  placeholder="Website"
-                  value={cardData.website}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, website: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Instagram */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="instagram"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Instagram:
-                </label>
-                <input
-                  id="instagram"
-                  type="text"
-                  placeholder="Instagram"
-                  value={cardData.instagram}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, instagram: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Facebook */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-                <label
-                  htmlFor="facebook"
-                  className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0"
-                >
-                  Facebook:
-                </label>
-                <input
-                  id="facebook"
-                  type="text"
-                  placeholder="Facebook"
-                  value={cardData.facebook}
-                  onChange={(e) => {
-                    setCardData({ ...cardData, facebook: e.target.value });
-                  }}
-                  className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
-                />
-              </div>
-
-              {/* Form buttons */}
-              <div className="flex flex-col sm:flex-row justify-between gap-3">
-                <button
-                  type="submit"
-                  className="bg-[#65558F] text-white px-4 py-2 rounded hover:bg-[#65558F] order-2 sm:order-1"
-                >
-                  Add Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCardModal(false)}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-800 order-1 sm:order-2"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddCardModal
+        show={showCardModal}
+        onClose={() => setShowCardModal(false)}
+        cardData={cardData}
+        setCardData={setCardData}
+        onAddCard={handleAddCard}
+      />
     </div>
   );
 };

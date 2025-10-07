@@ -27,23 +27,18 @@ const UserManagement = () => {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Check screen size for responsive design
+  // Responsive screen check
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
+    const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
-
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  // Fetch users data from API
+  // Fetch all users
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      console.error("No token found");
       setError("Authentication required. Please login again.");
       setLoading(false);
       return;
@@ -53,23 +48,19 @@ const UserManagement = () => {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/allUsersProgress`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch users: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Failed to fetch users: ${response.status}`);
 
       const data = await response.json();
       console.log("Fetched Users:", data.allUserData);
-      setUsers(data.allUserData || []); 
+      setUsers(data.allUserData || []);
       setError(null);
-    } catch (error) {
-      console.error("Error fetching users:", error);
+    } catch (err) {
+      console.error("Error fetching users:", err);
       setError("Failed to load users. Please try again.");
-      setUsers([]); 
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -79,7 +70,7 @@ const UserManagement = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Modal controls
+  // Modal handlers
   const openMoneyModal = (user: User) => {
     setSelectedUser(user);
     setIsMoneyModalOpen(true);
@@ -89,21 +80,20 @@ const UserManagement = () => {
     setIsMoneyModalOpen(false);
     setSelectedUser(null);
   };
-  
+
   const openDetailModal = (user: User) => {
-    setSelectedUser({...user}); // Create a copy to avoid reference issues
+    setSelectedUser({ ...user });
     setIsDetailModalOpen(true);
   };
-  
+
   const closeDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedUser(null);
   };
 
-  const handleGroupChange = (value: string) => {
-    setGroupBy(value);
-  };
+  const handleGroupChange = (value: string) => setGroupBy(value);
 
+  // Add new user
   const handleAddUser = async (data: any) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -122,131 +112,90 @@ const UserManagement = () => {
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to add user");
-      }
+      if (!response.ok) throw new Error("Failed to add user");
 
-      // Refresh the users list
       await fetchUsers();
       setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error adding user:", error);
+    } catch (err) {
+      console.error("Error adding user:", err);
       setError("Failed to add user. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle step click
   const handleStepClick = async (userId: string, step: number) => {
-    try {
-      // Find the user to update
-      const userToUpdate = users.find((user) => user.id === userId);
-      if (!userToUpdate) return;
+    const userToUpdate = users.find((u) => u.id === userId);
+    if (!userToUpdate) return;
 
-      // Create update object with only necessary fields
-      const updateData = { 
-        id: userId,
-        name: userToUpdate.name,
-        step: step 
-      };
-      
-      // Call the API to update the user
-      await handleUserUpdate(updateData);
-    } catch (error) {
-      console.error("Error updating step:", error);
-      setError("Failed to update step. Please try again.");
-      // Revert the optimistic update by refetching
-      fetchUsers();
-    }
+    await handleUserUpdate({ id: userId, step });
   };
 
-  const handleAddMoney = async (userId: string, amount: number) => {
-    try {
-      // Find the user to update
-      const userToUpdate = users.find((user) => user.id === userId);
-      if (!userToUpdate) return;
+  // Handle add money (main fix here)
+  const handleAddMoney = async (userId: string, amount: number | string) => {
+    const userToUpdate = users.find((u) => u.id === userId);
+    if (!userToUpdate) return;
 
-      // Create update object with only necessary fields
-      const updateData = { 
-        id: userId,
-        name: userToUpdate.name,
-        spends: userToUpdate.spends + amount 
-      };
-      
-      // Call the API to update the user
-      await handleUserUpdate(updateData);
-      closeMoneyModal();
-    } catch (error) {
-      console.error("Error adding money:", error);
-      setError("Failed to add money. Please try again.");
-      // Revert the optimistic update by refetching
-      fetchUsers();
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount)) {
+      setError("Invalid amount entered.");
+      return;
     }
+
+    const updatedSpends = Number(userToUpdate.spends) + numericAmount;
+
+    await handleUserUpdate({
+      id: userId,
+      spends: updatedSpends,
+    });
+
+    closeMoneyModal();
   };
 
+  // Exchange rate
   const fetchExchangeRate = useCallback(async (targetCurrency: string) => {
     if (targetCurrency.toLowerCase() === "ron") {
-      setExchangeRate(1); // No conversion needed for RON
+      setExchangeRate(1);
       return;
     }
 
     try {
-      const response = await fetch(
-        `https://api.exchangerate-api.com/v4/latest/RON`
-      );
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch exchange rate");
-      }
-      
+      const response = await fetch(`https://api.exchangerate-api.com/v4/latest/RON`);
+      if (!response.ok) throw new Error("Failed to fetch exchange rate");
+
       const data = await response.json();
       const rate = data.rates[targetCurrency.toUpperCase()];
+      if (!rate) throw new Error("Invalid currency");
+
       console.log("Exchange rate for", targetCurrency, ":", rate);
-      
-      if (!rate) {
-        throw new Error("Invalid currency");
-      }
-      
       setExchangeRate(rate);
-    } catch (error) {
-      console.error("Error fetching exchange rate:", error);
-      setError("Failed to fetch exchange rate. Using default.");
-      setExchangeRate(1); // Fallback to 1 if error
+    } catch (err) {
+      console.error("Error fetching exchange rate:", err);
+      setError("Failed to fetch exchange rate. Using default 1.");
+      setExchangeRate(1);
     }
   }, []);
 
-  const handleCurrencyChange = (currencyType: string) => {
-    setCurrency(currencyType);
-    fetchExchangeRate(currencyType);
+  const handleCurrencyChange = (type: string) => {
+    setCurrency(type);
+    fetchExchangeRate(type);
   };
 
-  const convertSpends = (amount: number) => {
-    return (amount * exchangeRate).toFixed(2);
-  };
+  const convertSpends = (amount: number) => (amount * exchangeRate).toFixed(2);
 
+  // Handle status change
   const handleStatusChange = async (userId: string, status: string) => {
-    // Find the user to update
-    const userToUpdate = users.find((user) => user.id === userId);
-    if (!userToUpdate) return;
-
-    // Create update object with only necessary fields
-    const updateData = { 
-      id: userId,
-      name: userToUpdate.name,
-      status: status 
-    };
-    
-    // Call the API to update the user
-    await handleUserUpdate(updateData);
+    await handleUserUpdate({ id: userId, status });
   };
-  
-  // Unified update function that handles all types of user updates
+
+  // Unified update function
   const handleUserUpdate = async (updatedUserData: Partial<User>) => {
     if (!updatedUserData.id) {
       setError("User ID is required for updates");
       return;
     }
-    
+
     const token = localStorage.getItem("authToken");
     if (!token) {
       setError("Authentication required. Please login again.");
@@ -254,27 +203,18 @@ const UserManagement = () => {
     }
 
     try {
-      // Find the current user data
-      const currentUser = users.find(user => user.id === updatedUserData.id);
-      if (!currentUser) {
-        throw new Error("User not found");
-      }
-      
-      // Optimistically update the UI first with merged data
+      const currentUser = users.find((u) => u.id === updatedUserData.id);
+      if (!currentUser) throw new Error("User not found");
+
       const mergedUserData = { ...currentUser, ...updatedUserData };
-      
-      setUsers((prevUsers) =>
-        prevUsers.map((user) => 
-          user.id === updatedUserData.id ? mergedUserData : user
-        )
-      );
-      
-      // If we're updating the currently selected user in details view
-      if (selectedUser && selectedUser.id === updatedUserData.id) {
+      setUsers((prev) => prev.map((u) => (u.id === mergedUserData.id ? mergedUserData : u)));
+
+      if (selectedUser && selectedUser.id === mergedUserData.id) {
         setSelectedUser(mergedUserData);
       }
 
-      // Send update to server
+      console.log("Sending user update:", updatedUserData);
+
       const response = await fetch(`${API_BASE_URL}/api/modifyUserData`, {
         method: "PATCH",
         headers: {
@@ -284,60 +224,48 @@ const UserManagement = () => {
         body: JSON.stringify(updatedUserData),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to update user data: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Failed to update user: ${response.status}`);
 
-      // Handle the response data
       const data = await response.json();
       console.log("Update response:", data);
-      
-      // FIX: Only update the specific modified user in the users array
-      // instead of replacing the entire users array
+
       if (data.updatedUser) {
-        setUsers((prevUsers) => 
-          prevUsers.map((user) => 
-            user.id === data.updatedUser.id ? data.updatedUser : user
-          )
+        setUsers((prev) =>
+          prev.map((u) => (u.id === data.updatedUser.id ? data.updatedUser : u))
         );
-        
-        // Update selected user if needed
+
         if (selectedUser && selectedUser.id === data.updatedUser.id) {
           setSelectedUser(data.updatedUser);
         }
       }
-      
+
       setError(null);
-    } catch (error) {
-      console.error("Error updating user data:", error);
-      // Revert the optimistic update by refetching
+    } catch (err) {
+      console.error("Error updating user:", err);
       fetchUsers();
       setError("Failed to update user. Please try again.");
     }
   };
 
-  // Filter users safely
-  const filteredUsers = users && users.length > 0 
-    ? users.filter((user) => user.status === groupBy || groupBy === "all")
-    : [];
+  // Filtered users
+  const filteredUsers =
+    users && users.length > 0
+      ? users.filter((u) => groupBy === "all" || u.status === groupBy)
+      : [];
 
   return (
-    <div className="p-4 md:p-8 h-full">
+    <div className="p-4 md:p-8 h-full w-full">
       <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">User Management</h1>
-      
-      {/* Show any error messages */}
+
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           <p>{error}</p>
-          <button 
-            className="underline text-sm" 
-            onClick={() => setError(null)}
-          >
+          <button className="underline text-sm" onClick={() => setError(null)}>
             Dismiss
           </button>
         </div>
       )}
-      
+
       <div className="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0 mb-4">
         <label className="flex items-center">
           Group by:
@@ -353,7 +281,7 @@ const UserManagement = () => {
             <option value="terminated">Terminated</option>
           </select>
         </label>
-        
+
         <label className="flex items-center">
           Currency:
           <select
@@ -368,33 +296,37 @@ const UserManagement = () => {
           </select>
         </label>
       </div>
-      
-      {/* Show loading state */}
+
       {loading ? (
         <div className="p-4 flex justify-center items-center">
           <p>Loading users...</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-[800px] min-w-[80vw]">
           <div className="max-h-[60vh] overflow-y-auto">
             {isMobile ? (
-              // Mobile card view
+              // Mobile cards
               <div className="grid grid-cols-1 gap-4">
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
-                    <div 
-                      key={user.id} 
+                    <div
+                      key={user.id}
                       className="bg-white shadow rounded-lg p-4 border-l-4 border-[#65558F]"
                       onClick={() => openDetailModal(user)}
                     >
                       <div className="flex justify-between items-center mb-2">
                         <h3 className="font-semibold">{user.name}</h3>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          user.status === 'active' ? 'bg-green-100 text-green-800' : 
-                          user.status === 'new' ? 'bg-blue-100 text-blue-800' :
-                          user.status === 'failed' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            user.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : user.status === "new"
+                              ? "bg-blue-100 text-blue-800"
+                              : user.status === "failed"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {user.status}
                         </span>
                       </div>
@@ -420,14 +352,14 @@ const UserManagement = () => {
                 )}
               </div>
             ) : (
-              // Desktop table view
+              // Desktop table
               <table className="min-w-full w-full bg-white shadow-md rounded-lg">
                 <thead className="bg-gray-100 border-b sticky top-0 z-10">
                   <tr>
                     <th className="text-left p-4">Name</th>
                     <th className="text-left p-4">Company</th>
-                    <th className="text-left p-4">Progress (Steps)</th>
-                    <th className="text-left p-4">User status</th>
+                    <th className="text-left p-4">Progress</th>
+                    <th className="text-left p-4">Status</th>
                     <th className="text-left p-4">Income ({currency.toUpperCase()})</th>
                     <th className="text-left p-4">Actions</th>
                   </tr>
@@ -458,7 +390,9 @@ const UserManagement = () => {
                         <td className="p-4">
                           <select
                             value={user.status}
-                            onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                            onChange={(e) =>
+                              handleStatusChange(user.id, e.target.value)
+                            }
                             className="border border-gray-300 p-1 rounded"
                           >
                             <option value="new">New</option>
@@ -467,9 +401,7 @@ const UserManagement = () => {
                             <option value="terminated">Terminated</option>
                           </select>
                         </td>
-                        <td className="p-4">
-                          {convertSpends(user.spends)}
-                        </td>
+                        <td className="p-4">{convertSpends(user.spends)}</td>
                         <td className="p-4 flex space-x-2">
                           <button
                             className="bg-[#65558F] text-white px-2 py-1 rounded hover:bg-blue-600"
@@ -511,37 +443,35 @@ const UserManagement = () => {
           Add new user
         </button>
       </div>
-      
-      {/* Update AddMoneyModal to use userId instead of username */}
+
+      {/* Modals */}
       <AddMoneyModal
         isOpen={isMoneyModalOpen}
         onClose={closeMoneyModal}
         onAddMoney={(amount) => {
-          if (selectedUser) {
-            handleAddMoney(selectedUser.id, amount);
-          }
+          if (selectedUser) handleAddMoney(selectedUser.id, Number(amount));
         }}
         username={selectedUser?.name || ""}
       />
-      
+
       <AddUserModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddUser}
       />
-      
+
       {selectedUser && (
         <UserDetailModal
           isOpen={isDetailModalOpen}
           onClose={closeDetailModal}
           user={selectedUser}
           currency={currency}
-          convertedSpends={selectedUser ? convertSpends(selectedUser.spends) : "0"}
+          convertedSpends={convertSpends(selectedUser.spends)}
           onStepClick={(_, step) => handleStepClick(selectedUser.id, step)}
-          onStatusChange={(updatedUser) => handleStatusChange(selectedUser.id, updatedUser.status)}
-          onAddMoney={(amount) => {
-            handleAddMoney(selectedUser.id, amount);
-          }}
+          onStatusChange={(updatedUser) =>
+            handleStatusChange(selectedUser.id, updatedUser.status)
+          }
+          onAddMoney={(amount) => handleAddMoney(selectedUser.id, Number(amount))}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import darkLogo from "/public/dark-logo.png";
 import { Link } from "react-router-dom";
+import NavigationButton from "../components/NavigationButton";
 
 const CustomNavbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,9 +38,9 @@ const CustomNavbar: React.FC = () => {
 
   return (
     <div
-      className={`relative sticky top-0 z-50 transition-all duration-30 ${
+      className={`relative sticky top-0 z-50 transition-all duration-30 bg-white ${
         isScrolled
-          ? "lg:p-5 lg:pb-0 bg-white lg:pt-0 lg:mt-0 shadow-lg [box-shadow-color:rgba(0,0,0,0.25)]"
+          ? "lg:p-5 lg:pb-0 lg:pt-0 lg:mt-0 shadow-lg [box-shadow-color:rgba(0,0,0,0.25)]"
           : "lg:p-10 lg:pt-[50px] lg:mt-0"
       }`}
     >
@@ -106,7 +107,7 @@ const CustomNavbar: React.FC = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden flex flex-col space-y-4 text-xl font-inter font-extrabold text-white p-5 rounded-md">
+        <div className="lg:hidden flex flex-col space-y-4 text-xl font-inter font-extrabold text-gray-800  p-5 rounded-md">
           <Link to="/register" className="hover:text-gray-300">
             Contact
           </Link>
@@ -119,16 +120,10 @@ const CustomNavbar: React.FC = () => {
           <Link to="/register" className="hover:text-gray-300">
             Blog
           </Link>
-          <Link to="/login">
-            <div className="bg-[#343E4C] text-white py-2 px-4 rounded hover:bg-sky-500 hover:text-white">
-              Login
-            </div>
-          </Link>
-          <Link to="/register">
-            <button className="bg-[#343E4C] text-white p-4 px-20 rounded hover:bg-sky-700">
-              Sign in
-            </button>
-          </Link>
+          <div className="flex flex-wrap w-full justify-between [&>*>button]:w-full [&>*]:w-full gap-4">
+          <NavigationButton url="/login" text="Login"/>
+          <NavigationButton url="/register" text="Sign up"/>
+          </div>
         </div>
       )}
     </div>
