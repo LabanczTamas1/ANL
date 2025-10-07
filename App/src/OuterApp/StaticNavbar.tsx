@@ -253,7 +253,7 @@ const StaticNavbar: React.FC = () => {
             <Link to="/aboutus" className="hover:text-gray-300">
               {t.aboutUs}
             </Link>
-            <Link to="/blog" className="hover:text-gray-300">
+            <Link to="/blog" className="text-gray-300 hover:text-gray-300">
               {t.blog}
             </Link>
 

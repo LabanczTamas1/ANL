@@ -89,14 +89,10 @@ const Navbar: React.FC = () => {
 
   return (
     <div
-  className={`relative sticky top-0 z-50 transition-all duration-300
-    p-5             /* default padding for small screens */
-    md:p-0          /* padding 0 for 768px+ */
-    xl:p-10         /* padding 10 for 1280px+ */
-    ${isScrolled ? "!p-0 bg-[#080A0D] lg:pb-0 lg:pt-0 lg:mt-0 m-0 !px-4" : ""}
-  `}
->
-
+      className={`relative sticky top-0 z-50 transition-all duration-300
+      p-5 md:p-0 xl:p-10
+      ${isScrolled ? "!p-0 bg-[#080A0D] lg:pb-0 lg:pt-0 lg:mt-0 m-0 !px-4" : ""}`}
+    >
       {/* Desktop Navbar >1400px */}
       <div
         className={`hidden xl:flex items-center justify-between text-white lg:py-4 ${
@@ -196,7 +192,6 @@ const Navbar: React.FC = () => {
 
       {/* Mid-size Navbar 1024px–1400px */}
       <div className="hidden lg:flex xl:hidden items-center justify-center text-white relative">
-        {/* Logo centered */}
         <Link to="/" className="mx-auto">
           <img
             src={lightLogo}
@@ -207,7 +202,6 @@ const Navbar: React.FC = () => {
           />
         </Link>
 
-        {/* Right side: login/sign in + dropdown */}
         <div className="absolute right-5 flex items-center gap-4">
           <Link to="/login">
             <div className="bg-[#65558F] text-white p-2 px-6 rounded hover:bg-sky-700">
@@ -220,7 +214,6 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Dropdown Hamburger */}
           <button
             className="text-white focus:outline-none"
             onClick={toggleMenu}
@@ -242,7 +235,6 @@ const Navbar: React.FC = () => {
           </button>
         </div>
 
-        {/* Dropdown Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -272,7 +264,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile Navbar <1024px */}
-      <div className="lg:hidden flex items-center justify-between text-white">
+      <div className="lg:hidden flex items-center justify-between text-white relative">
         <Link to="/" className="pl-5">
           <img src={lightLogo} alt="Logo" className={`h-16`} />
         </Link>
@@ -316,18 +308,18 @@ const Navbar: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="absolute z-10 w-full flex flex-col space-y-4 text-xl font-inter font-extrabold text-white p-5 rounded-md bg-[#080A0D]"
+              className="absolute top-full left-0 z-10 w-full flex flex-col text-xl font-inter font-extrabold text-white p-5 rounded-md bg-[#080A0D] mt-2"
             >
-              <Link to="/contact" className="hover:text-gray-300">
+              <Link to="/contact" className="hover:text-gray-300 my-2">
                 {t.contact}
               </Link>
-              <Link to="/services" className="hover:text-gray-300">
+              <Link to="/services" className="hover:text-gray-300 my-2">
                 {t.services}
               </Link>
-              <Link to="/aboutus" className="hover:text-gray-300">
+              <Link to="/aboutus" className="hover:text-gray-300 my-2">
                 {t.aboutUs}
               </Link>
-              <Link to="/blog" className="hover:text-gray-300">
+              <Link to="/blog" className="hover:text-gray-300 my-2">
                 {t.blog}
               </Link>
 

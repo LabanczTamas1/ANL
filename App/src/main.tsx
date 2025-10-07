@@ -1,7 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 import LandingPage from "./OuterApp/LandingPage.tsx";
 import RegisterPage from "./OuterApp/RegisterPage.tsx";
 import LoginPage from "./OuterApp/LoginPage.tsx";
@@ -36,17 +40,18 @@ import MessageDetail from "./InnerApp/components/MessageDetail.tsx";
 import { ReactNode } from "react";
 import OAuthCallback from "./services/OauthCallback.tsx";
 import LanguageSwitcherPage from "./InnerApp/LanguageSwitcherPage.tsx";
-import { LanguageProvider } from './hooks/useLanguage';
-import { translations } from './translations/translations';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { LanguageProvider } from "./hooks/useLanguage";
+import { translations } from "./translations/translations";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
+import LastOutComing from "./InnerApp/SentEmails";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
   // Check if user is admin based on localStorage
-  const isAdmin = localStorage.getItem('name') === 'admin';
-  
+  const isAdmin = localStorage.getItem("name") === "admin";
+
   if (!isAdmin) {
     // Redirect to home page if not admin
     return <Navigate to="/home" replace />;
@@ -77,7 +82,7 @@ const router = createBrowserRouter([
     path: "/oauth-callback",
     element: <OAuthCallback />,
   },
-   {
+  {
     path: "/check-email",
     element: <EmailVerification />,
   },
@@ -98,7 +103,7 @@ const router = createBrowserRouter([
     element: <Services />,
   },
   {
-    path: "/mail/send",
+    path: "/mail/send-mail",
     element: <SendMail />,
   },
   {
@@ -120,12 +125,20 @@ const router = createBrowserRouter([
       { path: "mail/inbox", element: <Inbox /> }, // Renders Inbox under "/home/inbox"
       { path: "mail/inbox/:details", element: <MessageDetail /> },
       { path: "mail/send", element: <SendMail /> }, // Renders SendMail under "/home/send"
+      {
+        path: "mail/last-outgoing",
+        element: <LastOutComing />,
+      },
       { path: "account", element: <Account /> },
       { path: "kanban", element: <Kanban /> },
       // Protected admin route
-      { 
-        path: "adminpage", 
-        element: <AdminRoute><AdminPage /></AdminRoute> 
+      {
+        path: "adminpage",
+        element: (
+          <AdminRoute>
+            <AdminPage />
+          </AdminRoute>
+        ),
       },
       { path: "booking", element: <Booking /> },
       { path: "successful-booking", element: <SuccessfulBooking /> },
@@ -145,12 +158,20 @@ const router = createBrowserRouter([
       // Protected user management route (assuming this is also admin-only)
       {
         path: "user-management",
-        element: <AdminRoute><UserManagement /></AdminRoute>,
+        element: (
+          <AdminRoute>
+            <UserManagement />
+          </AdminRoute>
+        ),
       },
       // Protected statistics route (assuming this is also admin-only)
       {
         path: "statistics",
-        element: <AdminRoute><Statistics /></AdminRoute>,
+        element: (
+          <AdminRoute>
+            <Statistics />
+          </AdminRoute>
+        ),
       },
       {
         path: "language-selection",
@@ -166,7 +187,12 @@ const router = createBrowserRouter([
       },
       {
         path: "terms-and-policy",
-        element: <><TermsAndConditions /><PrivacyPolicy /></>,
+        element: (
+          <>
+            <TermsAndConditions />
+            <PrivacyPolicy />
+          </>
+        ),
       },
     ],
   },
@@ -179,10 +205,10 @@ const router = createBrowserRouter([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HelmetProvider>
-    <LanguageProvider translations={translations} defaultLanguage="english">
-    <NotificationProvider>
-      <RouterProvider router={router} />
-      </NotificationProvider>
+      <LanguageProvider translations={translations} defaultLanguage="english">
+        <NotificationProvider>
+          <RouterProvider router={router} />
+        </NotificationProvider>
       </LanguageProvider>
     </HelmetProvider>
   </StrictMode>

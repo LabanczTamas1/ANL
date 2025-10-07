@@ -2,19 +2,27 @@ import { useNavigate } from "react-router-dom";
 
 /**
  * A custom hook that provides a reusable logout function
- * Clears all authentication-related data from localStorage and redirects to login page
- * @returns {Function} logout function
+ * Clears all authentication-related data from localStorage except darkMode
+ * and redirects to login page
  */
 export const useLogout = () => {
   const navigate = useNavigate();
-  
+
   const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("name");
-    localStorage.removeItem("superRole");
-    
-    navigate("/login");
+    // Preserve darkMode
+    const darkMode = localStorage.getItem("darkMode");
+
+    // Clear everything
+    localStorage.clear();
+
+    // Restore darkMode
+    if (darkMode !== null) {
+      localStorage.setItem("darkMode", darkMode);
+    }
+
+    // Navigate to login page
+    navigate("/login", { replace: true });
   };
-  
+
   return logout;
 };

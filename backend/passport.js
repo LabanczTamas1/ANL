@@ -75,6 +75,7 @@ passport.use(
           // Store in Redis
           await redisClient.set(userKey, userId);
           await redisClient.hSet(`user:${userId}`, newUser);
+          await redisClient.set(`user:username:${username}`, userId);
 
           return done(null, newUser);
         }
