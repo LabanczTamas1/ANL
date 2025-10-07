@@ -2,7 +2,7 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const { v4: uuidv4 } = require("uuid");
-const redisClient = require("./redisClient"); // Make sure this path is correct
+const redisClient = require("./redisClient");
 require("dotenv").config();
 
 console.log("passport.js-----------------");
@@ -27,17 +27,15 @@ passport.use(
           return done(new Error("No email found in profile"), null);
         }
 
-        // Determine user role based on email domain or specific emails
-        let userRole = "user"; // Default role
+        let userRole = "user";
         
-        // Check for specific admin emails
         if (
           userEmail === process.env.ADMIN_GOOGLE_EMAIL ||
           userEmail === "deid.unideb@gmail.com"
         ) {
           userRole = "admin";
         } 
-        // Check for company domain emails
+
         else if (userEmail.endsWith('@yourcompany.com')) {
           userRole = "admin";
         }
@@ -46,15 +44,12 @@ passport.use(
         const userExists = await redisClient.exists(userKey);
 
         if (userExists) {
-          // Get existing user
           const userId = await redisClient.get(userKey);
           const userData = await redisClient.hGetAll(`user:${userId}`);
           
-          // Return the user with their existing data - no updates
           console.log("User login with data:", userData);
           return done(null, { id: userId, ...userData });
         } else {
-          // Create new user
           const userId = uuidv4();
           const username = profile.displayName
             ? profile.displayName.toLowerCase().replace(/\s/g, "")
@@ -67,7 +62,7 @@ passport.use(
             firstName: profile.name?.givenName || "",
             lastName: profile.name?.familyName || "",
             provider: "google",
-            role: userRole, // Set the determined role
+            role: userRole,
             googleId: profile.id,
             createdAt: new Date().toISOString(),
           };
