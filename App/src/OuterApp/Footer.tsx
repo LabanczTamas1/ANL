@@ -144,6 +144,7 @@ const Footer: React.FC<FooterProps> = ({ darkMode }) => {
             <Link to="/">{t.aboutUs}</Link>
             <Link to="/">{t.ourTeam}</Link>
             <Link to="/contact">{t.contactUs}</Link>
+            <Link to="/information/reviews">{t.reviews}</Link>
           </div>
         </div>
       </div>

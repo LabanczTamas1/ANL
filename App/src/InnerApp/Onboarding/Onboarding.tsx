@@ -94,12 +94,10 @@ export default function Onboarding() {
   const [currentTextIndex, setCurrentTextIndex] = useState<number>(0);
   const playerRef = useRef<ReactPlayer | null>(null);
 
-  // To accumulate total text count across all previous steps
   const getTotalTextCount = (step: number) => {
     return Object.values(timedTexts).slice(0, step).flat().length;
   };
 
-  // Define the handleProgress function here
   const handleProgress = (state: { played: number; playedSeconds: number }) => {
     setProgress(state.played * 100);
     setCurrentTime(state.playedSeconds);
@@ -107,12 +105,9 @@ export default function Onboarding() {
 
   const setVideoTimeToFiveSeconds = (time: number) => {
     if (playerRef.current) {
-      // Seek to the specified time
       playerRef.current.seekTo(time, "seconds");
-      // Set the video to play immediately after seeking
-      playerRef.current.seekTo(time, "seconds", true); // The third argument is 'play' flag
+      playerRef.current.seekTo(time, "seconds", true);
 
-      // Ensure the video is playing after seeking
       if (playerRef.current.getInternalPlayer()) {
         const internalPlayer = playerRef.current.getInternalPlayer();
         if (internalPlayer.paused) {
@@ -129,7 +124,6 @@ export default function Onboarding() {
         (entry) => Math.floor(currentTime) >= entry.time
       );
 
-      // Get the total count of texts in previous steps
       const totalPreviousTextCount = getTotalTextCount(currentStep);
 
       if (matchingTexts.length > 0) {
@@ -137,11 +131,11 @@ export default function Onboarding() {
         setCurrentTextIndex(totalPreviousTextCount + matchingTexts.length);
       } else {
         setDisplayText("");
-        setCurrentTextIndex(totalPreviousTextCount); // Reset to the count of previous texts
+        setCurrentTextIndex(totalPreviousTextCount);
       }
     } else {
       setDisplayText("");
-      setCurrentTextIndex(getTotalTextCount(currentStep)); // Reset if no texts exist for the current step
+      setCurrentTextIndex(getTotalTextCount(currentStep));
     }
   }, [currentTime, currentStep]);
 

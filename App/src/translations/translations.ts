@@ -22,6 +22,10 @@ export const translations: TranslationsType = {
     homeSubheading: "For Digital Solutions",
     learnMore: "Learn More",
     contactUs: "Contact Us",
+    reviews: "Reviews",
+    all: "All",
+    sortBy: "Sort by",
+    noReviews: "No reviews yet.",
 
     // Hero section
     heroHeading: "Advertise your brand here and now",
@@ -177,7 +181,22 @@ export const translations: TranslationsType = {
   confirmNewPassword: "Confirm New Password",
   confirmPassword: "Confirm new password",
   updatePassword: "Update Password",
-  updating: "Updating..."
+  updating: "Updating...",
+
+    // Review page translations
+    'review.title': 'Add a review',
+    'review.username': 'Your name',
+    'review.usernamePlaceholder': 'Enter your name',
+    'review.autofilled': 'auto-filled from your account',
+    'review.score': 'Score',
+    'review.description': 'Description',
+    'review.descriptionPlaceholder': 'Write your review here',
+    'review.submit': 'Submit review',
+    'review.reset': 'Reset',
+    'review.saving': 'Saving...',
+    'review.success': 'Review added successfully',
+    'review.fail': 'Failed to add review',
+    'review.errors.required': 'Please fill all fields',
   },
 
   magyar: {
@@ -201,6 +220,10 @@ export const translations: TranslationsType = {
     homeSubheading: "Digitális Megoldásokhoz",
     learnMore: "Tudjon meg többet",
     contactUs: "Kapcsolatfelvétel",
+    reviews: "Vélemények",
+    all: "Összes",
+    sortBy: "Rendezés",
+    noReviews: "Még nincsenek vélemények.",
 
     // Hero section
     heroHeading: "Hirdesse márkáját itt és most",
@@ -354,7 +377,22 @@ export const translations: TranslationsType = {
   confirmNewPassword: "Új jelszó megerősítése",
   confirmPassword: "Erősítse meg az új jelszót",
   updatePassword: "Jelszó frissítése",
-  updating: "Frissítés..."
+  updating: "Frissítés...",
+
+    // Review page translations
+    'review.title': 'Értékelés hozzáadása',
+    'review.username': 'Név',
+    'review.usernamePlaceholder': 'Írja be a nevét',
+    'review.autofilled': 'automatikusan kitöltve a fiókjából',
+    'review.score': 'Értékelés',
+    'review.description': 'Leírás',
+    'review.descriptionPlaceholder': 'Írja ide az értékelését',
+    'review.submit': 'Értékelés beküldése',
+    'review.reset': 'Visszaállítás',
+    'review.saving': 'Mentés...',
+    'review.success': 'Az értékelés sikeresen hozzáadva',
+    'review.fail': 'Nem sikerült hozzáadni az értékelést',
+    'review.errors.required': 'Kérjük, töltsön ki minden mezőt',
   },
 
   romana: {
@@ -378,6 +416,10 @@ export const translations: TranslationsType = {
     homeSubheading: "Pentru Soluții Digitale",
     learnMore: "Aflați mai multe",
     contactUs: "Contactați-ne",
+    reviews: "Recenzii",
+    all: "Toate",
+    sortBy: "Sortează după",
+    noReviews: "Nu există recenzii încă.",
 
     // Hero section
     heroHeading: "Promovați-vă brandul aici și acum",
@@ -534,5 +576,20 @@ export const translations: TranslationsType = {
   confirmPassword: "Confirmați parola nouă",
   updatePassword: "Actualizare parolă",
   updating: "Se actualizează...",
+
+    // Review page translations
+    'review.title': 'Adaugă o recenzie',
+    'review.username': 'Numele tău',
+    'review.usernamePlaceholder': 'Introduceți numele dvs.',
+    'review.autofilled': 'completat automat din contul dvs.',
+    'review.score': 'Scor',
+    'review.description': 'Descriere',
+    'review.descriptionPlaceholder': 'Scrieți recenzia aici',
+    'review.submit': 'Trimite recenzia',
+    'review.reset': 'Resetează',
+    'review.saving': 'Se salvează...',
+    'review.success': 'Recenzia a fost adăugată cu succes',
+    'review.fail': 'Nu s-a putut adăuga recenzia',
+    'review.errors.required': 'Vă rugăm să completați toate câmpurile',
   },
 };

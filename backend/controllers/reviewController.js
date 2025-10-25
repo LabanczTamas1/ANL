@@ -39,29 +39,30 @@ const getReviews = async (req, res) => {
   try {
     const { score, random } = req.query;
 
-    if (!score) {
-      return res.status(400).json({ error: "Score query parameter is required" });
-    }
-
-    const reviewIds = await redisClient.sMembers(`reviews:score:${score}`);
-    if (!reviewIds || reviewIds.length === 0) {
-      return res.json({ reviews: [] });
-    }
-
-    const reviews = [];
-    for (const id of reviewIds) {
-      const data = await redisClient.hGetAll(`review:${id}`);
-      if (Object.keys(data).length > 0) {
-        reviews.push(data);
+    let reviews = [];
+    if (score) {
+      // Fetch by score
+      const reviewIds = await redisClient.sMembers(`reviews:score:${score}`);
+      for (const id of reviewIds) {
+        const data = await redisClient.hGetAll(`review:${id}`);
+        if (Object.keys(data).length > 0) {
+          reviews.push(data);
+        }
+      }
+    } else {
+      // Fetch all reviews
+      const keys = await redisClient.keys('review:*');
+      for (const key of keys) {
+        const data = await redisClient.hGetAll(key);
+        if (Object.keys(data).length > 0) {
+          reviews.push(data);
+        }
       }
     }
-
-    let result = reviews;
     if (random === "true") {
-      result = reviews.sort(() => Math.random() - 0.5);
+      reviews = reviews.sort(() => Math.random() - 0.5);
     }
-
-    res.json({ reviews: result });
+    res.json({ reviews });
   } catch (error) {
     console.error("[REVIEWS] Fetch reviews error:", error);
     res.status(500).json({ error: "Failed to fetch reviews" });

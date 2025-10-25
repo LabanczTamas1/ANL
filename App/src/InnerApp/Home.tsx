@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Star, BookOpen } from "lucide-react";
 import { useLanguage } from '../hooks/useLanguage';
 import MeetingsDashboard from "./components/MeetingsDashboard";
+import ReviewCarousel from "./ReviewCarousel";
 
 const Home = () => {
   const { t } = useLanguage();
@@ -116,7 +117,8 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Features Grid - Now more squared and with hover effects */}
+        <ReviewCarousel score={5} intervalMs={5000} />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {features.map((feature) => (
             <div

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { FaEnvelope } from 'react-icons/fa';
 import RecipientInput from "./components/RecipientInput";
 import LinkModal from "./components/LinkModal";
 import { useSendMail, User } from "../hooks/useSendMail";
@@ -25,9 +26,7 @@ const SendMail: React.FC = () => {
     <div className="bg-white p-6 rounded-md shadow-md">
       {/* Header */}
       <div className="flex flex-row items-center mb-6">
-        <svg className="mt-2" width="33" height="33" viewBox="0 0 33 33" fill="none">
-          {/* SVG PATH */}
-        </svg>
+        <FaEnvelope className="mb-1" size={33} />
         <h2 className="font-bold text-4xl pl-2">Send Mail</h2>
       </div>
 

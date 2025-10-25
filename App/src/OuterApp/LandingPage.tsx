@@ -1,82 +1,113 @@
-import React from "react";
+import React, { Suspense } from "react";
+import { Helmet } from "react-helmet-async";
+
+// Components
 import Navbar from "./Navbar";
-import stars from "/public/LandingPage.svg";
 import HeroSection from "./HeroSection";
 import Footer from "./Footer";
 import PersonCard from "./PersonCard";
 import ScrollingCarousel from "../ScrollingCarousel";
 import Timeline from "./Timeline";
-import { Helmet } from "react-helmet-async";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
-import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
-import AmoebaShape from "./components/MovingAnimation";
 import ANLShape from "./components/MovingAnimation";
+import { useLanguage } from "../hooks/useLanguage";
+import stars from "/LandingPage.svg";
 
 const LandingPage = () => {
   const { t } = useLanguage();
+
   return (
-    <div className="bg-[#080A0D] relative">
+    <div className="relative bg-[#080A0D] overflow-hidden">
       <Helmet>
         <title>ANL | Watch Your Growth</title>
         <meta
           name="description"
-          content="This is a custom description for this page."
+          content="ANL helps you visualize growth with data-driven insights and personalized analytics."
         />
+        <meta property="og:title" content="ANL | Watch Your Growth" />
+        <meta
+          property="og:description"
+          content="Discover your potential with ANL — growth analytics for modern teams."
+        />
+        <meta property="og:image" content="/preview.jpg" />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://yourdomain.com/" />
       </Helmet>
 
-      {/* Background SVG */}
+      {/* Background */}
       <div
-        className="absolute h-[112vh] inset-0 bg-no-repeat bg-cover bg-center z-0"
+        className="absolute inset-0 h-[112vh] bg-no-repeat bg-cover bg-center opacity-90 -z-10"
         style={{
           backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(8, 10, 13, 1) 100%), url(${stars})`,
-          opacity: 1,
         }}
+        role="presentation"
+        aria-hidden="true"
       ></div>
 
-      {/* Navbar */}
-      <Navbar />
+      <header>
+        <Navbar />
+      </header>
+      <main>
+        <HeroSection />
 
-      {/* Hero Section */}
-      <HeroSection />
+        {/* Founders Section */}
+        <section
+          id="founders"
+          aria-labelledby="founders-title"
+          className="pt-20 bg-gradient-to-b from-[#080A0D] via-[#65558F] to-black"
+        >
+          <h2
+            id="founders-title"
+            className="text-white text-center font-bold text-3xl md:text-4xl pb-8"
+          >
+            {t("Founders") || "Founders"}
+          </h2>
 
-      <h2 className="text-white text-center font-bold text-[2em] bg-[#080A0D] pt-16 pb-4">
-        Founders
-      </h2>
-      <section className="flex md:flex-row gap-50 md:justify-around flex-col items-center justify-center pt-[100px] bg-gradient-to-b from-[#080A0D] to-black via-[#65558F]">
-        <PersonCard
-          imageUrl="/public/Picture1.png"
-          name="Koszta Zsolt"
-          position="Co-Founder"
-          description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"
-        />
-        <PersonCard
-          imageUrl="/public/Picture1.png"
-          name="Koszta Zsolt"
-          position="Co-Founder"
-          description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"
-        />
-      </section>
-      <section>
-        <ScrollingCarousel />
-      </section>
-      <section className="">
-        <Timeline />
-      </section>
-      <section className="relative bg-black overflow-hidden w-full h-screen">
-        <Starfield />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <ANLShape size="2xl" />
-        </div>
-      </section>
+          <div className="flex flex-col md:flex-row gap-10 md:gap-20 justify-center items-center px-6 pb-24">
+            <PersonCard
+              imageUrl="/John_Doe.png"
+              name="Test Elek"
+              position="Founder"
+              description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text since the 1500s."
+            />
+            <PersonCard
+              imageUrl="/John_Doe.png"
+              name="Doe John"
+              position="Co-Founder"
+              description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text since the 1500s."
+            />
+          </div>
+        </section>
 
-      {/* <section className="bg-black w-full h-screen overflow-hidden">
-        <AmoebaShape />
-      </section> */}
-      <section className="h-[0vh]"></section>
+        {/* Scrolling Carousel */}
+        <Suspense fallback={<div className="text-center text-white py-20">Loading carousel...</div>}>
+          <section aria-label="Scrolling showcase">
+            <ScrollingCarousel />
+          </section>
+        </Suspense>
 
+        {/* Timeline */}
+        <section aria-label="Company Timeline" className="bg-[#080A0D] py-16">
+          <Timeline />
+        </section>
+
+        {/* Animated Section */}
+        <section
+          className="relative bg-black w-full h-screen overflow-hidden flex items-center justify-center"
+          aria-label="Animated ANL logo"
+        >
+          <Starfield />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ANLShape size="2xl" />
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
       <Footer darkMode={true} />
-      {/* Cookie Consent Banner */}
+
+      {/* Cookie Consent */}
       <CookieConsentBanner />
     </div>
   );

@@ -46,6 +46,8 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
+import Review from "./InnerApp/Review";
+import ReviewsPage from "./InnerApp/ReviewsPage"; // Importing the new ReviewsPage component
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -114,9 +116,12 @@ const router = createBrowserRouter([
       { path: "privacy-policy", element: <PrivacyPolicy /> },
       { path: "terms-and-conditions", element: <TermsAndConditions /> },
       { path: "cookie-policy", element: <CookiePolicy /> },
+      {
+        path: "reviews",
+        element: <ReviewsPage />,
+      },
     ],
   },
-
   {
     path: "/home",
     element: <Layout />,
@@ -164,7 +169,7 @@ const router = createBrowserRouter([
           </AdminRoute>
         ),
       },
-      // Protected statistics route (assuming this is also admin-only)
+      // Protected statistics route
       {
         path: "statistics",
         element: (
@@ -176,6 +181,10 @@ const router = createBrowserRouter([
       {
         path: "language-selection",
         element: <LanguageSwitcherPage />,
+      },
+      {
+        path: "add-review",
+        element: <Review />,
       },
       {
         path: "privacy-policy",

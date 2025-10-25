@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarAlt, FaPaperPlane, FaChartLine, FaColumns, FaUsers, FaUserCog } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import lightLogo from "/public/light-logo.png";
@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from './../hooks/useLanguage';
 import { useNotification } from './../contexts/NotificationContext';
 import NotificationBadge from './components/NotificationBadge';
+import { FaCommentDots } from 'react-icons/fa';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Sidebar: React.FC = () => {
         <div className="flex flex-col gap-3">
           <Link to="/home/progress-tracker">
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-              <FaInbox className="text-lg" />
+              <FaChartLine className="text-lg" />
               <span>{t('sidebar.progressTracker')}</span>
             </div>
           </Link>
@@ -55,7 +56,7 @@ const Sidebar: React.FC = () => {
           : ""}
           <Link to='/home/booking'>
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-              <FaEnvelope className="text-lg" />
+                <FaCalendarAlt className="text-lg" />
               <span>{t('sidebar.bookMeeting')}</span>
             </div>
           </Link>
@@ -81,9 +82,8 @@ const Sidebar: React.FC = () => {
           </Link>
            <Link to="/home/mail/last-outgoing">
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg relative">
-              <FaInbox className="text-lg" />
+              <FaPaperPlane className="text-lg" />
               <span>{t('sidebar.sent')}</span>
-              
             </div>
           </Link>
         </div>
@@ -102,7 +102,7 @@ const Sidebar: React.FC = () => {
           {(role === "admin" || role === "owner") ?
             <Link to="user-management">
               <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
+                <FaUsers className="text-lg" />
                 <span>{t('sidebar.userManagement')}</span>
               </div>
             </Link>
@@ -118,7 +118,7 @@ const Sidebar: React.FC = () => {
           {(role === "admin" || role === "owner") ?
             <Link to="/home/kanban">
               <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
+                <FaColumns className="text-lg" />
                 <span>{t('sidebar.kanban')}</span>
               </div>
             </Link>
@@ -126,7 +126,7 @@ const Sidebar: React.FC = () => {
           {role === "admin" ?
             <Link to="/home/adminpage">
               <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
+                <FaUserCog className="text-lg" />
                 <span>{t('sidebar.adminPage')}</span>
               </div>
             </Link>
@@ -146,6 +146,12 @@ const Sidebar: React.FC = () => {
             <GiSettingsKnobs className="text-lg" />
             <span>{t('sidebar.addReview')}</span>
           </div>
+          <Link to="/home/add-review">
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+              <FaCommentDots className="text-lg" />
+              <span>{t('sidebar.addReview')}</span>
+            </div>
+          </Link>
         </div>
       </div>
 

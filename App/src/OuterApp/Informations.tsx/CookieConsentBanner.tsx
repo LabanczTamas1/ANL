@@ -19,10 +19,8 @@ const CookieConsentBanner = () => {
   });
   
   useEffect(() => {
-    // Check if user has already given consent
     const consentGiven = localStorage.getItem('cookieConsent');
     
-    // If no consent record found, show the banner
     if (!consentGiven) {
       setVisible(true);
     }
@@ -74,7 +72,7 @@ const CookieConsentBanner = () => {
               <p className="text-sm text-gray-600">
                 We use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
                 By clicking "Accept All", you consent to our use of cookies as described in our 
-                <Link to="/information/cookie-policy" className="text-blue-600 hover:underline ml-1">Cookie Policy</Link>.
+                <Link to="/information/cookie-policy" className="text-blue-600 hover:underline ml-1" aria-label="Read more about our Cookie Policy">Cookie Policy</Link>.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">

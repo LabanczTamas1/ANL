@@ -91,7 +91,9 @@ const Navbar: React.FC = () => {
     <div
       className={`relative sticky top-0 z-50 transition-all duration-300
       p-5 md:p-0 xl:p-10
-      ${isScrolled ? "!p-0 bg-[#080A0D] lg:pb-0 lg:pt-0 lg:mt-0 m-0 !px-4" : ""}`}
+      ${
+        isScrolled ? "!p-0 bg-[#080A0D] lg:pb-0 lg:pt-0 lg:mt-0 m-0 !px-4" : ""
+      }`}
     >
       {/* Desktop Navbar >1400px */}
       <div
@@ -290,7 +292,11 @@ const Navbar: React.FC = () => {
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              role="img"
+              aria-labelledby="menuIconTitle"
+              focusable="false"
             >
+              <title id="menuIconTitle">Open main menu</title>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
