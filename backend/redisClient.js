@@ -1,29 +1,45 @@
 const redis = require('redis');
 require('dotenv').config();
 
-// Create a Redis client instance
 const redisClient = redis.createClient({
-   url: process.env.REDIS_URL,
+  url: process.env.REDIS_URL,
+  socket: {
+    connectTimeout: 20000,
+    reconnectStrategy: (retries) => {
+      console.log(`🔄 Redis reconnect attempt #${retries}`);
+      return Math.min(retries * 100, 3000);
+    }
+  }
 });
 
-// Handle Redis connection events
+// EVENTS
 redisClient.on('connect', () => {
   console.log('Connected to Redis');
 });
 
-// Handle Redis error events
+redisClient.on('ready', () => {
+  console.log('Redis is ready to use');
+});
+
 redisClient.on('error', (err) => {
   console.error('Redis error:', err);
 });
 
-// Handle Redis client end events (when the client disconnects)
 redisClient.on('end', () => {
-  console.log('Redis client has ended.');
+  console.log('Redis connection closed');
 });
 
-// Ensure that Redis client is connected before using it
-redisClient.connect().catch((err) => {
-  console.error('Failed to connect to Redis:', err);
+redisClient.on('reconnecting', () => {
+  console.log('Redis reconnecting...');
 });
+
+// CONNECT
+(async () => {
+  try {
+    await redisClient.connect();
+  } catch (err) {
+    console.error('Failed to connect to Redis:', err);
+  }
+})();
 
 module.exports = redisClient;

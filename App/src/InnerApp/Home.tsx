@@ -3,11 +3,18 @@ import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Star, Bo
 import { useLanguage } from '../hooks/useLanguage';
 import MeetingsDashboard from "./components/MeetingsDashboard";
 import ReviewCarousel from "./ReviewCarousel";
+import FlashMessage from "../FlashMessage";
 
 const Home = () => {
   const { t } = useLanguage();
   const [greeting, setGreeting] = useState(t('welcomeInner'));
   const [isLoading, setIsLoading] = useState(true);
+  const [flash, setFlash] = useState<{
+    message: string;
+    type: "success" | "error" | "info" | "warning";
+    duration: number;
+  } | null>(null);
+  const [flashTrigger, setFlashTrigger] = useState(0);
 
   useEffect(() => {
     // Update the greetings array to use translations
@@ -29,7 +36,7 @@ const Home = () => {
     }
 
     return () => clearInterval(interval);
-  }, [t]); // Add t as a dependency to update greetings when language changes
+  }, [t]);
 
   const features = [
     { 
@@ -98,7 +105,53 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
-
+        {/* FlashMessage test buttons */}
+        <div className="flex gap-4 mb-8 justify-center">
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded"
+            onClick={() => {
+              setFlash({ message: "Success! Everything worked.", type: "success", duration: 3000 });
+              setFlashTrigger(flashTrigger => flashTrigger + 1);
+            }}
+          >
+            Show Success
+          </button>
+          <button
+            className="bg-red-500 text-white px-4 py-2 rounded"
+            onClick={() => {
+              setFlash({ message: "Error! Something went wrong.", type: "error", duration: 3000 });
+              setFlashTrigger(flashTrigger => flashTrigger + 1);
+            }}
+          >
+            Show Error
+          </button>
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={() => {
+              setFlash({ message: "Info! Here is some information.", type: "info", duration: 3000 });
+              setFlashTrigger(flashTrigger => flashTrigger + 1);
+            }}
+          >
+            Show Info
+          </button>
+          <button
+            className="bg-yellow-500 text-white px-4 py-2 rounded"
+            onClick={() => {
+              setFlash({ message: "Warning! Please be careful.", type: "warning", duration: 3000 });
+              setFlashTrigger(flashTrigger => flashTrigger + 1);
+            }}
+          >
+            Show Warning
+          </button>
+        </div>
+        {flash && (
+          <FlashMessage
+            message={flash.message}
+            type={flash.type}
+            duration={flash.duration}
+            trigger={flashTrigger}
+          />
+        )}
         {/* Hero Section */}
         <div className="text-center mb-12 mt-8">
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">

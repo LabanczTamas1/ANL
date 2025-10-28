@@ -13,3 +13,60 @@ body{
 #child-paddings > *{
     padding-top: 1em;
 }
+
+@keyframes slideDownToast {
+  0% {
+    transform: translateY(-100%) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes slideUpToast {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px) scale(0.98);
+    opacity: 0;
+  }
+}
+@keyframes slideUpDesktop {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(60px) scale(0.98);
+    opacity: 0;
+  }
+}
+@keyframes slideDownDesktop {
+  0% {
+    transform: translateY(60px) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slideDownToast {
+  animation: slideDownToast 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.animate-slideDownToastMobile {
+  animation: slideDownToast 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.animate-slideUpToastMobile {
+  animation: slideUpToast 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+.animate-slideUpDesktop {
+  animation: slideDownDesktop 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.animate-slideDownDesktop {
+  animation: slideUpDesktop 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+}
