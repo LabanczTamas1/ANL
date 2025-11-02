@@ -95,9 +95,6 @@ const Home = () => {
   }
 
   const handleFeatureClick = (link: string) => {
-    console.log(`Navigating to: ${link}`);
-    // In a real implementation, you would use router navigation here
-    // e.g., router.push(link) or navigate(link)
   };
 
   const purpleColor = "#65558F";
