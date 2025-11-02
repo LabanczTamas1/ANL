@@ -113,18 +113,29 @@ const Booking = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        setError(errorData.error || "Failed to fetch availability.");
+        setFlashMessage({
+          message: errorData.error || "Failed to fetch availability.",
+          type: "error",
+        });
         throw new Error(errorData.error || "Failed to fetch availability.");
       }
 
       const data = await response.json();
       setAddableTimes(data.availableTimes || []);
-      setSuccess(data.message || "Availability fetched successfully!");
-      if (data.message !== undefined) {
+      setSuccess(data.message || `Availability ${formattedDate} successfully!`);
+      if(data.availableTimes.length === 0) {
         setFlashMessage({
-          message: data.message || "Availability fetched successfully!",
+          message: `No available times for ${formattedDate}.`,
           type: "warning",
         });
       }
+      else{
+      setFlashMessage({
+        message: data.message || `Availability ${formattedDate} successfully!`,
+        type: data.message !== undefined ? "warning" : "success",
+      });
+    }
     } catch (err: unknown) {
       if (err instanceof Error) {
         const errorMsg =
@@ -163,6 +174,7 @@ const Booking = () => {
         message: "Please select at least one time slot before submitting.",
         type: "error",
       });
+      setError("Please select at least one time slot before submitting.");
       return;
     }
 
@@ -173,6 +185,10 @@ const Booking = () => {
 
       const token = localStorage.getItem("authToken");
       if (!token) {
+        setFlashMessage({
+          message: "Authentication token is missing.",
+          type: "error",
+        });
         throw new Error("Authentication token is missing.");
       }
 
@@ -216,6 +232,10 @@ const Booking = () => {
             "pendingBooking",
             JSON.stringify(bookingDetails)
           );
+          setFlashMessage({
+            message: "Authentication required. Redirecting...",
+            type: "warning",
+          });
           window.location.href = errorData.authUrl;
           return;
         }
@@ -223,6 +243,11 @@ const Booking = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        setError(errorData.error || "Failed to save availability.");
+        setFlashMessage({
+          message: errorData.error || "Failed to save availability.",
+          type: "error",
+        });
         throw new Error(errorData.error || "Failed to save availability.");
       }
 
