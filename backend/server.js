@@ -41,16 +41,19 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true); // Allow the request
+    // 👇 Always allow all origins (for development)
+    if (true) {
+      callback(null, true);
+    } else if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
       console.log("Blocked by CORS:", origin);
-      callback(new Error("Not allowed by CORS")); // Block other origins
+      callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // Allow cookies to be sent across domains
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
