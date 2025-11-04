@@ -595,7 +595,6 @@ app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
     console.log("[AUTH] Login attempt for:", email);
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ error: "Email/Username and password are required" });
     }
@@ -609,46 +608,40 @@ app.post("/auth/login", async (req, res) => {
     }
 
     const usernameKeys = await redisClient.keys("user:username:*");
-    
     if (usernameKeys.length === 0) {
       return res.status(404).json({ message: "No usernames found." });
     }
-    
+
     const userList = [];
     for (const key of usernameKeys) {
-      const username = key.split(":")[2]; // Extract the username from the key string
-      const userId = await redisClient.get(key);
-      userList.push({ username, userId });
+      const username = key.split(":")[2];
+      const id = await redisClient.get(key); // 👈 renamed
+      userList.push({ username, userId: id });
     }
-    
-    console.log("All usernames and user IDs:", userList);
-    console.log(await redisClient.get(`user:username`));
 
-     console.log(userId, '\n');
+    console.log("All usernames and user IDs:", userList);
+    console.log(userId, "\n");
 
     if (!userId) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Get user data
     const userData = await redisClient.hGetAll(`user:${userId}`);
-    if (!userData) {
+    if (!userData || Object.keys(userData).length === 0) {
       return res.status(404).json({ error: "User data not found" });
     }
 
-    // Verify password
     const passwordValid = await bcrypt.compare(password, userData.password);
     if (!passwordValid) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       {
         id: userId,
         email: userData.email,
         role: userData.role || "user",
-        username: userData.name
+        username: userData.name,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -656,9 +649,7 @@ app.post("/auth/login", async (req, res) => {
 
     console.log(`[AUTH] User authenticated: ${userId}, email: ${userData.email}`);
 
-    // --- FIX START ---
-    // Respond with the token, userId, and user data
-    res.json({
+    return res.json({
       token,
       userId,
       user: {
@@ -667,9 +658,8 @@ app.post("/auth/login", async (req, res) => {
         name: userData.name,
         role: userData.role,
         verified: userData.verified,
-      }
+      },
     });
-    // --- FIX END ---
 
   } catch (error) {
     console.error("[AUTH] Login error:", error);
