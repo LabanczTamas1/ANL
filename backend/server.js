@@ -2027,14 +2027,12 @@ async function processOldFormat(jsonData) {
 
 app.get("/api/export", async (req, res) => {
   try {
-    // Retrieve KanbanTable
     const kanbanTable = await redisClient.zRangeWithScores(
       "KanbanTable",
       0,
       -1
     );
 
-    // Prepare `lists` array
     const lists = [];
     for (const board of kanbanTable) {
       const boardId = board.value;
@@ -2046,7 +2044,6 @@ app.get("/api/export", async (req, res) => {
       });
     }
 
-    // Prepare `cards` array
     const cards = [];
     for (const board of kanbanTable) {
       const boardId = board.value;
@@ -2069,7 +2066,6 @@ app.get("/api/export", async (req, res) => {
       }
     }
 
-    // Reconstruct the original JSON structure
     const exportData = {
       lists,
       cards,
@@ -2077,7 +2073,6 @@ app.get("/api/export", async (req, res) => {
 
     console.log(exportData);
 
-    // Send the JSON data
     res.json(exportData);
   } catch (error) {
     console.error("Error exporting data:", error);
