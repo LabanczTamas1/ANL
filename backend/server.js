@@ -765,19 +765,10 @@ app.get("/admin/banned-ips", authenticateJWT, authorizeRoles("admin"), async (re
   }
 });
 
-
-// Assuming listAllUsersAdmin function is modified to return data directly as discussed earlier
-
 app.patch("/updateUserRole/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { role } = req.body; // New role to set (admin, user, owner)
+  const { role } = req.body;
 
-  // Step 1: Log the incoming request
-  console.log(
-    `Received role change request for user ID: ${userId}, New role: ${role}`
-  );
-
-  // Validate the role input
   if (!["admin", "user", "owner"].includes(role)) {
     return res
       .status(400)
@@ -785,7 +776,6 @@ app.patch("/updateUserRole/:userId", async (req, res) => {
   }
 
   try {
-    // Step 2: Check if the user exists in Redis
     const userKey = `user:${userId}`;
     const userData = await redisClient.hGetAll(userKey);
 
@@ -793,11 +783,9 @@ app.patch("/updateUserRole/:userId", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Step 3: Update the role in Redis
     await redisClient.hSet(userKey, "role", role);
     console.log(`User role updated to ${role} for user ID: ${userId}`);
 
-    // Step 4: Send success response
     res
       .status(200)
       .json({ 
@@ -810,13 +798,11 @@ app.patch("/updateUserRole/:userId", async (req, res) => {
         }
       });
   } catch (error) {
-    // General error handling
     console.error("Error changing user role:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Get user by username
 app.get("/user/:username", async (req, res) => {
   const { username } = req.params;
 
@@ -848,19 +834,14 @@ async function getAllUserEmails() {
       cursor = result.cursor;
       const keys = result.keys;
        
-      // Process each key to extract email
       for (const key of keys) {
         const email = key.split("user:email:")[1];
         if (email) {
           emails.push(email);
-          
-          // Get the username associated with this email
-          // Assuming there's a mapping between email and username in the database
+        
           const userKey = `user:email:${email}`;
           const userId = await redisClient.get(userKey);
           
-          // Now get the username from the hash using the userId
-          console.log(userId);
           const username = userId ? 
             await redisClient.hGet(`user:${userId}`, 'username') || '' : 
             'asd';
@@ -873,7 +854,6 @@ async function getAllUserEmails() {
       }
     } while (cursor !== 0);
      
-    // Return the emails with additional info about count
     return {
       count: emails.length,
       data: userDetails,
@@ -897,8 +877,6 @@ app.get(
         success: true,
         count: emailsResult.count,
         emails: emailsResult.data,
-        // The username is now dynamic based on the database structure
-        // No need for hardcoding "Jancsi"
       });
     } catch (err) {
       console.error("Failed to get emails:", err);
@@ -912,14 +890,13 @@ app.get(
 );
 
 app.put("/api/mark-as-read", authenticateJWT, async (req, res) => {
-  const { emailIds, username } = req.body; // Add username parameter
+  const { emailIds, username } = req.body;
 
   if (!emailIds || !Array.isArray(emailIds)) {
     return res.status(400).json({ error: "Valid emailIds array is required" });
   }
 
   try {
-    // Verify the JWT token to get the user info
     const token = req.headers["authorization"]?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
@@ -932,9 +909,8 @@ app.put("/api/mark-as-read", authenticateJWT, async (req, res) => {
       return res.status(401).json({ error: "Invalid token" });
     }
 
-    // Use the username from request body or decoded token
     const name = username || req.body.name || decoded.name;
-    const userNameCreated = `username:${name}`; // Match the same format used in inbox endpoint
+    const userNameCreated = `username:${name}`;
     
     console.log("Looking up user with key:", userNameCreated);
     const userId = await redisClient.get(userNameCreated);
@@ -943,10 +919,6 @@ app.put("/api/mark-as-read", authenticateJWT, async (req, res) => {
       return res.status(400).json({ error: "User not found" });
     }
     
-    console.log("Found user ID:", userId);
-    console.log("Marking emails as read:", emailIds);
-
-    // Mark each email as read
     for (const emailId of emailIds) {
       await redisClient.hSet(`MailDetails:${emailId}`, "isRead", "true");
     }
@@ -1027,13 +999,9 @@ app.post("/api/save-email", authenticateJWT, async (req, res) => {
     }
 
     const userName = `username:${name}`;
-    console.log("------------", userName);
     const userId = await redisClient.get(`user:${userName}`) || await redisClient.get(userName);
 
-    console.log("Here is the id:", userId);
-
     const userData = await redisClient.hGetAll(`user:${userId}`);
-    console.log("User Data: ", userData);
 
     const fromEmail = userData.email;
 
@@ -1047,16 +1015,15 @@ app.post("/api/save-email", authenticateJWT, async (req, res) => {
     const currentDate = new Date();
     const timestamp = currentDate.getTime();
 
-    // Save email data in Redis as a hash with isRead set to false by default
     await redisClient.hSet(emailDetails, {
-      fromId: userId, // Store userId as 'from'
+      fromId: userId,
       fromName: name,
       fromEmail: fromEmail,
       subject: subject,
-      recipient: recipientString, // Use the serialized string here
+      recipient: recipientString,
       body: bodyString,
       timeSended: timestamp, 
-      isRead: "false" // Add this flag for tracking read status
+      isRead: "false"
     });
 
     const inboxRankingName = `inbox:${userId}`;

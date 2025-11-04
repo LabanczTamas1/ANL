@@ -102,45 +102,6 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-8 px-4 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
-        {/* FlashMessage test buttons */}
-        <div className="flex gap-4 mb-8 justify-center">
-          <button
-            className="bg-green-500 text-white px-4 py-2 rounded"
-            onClick={() => {
-              setFlash({ message: "Success! Everything worked.", type: "success", duration: 3000 });
-              setFlashTrigger(flashTrigger => flashTrigger + 1);
-            }}
-          >
-            Show Success
-          </button>
-          <button
-            className="bg-red-500 text-white px-4 py-2 rounded"
-            onClick={() => {
-              setFlash({ message: "Error! Something went wrong.", type: "error", duration: 3000 });
-              setFlashTrigger(flashTrigger => flashTrigger + 1);
-            }}
-          >
-            Show Error
-          </button>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => {
-              setFlash({ message: "Info! Here is some information.", type: "info", duration: 3000 });
-              setFlashTrigger(flashTrigger => flashTrigger + 1);
-            }}
-          >
-            Show Info
-          </button>
-          <button
-            className="bg-yellow-500 text-white px-4 py-2 rounded"
-            onClick={() => {
-              setFlash({ message: "Warning! Please be careful.", type: "warning", duration: 3000 });
-              setFlashTrigger(flashTrigger => flashTrigger + 1);
-            }}
-          >
-            Show Warning
-          </button>
-        </div>
         {flash && (
           <FlashMessage
             message={flash.message}
