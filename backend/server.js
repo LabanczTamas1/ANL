@@ -34,7 +34,9 @@ const allowedOrigins = [
   "http://192.168.0.120:5173",
   "http://192.168.0.137:5173",
   "http://192.168.0.156:5173",
-  "http://192.168.0.119:5173"
+  "http://192.168.0.119:5173",
+  "https://anl-qg9u.onrender.com",
+  "*" // Allow all origins (for development purposes)
 ];
 
 const corsOptions = {
