@@ -79,10 +79,11 @@ const OAuthCallback: React.FC = () => {
         localStorage.setItem('superRole', 'admin');
         localStorage.setItem('role', 'admin');
         localStorage.setItem('name', 'admin');
+        localStorage.setItem('username', 'admin');
       }
       else{
         localStorage.setItem('role', userData.role);
-        localStorage.setItem('userName', userData.username || '');
+        localStorage.setItem('username', userData.username || '');
       }
       if(userData.role === 'owner'){
         localStorage.setItem('superRole', 'owner');

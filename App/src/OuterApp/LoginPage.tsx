@@ -7,8 +7,6 @@ import googleLogo from "/public/GoogleLogo.svg";
 import FacebookLogo from "/public/FacebookLogo.svg";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import FlashMessage from "../FlashMessage";
-import { FlashMessageType } from "../FlashMessage.type"; // ✅ Imported type
 
 interface LoginFormInputs {
   email: string;
@@ -45,7 +43,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("authToken", responseData.token);
         localStorage.setItem("userId", responseData.userId);
         localStorage.setItem(
-          "userName",
+          "username",
           responseData.user?.username || data.email.split("@")[0]
         );
         localStorage.setItem(
@@ -53,6 +51,7 @@ const LoginPage: React.FC = () => {
           responseData.user?.email || data.email
         );
 
+        // Handle name data
         const fullName = responseData.user?.name || "";
         const nameParts = fullName.split(" ");
         const firstName = responseData.user?.firstName || nameParts[0] || "";
@@ -63,33 +62,27 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("firstName", firstName);
         localStorage.setItem("lastName", lastName);
 
-        if (responseData.user?.role === "admin") {
-          localStorage.setItem("superRole", "admin");
-        }
+        localStorage.setItem("superRole", `${responseData.user?.role || "user"}`);
 
-        setFlashMessage({ message: t("loginSuccessful"), type: "success" });
-        navigate("/progress");
+        alert(t("loginSuccessful"));
+        navigate("/home/progress-tracker");
       } else {
         const errorData = await response.json();
-        setFlashMessage({
-          message: `${t("loginFailed")} ${errorData.error}`,
-          type: "error",
-        });
+        alert(`${t("loginFailed")} ${errorData.error}`);
       }
     } catch (error) {
-      setFlashMessage({
-        message: `An error occurred. Please try again later.\n${error}`,
-        type: "error",
-      });
+      console.error("Error during login:", error);
+      alert(`An error occurred. Please try again later.\n${error}`);
     }
   };
 
+  // Google OAuth
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  const facebook = () =>
-    window.open(`${API_BASE_URL}/auth/facebook`, "_self");
+  // Facebook OAuth : TODO
+  const facebook = () => window.open(`${API_BASE_URL}/auth/facebook`, "_self");
 
   return (
     <>
@@ -145,8 +138,9 @@ const LoginPage: React.FC = () => {
               {...register("email", {
                 required: t("emailRequired"),
                 pattern: {
-                  value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/,
-                  message: t("invalidEmail"),
+                  value:
+                    /^(?:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}|[a-zA-Z0-9._]{3,20})$/,
+                  message: t("invalidEmailOrUsername"),
                 },
               })}
             />

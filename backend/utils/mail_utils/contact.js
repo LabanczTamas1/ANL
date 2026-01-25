@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 
 // Initialize Redis client
 const redisClient = redis.createClient({
-  url: "redis://localhost:6380",
+   url: "redis://default:wmtQc7PXbdMhjwPGgw8MjpfLe2sZVwbv@redis-18638.c55.eu-central-1-1.ec2.redns.redis-cloud.com:18638",
 });
 
 // Connect to Redis

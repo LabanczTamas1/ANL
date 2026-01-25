@@ -1,12 +1,11 @@
 import React, { useState } from "react";
-import '@fortawesome/fontawesome-free/css/all.min.css';
-
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 interface AddMoneyModalProps {
   username: string;
   isOpen: boolean;
   onClose: () => void;
-  onAddMoney: (username: string, amount: number) => void;
+  onAddMoney: (amount: number) => void;
 }
 
 const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
@@ -16,68 +15,81 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
   onAddMoney,
 }) => {
   const [amount, setAmount] = useState<string>("");
-  const [currency, setCurrency] = useState("ron");
+  const [currency, setCurrency] = useState("RON");
   const [exchangeRate, setExchangeRate] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  /** ✅ Only allow valid numeric input, including optional '-' and '.' */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^-?\d*\.?\d*$/.test(value)) {
-      // Allow negative numbers and decimals
       setAmount(value);
+      setError(null);
     }
   };
 
+  /** ✅ Fetch exchange rate (RON → targetCurrency) */
   const fetchExchangeRate = async (targetCurrency: string) => {
-    if (targetCurrency === "ron") {
+    if (targetCurrency.toUpperCase() === "RON") {
       setExchangeRate(1);
       return;
     }
 
     try {
       const response = await fetch(
-        `https://api.exchangerate-api.com/v4/latest/RON`
+        "https://api.exchangerate-api.com/v4/latest/RON"
       );
       const data = await response.json();
-      const rate = data.rates[targetCurrency.toUpperCase()];
-      console.log(currency);
-      console.log(data);
-      console.log(rate);
-      setExchangeRate(rate || 1);
+      const rate = data.rates?.[targetCurrency.toUpperCase()] || 1;
+      console.log("Fetched rate:", targetCurrency, rate);
+      setExchangeRate(rate);
     } catch (error) {
       console.error("Error fetching exchange rate:", error);
+      setExchangeRate(1);
     }
   };
 
+  /** ✅ Update currency + fetch rate */
   const handleCurrencyChange = (currencyType: string) => {
-    console.log(currencyType);
-    setCurrency(currencyType);
-    fetchExchangeRate(currencyType);
+    setCurrency(currencyType.toUpperCase());
+    fetchExchangeRate(currencyType.toUpperCase());
   };
 
-  const convertSpends = (amount: number) => {
-    return Number(((amount * 1) / exchangeRate).toFixed(2));
+  const convertToRON = (amount: number): number => {
+    if (currency === "RON") return amount;
+    // Convert foreign currency → RON
+    return Number((amount / exchangeRate).toFixed(2));
   };
 
+  /** ✅ Handle form submission */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numericAmount = parseFloat(amount); // Use parseFloat for handling decimals
+
+    const cleanValue = amount.trim();
+    const numericAmount = parseFloat(cleanValue);
+
     console.log(
-      "amount added: ",
+      "amount added:",
       typeof numericAmount,
       numericAmount,
       typeof amount,
       amount
     );
 
-    // Ensure that the numeric amount is valid and greater than 0 or less than 0
-    if (!isNaN(numericAmount) && numericAmount !== 0) {
-      onAddMoney(username, convertSpends(numericAmount));
-      setAmount(""); // Reset input field after submission
-    } else {
-      console.error("Invalid amount");
+    if (isNaN(numericAmount) || numericAmount === 0) {
+      setError("Please enter a valid non-zero number.");
+      return;
     }
+
+    const ronAmount = convertToRON(numericAmount);
+    console.log(`Converted ${numericAmount} ${currency} → ${ronAmount} RON`);
+
+    // ✅ Pass clean numeric value up
+    onAddMoney(convertToRON(numericAmount));
+    setAmount("");
+    setError(null);
   };
 
   return (
@@ -92,9 +104,9 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
             >
               Amount{" "}
               <div className="relative group">
-              <i className="fas fa-info-circle text-md"></i>
-                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 md:w-[300px] w-[150px]">
-                If you put a '-' sign in front of the number, you can subtract from the total!
+                <i className="fas fa-info-circle text-md"></i>
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 md:w-[300px] w-[180px]">
+                  Add a '-' before the number to subtract from the total.
                 </div>
               </div>
             </label>
@@ -102,7 +114,6 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
               <input
                 type="text"
                 id="amount"
-                step="0.01"
                 placeholder="Enter amount"
                 value={amount}
                 onChange={handleChange}
@@ -119,7 +130,9 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
                 <option value="HUF">HUF</option>
               </select>
             </div>
+            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
           </div>
+
           <div className="flex justify-end">
             <button
               type="button"

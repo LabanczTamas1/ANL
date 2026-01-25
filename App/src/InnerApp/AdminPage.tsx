@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import FlashMessage from '../FlashMessage';
 import RequestStats from './admin/RequestStats';
-import AdminIPBan from './admin/AdminIPban';
+import AdminIPBan from './admin/AdminIPBan';
 
 // Updated interface to match the backend model
 interface User {
