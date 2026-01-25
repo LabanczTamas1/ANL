@@ -19,19 +19,22 @@ require("./passport");
 const nodemailer = require("nodemailer");
 //const redisClient = require('./redisClient');
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const { Environment } = require('./constants/enviroment');
+const reviewRoutes = require("./routes/reviewRoutes");
+const authenticateJWT = require("./middleware/authenticateJWT");
 
 const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://192.168.0.134:5174",
   "http://192.168.0.134:5173",
   "http://192.168.0.120:5173",
   "http://192.168.0.137:5173",
   "http://192.168.0.156:5173",
-  "http://192.168.0.119:5173",
-  "http://192.168.56.1:5173/",
-  "http://localhost:5173/",
+  "http://192.168.0.119:5173"
 ];
 
 const corsOptions = {
@@ -72,7 +75,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const redisClient = redis.createClient({
-  url: "redis://localhost:6380",
+  url: process.env.REDIS_URL,
 });
 
 // Redis Client event listeners
@@ -279,59 +282,45 @@ app.get(
   }
 );
 
-const authenticateJWT = (req, res, next) => {
-  console.log(
-    `[AUTH] Authenticating request: ${req.method} ${req.originalUrl}`
-  );
+// const authenticateJWT = async (req, res, next) => {
+//   console.log(`[AUTH] Authenticating request: ${req.method} ${req.originalUrl}`);
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    console.warn("[AUTH] Missing or invalid Authorization header");
-    return res.status(401).json({ error: "Access token required" });
-  }
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+//     console.warn("[AUTH] Missing or invalid Authorization header");
+//     return res.status(401).json({ error: "Access token required" });
+//   }
 
-  const token = authHeader.split(" ")[1];
+//   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.error("[AUTH] JWT verification failed:", err.message);
-      return res.status(403).json({ error: "Invalid or expired token" });
-    }
+//   try {
+//     const decoded = jwt.verify(token, JWT_SECRET);
+//     console.log("[AUTH] Decoded token:", decoded);
 
-    console.log("[AUTH] Decoded token:", decoded);
+//     const exists = await redisClient.exists(`user:${decoded.id}`);
+//     if (!exists) {
+//       console.error(`[AUTH] User not found for ID: ${decoded.id}`);
+//       return res.status(404).json({ error: "User not found" });
+//     }
 
-    redisClient
-      .exists(`user:${decoded.id}`)
-      .then((exists) => {
-        if (!exists) {
-          console.error(`[AUTH] User not found for ID: ${decoded.id}`);
-          return res.status(404).json({ error: "User not found" });
-        }
+//     const userData = await redisClient.hGetAll(`user:${decoded.id}`);
+//     if (!userData) {
+//       return res.status(404).json({ error: "User data not found" });
+//     }
 
-        return redisClient.hGetAll(`user:${decoded.id}`);
-      })
-      .then((userData) => {
-        if (!userData) {
-          return res.status(404).json({ error: "User data not found" });
-        }
+//     req.user = {
+//       id: decoded.id,
+//       ...userData,
+//       role: userData.role || decoded.role || "user",
+//     };
 
-        req.user = {
-          id: decoded.id,
-          ...userData,
-          role: userData.role || decoded.role || "user",
-        };
-
-        console.log(
-          `[AUTH] User authenticated: ${req.user.id}, role: ${req.user.role}`
-        );
-        next();
-      })
-      .catch((error) => {
-        console.error("[AUTH] Error checking user:", error);
-        return res.status(500).json({ error: "Authentication error" });
-      });
-  });
-};
+//     console.log(`[AUTH] User authenticated: ${req.user.id}, role: ${req.user.role}`);
+//     next();
+//   } catch (err) {
+//     console.error("[AUTH] JWT verification or Redis error:", err);
+//     return res.status(403).json({ error: "Invalid or expired token" });
+//   }
+// };
 
 const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
@@ -406,10 +395,12 @@ const transporter = nodemailer.createTransport({
 app.post("/auth/register", async (req, res) => {
   try {
     console.log("[AUTH] Processing registration request");
-    const { email, password, name } = req.body;
+    const { email, password, firstName, lastName, username } = req.body;
+
+    console.log("username:", username);
 
     // Validate input
-    if (!email || !password || !name) {
+    if (!email || !password || !firstName || !lastName || !username) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -421,41 +412,175 @@ app.post("/auth/register", async (req, res) => {
 
     // Generate a unique ID for the new user
     const userId = uuidv4();
-    
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Store user data in Redis
+
+    // Store user data in Redis with a flag "verified: false"
     await redisClient.hSet(`user:${userId}`, {
       id: userId,
       email,
-      name,
+      firstName,
+      lastName,
+      username,
       password: hashedPassword,
       role: "user",
-      createdAt: new Date().toISOString()
+      verified: "false",
+      createdAt: new Date().toISOString(),
     });
-    
+
     // Create email reference for lookup
     await redisClient.set(`user:email:${email}`, userId);
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        id: userId,
-        email,
-        role: "user"
+    await redisClient.set(`user:username:${username}`, userId);
+
+    // Generate a verification code (6 digits)
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+    // Store verification code in Redis (expire in 15 mins)
+    await redisClient.set(`verify:email:${email}`, verificationCode, {
+      EX: 15 * 60,
+    });
+
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
-      JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-    
-    console.log(`[AUTH] User registered: ${userId}, email: ${email}`);
-    
-    // Return token to client
-    res.status(201).json({ token, userId });
+    });
+
+    //Later change back the 'to' to email
+    const mailOptions = {
+      from: `"MyApp" <${process.env.SMTP_USER}>`,
+      to: process.env.APP_ENV === Environment.PRODUCTION ? email : 'deid.unideb@gmail.com',
+      subject: "Verify your email",
+      text: `Your verification code is: ${verificationCode}`,
+      html: `<p>Your verification code is: <strong>${verificationCode}</strong></p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log(`[AUTH] User registered (verification sent): ${userId}, email: ${email}`);
+
+    // Respond with success message
+    res.status(201).json({ message: "Registration successful. Please check your email for the verification code.", userId });
   } catch (error) {
     console.error("[AUTH] Registration error:", error);
     res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+app.post("/auth/verify-email", async (req, res) => {
+  try {
+    console.log("[AUTH] Processing email verification request");
+    const { email, code } = req.body;
+
+    // Validate input
+    if (!email || !code) {
+      return res.status(400).json({ error: "Email and code are required" });
+    }
+
+    // Retrieve the verification code from Redis
+    const storedCode = await redisClient.get(`verify:email:${email}`);
+
+    if (!storedCode) {
+      return res.status(400).json({ error: "Verification code expired or not found" });
+    }
+
+    // Check if the codes match
+    if (storedCode !== code) {
+      return res.status(400).json({ error: "Invalid verification code" });
+    }
+
+    // Get the user ID from the email reference
+    const userId = await redisClient.get(`user:email:${email}`);
+    if (!userId) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update user as verified
+    await redisClient.hSet(`user:${userId}`, {
+      verified: "true",
+      verifiedAt: new Date().toISOString(),
+    });
+
+    // Delete the verification code from Redis since it's used
+    await redisClient.del(`verify:email:${email}`);
+
+    console.log(`[AUTH] Email verified for user: ${userId}, email: ${email}`);
+
+    res.status(200).json({ message: "Email successfully verified", userId });
+  } catch (error) {
+    console.error("[AUTH] Email verification error:", error);
+    res.status(500).json({ error: "Email verification failed" });
+  }
+});
+
+app.post("/auth/resend-verification", async (req, res) => {
+  try {
+    console.log("[AUTH] Processing resend verification request");
+    const { email } = req.body;
+
+    // Validate input
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Get user ID from email
+    const userId = await redisClient.get(`user:email:${email}`);
+    if (!userId) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get user data
+    const user = await redisClient.hGetAll(`user:${userId}`);
+    if (!user) {
+      return res.status(404).json({ error: "User data not found" });
+    }
+
+    // Check if user is already verified
+    if (user.verified === "true") {
+      return res.status(400).json({ error: "User already verified" });
+    }
+
+    // Generate a new verification code (6 digits)
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+    // Store verification code in Redis (expire in 15 mins)
+    await redisClient.set(`verify:email:${email}`, verificationCode, {
+      EX: 15 * 60,
+    });
+
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"MyApp" <${process.env.SMTP_USER}>`,
+      to: email, // Send to user's email
+      subject: "Verify your email",
+      text: `Your new verification code is: ${verificationCode}`,
+      html: `<p>Your new verification code is: <strong>${verificationCode}</strong></p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    console.log(`[AUTH] Verification code resent for user: ${userId}, email: ${email}`);
+
+    res.status(200).json({ message: "Verification code resent. Please check your email." });
+  } catch (error) {
+    console.error("[AUTH] Resend verification error:", error);
+    res.status(500).json({ error: "Failed to resend verification code" });
   }
 });
 
@@ -463,44 +588,84 @@ app.post("/auth/login", async (req, res) => {
   try {
     console.log("[AUTH] Processing login request");
     const { email, password } = req.body;
-    
+    console.log("[AUTH] Login attempt for:", email);
+
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return res.status(400).json({ error: "Email/Username and password are required" });
+    }
+
+    let userId;
+
+    if (email.includes('@')) {
+      userId = await redisClient.get(`user:email:${email}`);
+    } else {
+      userId = await redisClient.get(`user:username:${email}`);
+    }
+
+    const usernameKeys = await redisClient.keys("user:username:*");
+    
+    if (usernameKeys.length === 0) {
+      return res.status(404).json({ message: "No usernames found." });
     }
     
-    // Check if user exists by email
-    const userId = await redisClient.get(`user:email:${email}`);
+    const userList = [];
+    for (const key of usernameKeys) {
+      const username = key.split(":")[2]; // Extract the username from the key string
+      const userId = await redisClient.get(key);
+      userList.push({ username, userId });
+    }
+    
+    console.log("All usernames and user IDs:", userList);
+    console.log(await redisClient.get(`user:username`));
+
+     console.log(userId, '\n');
+
     if (!userId) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    
+
     // Get user data
     const userData = await redisClient.hGetAll(`user:${userId}`);
     if (!userData) {
       return res.status(404).json({ error: "User data not found" });
     }
-    
+
     // Verify password
     const passwordValid = await bcrypt.compare(password, userData.password);
     if (!passwordValid) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    
+
     // Generate JWT token
     const token = jwt.sign(
       {
         id: userId,
         email: userData.email,
-        role: userData.role || "user"
+        role: userData.role || "user",
+        username: userData.name
       },
       JWT_SECRET,
       { expiresIn: "24h" }
     );
-    
-    console.log(`[AUTH] User authenticated: ${userId}, email: ${email}`);
-    
-    res.json({ token, userId });
+
+    console.log(`[AUTH] User authenticated: ${userId}, email: ${userData.email}`);
+
+    // --- FIX START ---
+    // Respond with the token, userId, and user data
+    res.json({
+      token,
+      userId,
+      user: {
+        id: userId,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        verified: userData.verified,
+      }
+    });
+    // --- FIX END ---
+
   } catch (error) {
     console.error("[AUTH] Login error:", error);
     res.status(500).json({ error: "Login failed" });
@@ -794,13 +959,13 @@ app.put("/api/mark-as-read", authenticateJWT, async (req, res) => {
 });
 
 // Endpoint to get unread email count
-app.get("/inbox/:username/unread-count", authenticateJWT, async (req, res) => {
-  const { username } = req.params;
+app.get("/inbox/unread-count", authenticateJWT, async (req, res) => {
+  const { username } = req.query;
   console.log("Fetching unread count for username:", username);
-  const userNameCreated = `username:${username}`;
+  const userNameCreated = `user:username:${username}`;
 
   try {
-    const userId = await redisClient.get(userNameCreated);
+    const userId = await redisClient.get(userNameCreated) || await redisClient.get(`username:${username}`);
     if (!userId) {
       return res.status(404).json({ error: "User not found" });
     }
@@ -863,7 +1028,7 @@ app.post("/api/save-email", authenticateJWT, async (req, res) => {
 
     const userName = `username:${name}`;
     console.log("------------", userName);
-    const userId = await redisClient.get(userName);
+    const userId = await redisClient.get(`user:${userName}`) || await redisClient.get(userName);
 
     console.log("Here is the id:", userId);
 
@@ -1021,7 +1186,7 @@ app.get("/sentmails/:username", async (req, res) => {
     const userId = await redisClient.get(userNameCreated);
     console.log("User ID:", userId);
 
-    const mails = await redisClient.zRange(`SentMail:${userId}`, 0, 1);
+    const mails = await redisClient.zRange(`SentMail:${userId}`, 0, -1);
     console.log("Your mails:", mails);
 
     // Fetch details for each mail ID
@@ -3067,9 +3232,9 @@ app.get(
 
 function utcToMinutes(gmtString) {
   const match = gmtString.match(/UTC([+-])(\d+)/);
-  if (!match) return null; // Return null if the format is incorrect
+  if (!match) return null;
 
-  const sign = match[1] === "+" ? -1 : 1; // Positive offsets are negative in minutes
+  const sign = match[1] === "+" ? -1 : 1;
   const hours = parseInt(match[2], 10);
 
   return sign * hours * 60;
@@ -3117,43 +3282,48 @@ app.patch(
 app.get("/api/allUsersProgress", authenticateJWT, async (req, res) => {
   try {
     console.log("[API] Processing all users progress request");
-    
-    // Get all user keys from Redis that match the pattern
+
     const userKeys = await redisClient.keys("user:*");
-    
-    // Filter out email reference keys
     const userDataKeys = userKeys.filter(key => !key.startsWith("user:email:"));
-    console.log("Keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee--------------------ys", userKeys);
-    console.log("Keeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee--------------------ys", userDataKeys);
+
+    console.log("Found keys:", userKeys);
+    console.log("Filtered user data keys:", userDataKeys);
+
     const allUserData = await Promise.all(
       userDataKeys.map(async (userKey) => {
-        // Get user data from Redis
-        console.log("-->Key: ", userKey);
-        const userData = await redisClient.hGetAll(userKey);
-        console.log("--?Data: ", userData);
-        
-        // Only include users with "user" role
-        if (userData.role === "user") {
-          return {
-            id: userData.id,
-            name: userData.name || userData.firstName + " " + userData.lastName || "",
-            company: userData.company || "",
-            step: parseInt(userData.progress || "1", 10),
-            status: userData.status || "new",
-            spends: parseFloat(parseFloat(userData.spends || 0).toFixed(2)),
-          };
+        try {
+          const keyType = await redisClient.type(userKey);
+          if (keyType !== "hash") {
+            console.warn(`[API] Skipping non-hash key: ${userKey} (type: ${keyType})`);
+            return null;
+          }
+
+          const userData = await redisClient.hGetAll(userKey);
+          console.log(`--> Key: ${userKey}, Data:`, userData);
+
+          if (userData.role === "user") {
+            return {
+              id: userData.id,
+              name: userData.name || `${userData.firstName || ""} ${userData.lastName || ""}`.trim(),
+              company: userData.company || "",
+              step: parseInt(userData.step || "0", 10),
+              progress: parseInt(userData.progress || "0", 10),
+              status: userData.status || "new",
+              spends: parseFloat(parseFloat(userData.spends || 0).toFixed(2)),
+            };
+          }
+
+          return null;
+        } catch (err) {
+          console.error(`[API] Error processing key ${userKey}:`, err.message);
+          return null;
         }
-        
-        return null;
       })
     );
-    
-    // Filter out null values
-    console.log(allUserData);
+
     const filteredUserData = allUserData.filter(user => user !== null);
-    
     console.log(`[API] Retrieved progress data for ${filteredUserData.length} users`);
-    
+
     res.status(200).json({ allUserData: filteredUserData });
   } catch (error) {
     console.error("[API] Error fetching all user progress:", error);
@@ -3163,6 +3333,7 @@ app.get("/api/allUsersProgress", authenticateJWT, async (req, res) => {
     });
   }
 });
+
 
 app.get("/api/userData/:userId", authenticateJWT, async (req, res) => {
   try {
@@ -3185,54 +3356,69 @@ app.patch("/api/modifyUserData", authenticateJWT, async (req, res) => {
   try {
     const user = req.body;
     console.log("User to modify:", user);
-    
-    // Ensure we have a user ID
+
     if (!user.id) {
       console.error("Error: No user ID provided");
       return res.status(400).json({
         success: false,
-        message: "User ID is required"
+        message: "User ID is required",
       });
     }
-    
-    // Get current user data
-    const userData = await redisClient.hGetAll(`user:${user.id}`);
-    
+
+    const userKey = `user:${user.id}`;
+    const userData = await redisClient.hGetAll(userKey);
+
     if (!userData || Object.keys(userData).length === 0) {
       console.error(`Error: User with ID ${user.id} not found`);
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
-    
+
     console.log("Current user data:", userData);
-    
-    // Create an object with fields to update - ensure we preserve existing data
-    // Convert numeric fields from strings to numbers as needed for Redis storage
+
+    const sanitizeNumber = (value, fallback) => {
+      const num = parseFloat(value);
+      return isNaN(num) ? fallback : num;
+    };
+
     const updateFields = {
-      // Preserve core identification fields
       id: user.id,
       name: user.name || userData.name,
       company: user.company || userData.company,
-      // Update operational fields - ensure numeric fields are stored as strings in Redis
-      progress: user.progress !== undefined ? String(user.progress) : (userData.progress || '0'),
-      step: user.step !== undefined ? String(user.step) : (userData.step || '0'),
+      progress:
+        user.progress !== undefined
+          ? sanitizeNumber(user.progress, userData.progress || "0")
+          : sanitizeNumber(userData.progress, "0"),
+      step:
+        user.step !== undefined
+          ? sanitizeNumber(user.step, userData.step || "0")
+          : sanitizeNumber(userData.step, "0"),
       status: user.status || userData.status || "new",
-      spends: user.spends !== undefined ? String(user.spends) : (userData.spends || '0')
+      spends:
+        user.spends !== undefined
+          ? sanitizeNumber(user.spends, userData.spends || "0")
+          : sanitizeNumber(userData.spends, "0"),
     };
-    
+
+    const normalizeFields = (obj) => {
+      const result = {};
+      for (const [key, value] of Object.entries(obj)) {
+        if (value === undefined || value === null) continue;
+        result[key] = String(value);
+      }
+      return result;
+    };
+
     console.log("Updating user with fields:", updateFields);
-    
-    // Update user data
-    await redisClient.hSet(`user:${user.id}`, updateFields);
-    
-    // Handle termination status
+
+    await redisClient.hSet(userKey, normalizeFields(updateFields));
+
     if (user.status === "terminated" && userData.status !== "terminated") {
       console.log("User terminated for the first time");
       const currentMonth = new Date().getMonth() + 1;
-      
-      // Safely get the current termination count
+
       let terminatedCount = 0;
       try {
         const getValue = await redisClient.hGet("ClientsTerminatedByMonth", String(currentMonth));
@@ -3240,90 +3426,72 @@ app.patch("/api/modifyUserData", authenticateJWT, async (req, res) => {
       } catch (err) {
         console.error("Error getting termination count:", err);
       }
-      
-      // Update the termination count
+
       await redisClient.hSet("ClientsTerminatedByMonth", {
-        [currentMonth]: terminatedCount + 1
+        [currentMonth]: String(terminatedCount + 1),
       });
     }
-    
-    if (user.status === "terminated") {
+
+    if (updateFields.status === "terminated") {
       const currentMonth = new Date().getMonth() + 1;
-      
-      // Add user spends to the sorted set
       try {
-        // Convert spends to number for score
-        const spendsValue = parseFloat(updateFields.spends);
+        const spendsValue = parseFloat(updateFields.spends) || 0;
+
         await redisClient.zAdd(`Spends:${currentMonth}`, {
           score: spendsValue,
-          value: user.id
+          value: user.id,
         });
-        
-        // Calculate total spends
-        const spendsRaw = await redisClient.zRangeWithScores(
-          `Spends:${currentMonth}`,
-          0,
-          -1
-        );
-        
-        const totalScore = spendsRaw.reduce(
-          (sum, item) => sum + parseFloat(item.score),
-          0
-        );
-        
+
+        const spendsRaw = await redisClient.zRangeWithScores(`Spends:${currentMonth}`, 0, -1);
+        const totalScore = spendsRaw.reduce((sum, item) => sum + parseFloat(item.score), 0);
+
         console.log(`Total spends for month ${currentMonth}:`, totalScore);
       } catch (err) {
         console.error("Error updating spends:", err);
       }
     }
-    
-    // Get updated user data to confirm changes
-    const updatedUser = await redisClient.hGetAll(`user:${user.id}`);
+
+    const updatedUser = await redisClient.hGetAll(userKey);
     console.log("Updated user data:", updatedUser);
-    
-    // Convert string values back to numbers for the response
+
     const formattedUpdatedUser = {
       ...updatedUser,
       id: user.id,
       step: updatedUser.step ? parseInt(updatedUser.step) : 0,
       progress: updatedUser.progress ? parseInt(updatedUser.progress) : 0,
-      spends: updatedUser.spends ? parseFloat(updatedUser.spends) : 0
+      spends: updatedUser.spends ? parseFloat(updatedUser.spends) : 0,
     };
-    
-    // Fetch all users to return in response
+
     try {
       const usersSet = await redisClient.sMembers("users");
       const allUserData = await Promise.all(
         usersSet.map(async (userId) => {
-          const userData = await redisClient.hGetAll(`user:${userId}`);
-          // Convert string values to numbers and ensure ID is included
-          return { 
-            ...userData, 
+          const data = await redisClient.hGetAll(`user:${userId}`);
+          return {
+            ...data,
             id: userId,
-            step: userData.step ? parseInt(userData.step) : 0,
-            progress: userData.progress ? parseInt(userData.progress) : 0,
-            spends: userData.spends ? parseFloat(userData.spends) : 0
+            step: data.step ? parseInt(data.step) : 0,
+            progress: data.progress ? parseInt(data.progress) : 0,
+            spends: data.spends ? parseFloat(data.spends) : 0,
           };
         })
       );
-      
+
       console.log("Returning updated user list with", allUserData.length, "users");
-      
-      // Send success response with updated user data
-      res.status(200).json({
-        success: true, 
+
+      return res.status(200).json({
+        success: true,
         message: "User data updated successfully",
-        allUserData: allUserData,
-        updatedUser: formattedUpdatedUser // Include the properly formatted updated user
+        allUserData,
+        updatedUser: formattedUpdatedUser,
       });
     } catch (err) {
       console.error("Error retrieving all users:", err);
-      
-      // Still return success for the individual user update
-      res.status(200).json({
+
+      return res.status(200).json({
         success: true,
         message: "User data updated successfully",
-        updatedUser: formattedUpdatedUser
+        updatedUser: formattedUpdatedUser,
       });
     }
   } catch (error) {
@@ -3331,10 +3499,12 @@ app.patch("/api/modifyUserData", authenticateJWT, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to update user data",
-      error: error.message
+      error: error.message,
     });
   }
 });
+
+
 
 app.get("/api/terminatedStatistics", authenticateJWT, async (req, res) => {
   try {
@@ -3629,3 +3799,5 @@ app.put("/api/user/profile", authenticateJWT, async (req, res) => {
     res.status(500).json({ error: "Failed to update profile" });
   }
 });
+
+app.use("/api/reviews", reviewRoutes);

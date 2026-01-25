@@ -1,82 +1,73 @@
 import React, { useEffect, useRef, useState } from 'react';
 import personalized from '/public/LandingPage/personalized.png';
 
-const ScrollingCarousel = () => {
-    const sectionRef = useRef<HTMLDivElement>(null);
-    const [scrollProgress, setScrollProgress] = useState(0);
+const cards = [
+  { title: 'Personalized ads', img: personalized },
+  { title: 'Automatized works', img: personalized },
+  { title: 'Automatized works', img: personalized },
+  { title: 'Grown', img: personalized },
+];
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const section = sectionRef.current;
-            if (section) {
-                const rect = section.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
+const CARD_WIDTH = 350; // px, adjust based on your design
+const VISIBLE_CARDS = 6; // how many cards to render at once
 
-                if (rect.top < windowHeight && rect.bottom > 0) {
-                    const scrollRange = rect.height + windowHeight;
-                    const scrollOffset = Math.min(Math.max(windowHeight - rect.top, 0), scrollRange);
-                    const progress = scrollOffset / scrollRange;
-                    setScrollProgress(progress);
-                } else {
-                    setScrollProgress(0);
-                }
-            }
-        };
+const VirtualScrollingCarousel = () => {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState(0);
+  const [renderedCards, setRenderedCards] = useState(cards);
 
-        window.addEventListener('scroll', handleScroll);
+  // Infinite scroll effect
+  useEffect(() => {
+    let animationFrame: number;
 
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, []);
+    const animate = () => {
+      setOffset((prev) => {
+        const newOffset = prev + 0.5; // base speed
+        // when a card fully scrolls out, rotate it to the end
+        if (newOffset >= CARD_WIDTH) {
+          setRenderedCards((prevCards) => [...prevCards.slice(1), prevCards[0]]);
+          return newOffset - CARD_WIDTH;
+        }
+        return newOffset;
+      });
 
-    const translateX = scrollProgress * 40; // Adjust the scroll effect for better visibility
+      animationFrame = requestAnimationFrame(animate);
+    };
 
-    return (
+    animate();
+    return () => cancelAnimationFrame(animationFrame);
+  }, []);
+
+  return (
+    <div
+      ref={sectionRef}
+      className="relative w-full h-screen bg-gradient-to-b from-black to-[#65558F] overflow-hidden flex flex-col items-center justify-center"
+    >
+      <h3 className="text-white text-[1.5em] md:text-[2em] absolute top-10 z-20 w-full text-center">
+        With us, with the professionals
+      </h3>
+
+      <div className="relative w-full h-[60%] overflow-hidden">
         <div
-            ref={sectionRef}
-            className="relative flex items-center justify-center w-full h-screen bg-gradient-to-b from-black to-[#65558F] overflow-hidden"
+          className="flex h-full absolute top-0 left-0"
+          style={{
+            transform: `translateX(-${offset}px)`,
+            transition: 'transform 0.1s linear',
+          }}
         >
-            {/* Content */}
-            <h3 className="text-white text-[1.5em] md:text-[2em] md:w-[10em] absolute top-10 z-20 flex space-x-4 overflow-hidden p-4 text-center">
-                With us, with the professionals
-            </h3>
+          {renderedCards.map((card, index) => (
             <div
-                className="relative z-10 flex h-[60%] items-center space-x-4 p-4"
-                style={{
-                    transform: `translateX(-${translateX}%)`,
-                    willChange: 'transform',
-                }}
+              key={index}
+              className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg flex flex-col items-center justify-around text-center border-4 border-gray-400 mx-2"
             >
-                {/* Carousel Cards */}
-                
-                <div
-                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                >
-                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Personalized ads</h4>
-                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                </div>
-                <div
-                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                >
-                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
-                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                </div>
-                <div
-                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                >
-                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Automatized works</h4>
-                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                </div>
-                <div
-                    className="min-w-[250px] sm:min-w-[300px] lg:min-w-[350px] h-full bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center border-4 border-gray-400"
-                >
-                    <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">Grown</h4>
-                    <img src={personalized} alt="Personalized" className="w-64 h-64 md:w-64 md:h-64" />
-                </div>
+              <h4 className="text-[1.2em] md:text-[1.5em] font-semibold">{card.title}</h4>
+              <img src={card.img} alt={card.title} className="w-48 h-48 md:w-64 md:h-64" />
             </div>
+          ))}
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
-export default ScrollingCarousel;
+export default VirtualScrollingCarousel;
