@@ -1,270 +1,48 @@
-import React, { useState } from "react";
+import React from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import FlashMessage from "../../FlashMessage";
-import { useNavigate } from "react-router-dom";
 import darkLogo from "/public/dark-logo.png";
 import lightLogo from "/public/light-logo.png";
 import { Calendar as CalendarIcon, Clock, Video } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import ThemeIcon from "../components/Logo";
+import { ToastContainer, Bounce } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useBooking } from "./useBooking";
+
+type ValuePiece = Date | null;
+type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const Booking = () => {
-  type ValuePiece = Date | null;
-  type Value = ValuePiece | [ValuePiece, ValuePiece];
-
   const { t } = useLanguage();
+  const {
+    currentDate,
+    setCurrentDate,
+    isLoading,
+    addableTimes,
+    selectedValues,
+    setSelectedValues,
+    selectedDateFormated,
+    fullName,
+    formatTime,
+    getAvailableTimeByDate,
+    handleSelection,
+    handleSubmit,
+  } = useBooking();
 
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [addableTimes, setAddableTimes] = useState<number[]>([]);
-  const [flashMessage, setFlashMessage] = useState<{
-    message: string;
-    type: "success" | "error" | "info" | "warning";
-  } | null>(null);
-  const [selectedValues, setSelectedValues] = useState<string[]>([]);
-  const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedDateFormated, setSelectedDateFormated] = useState("");
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-  const firstName = localStorage.getItem("firstName") || "";
-  const lastName = localStorage.getItem("lastName") || "";
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  const formatSelectedDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  };
-
-  const formatTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    const period = hours >= 12 ? "PM" : "AM";
-    const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-    const formattedMinutes = mins < 10 ? `0${mins}` : mins;
-    return `${formattedHours}:${formattedMinutes} ${period}`;
-  };
-
-  const getAvailableTimeByDate = async (value: Value) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-    setSelectedValues([]);
-
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setError("No authentication token found.");
-      setFlashMessage({
-        message: "No authentication token found.",
-        type: "error",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-      Date.prototype.getTimezoneOffset = function () {
-        return +15000;
-      };
-      const dynamicTime = new Date(
-        new Date().getTime() + new Date().getTimezoneOffset() * 60000
-      );
-      Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
-
-      const dateValue = Array.isArray(value) ? value[0] : value;
-      setSelectedDateFormated(formatSelectedDate(dateValue?.toString() ?? ""));
-      const formattedDate = dateValue
-        ? `${dateValue.getFullYear()}-${String(
-            dateValue.getMonth() + 1
-          ).padStart(2, "0")}-${String(dateValue.getDate()).padStart(2, "0")}`
-        : "";
-      setSelectedDate(formattedDate);
-
-      const currentTime = `[${new Date().toISOString().split("T")[0]}, UTC${
-        -new Date().getTimezoneOffset() / 60 >= 0 ? "+" : ""
-      }${-new Date().getTimezoneOffset() / 60}, ${new Date()
-        .getHours()
-        .toString()
-        .padStart(2, "0")}:${new Date()
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}]`;
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/availability/show-available-times/${formattedDate}?current_time=${encodeURIComponent(
-          currentTime
-        )}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch availability.");
-      }
-
-      const data = await response.json();
-      setAddableTimes(data.availableTimes || []);
-      setSuccess(data.message || "Availability fetched successfully!");
-      if (data.message !== undefined) {
-        setFlashMessage({
-          message: data.message || "Availability fetched successfully!",
-          type: "warning",
-        });
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        const errorMsg =
-          err.message || "An error occurred while fetching availability.";
-        setError(errorMsg);
-        setFlashMessage({
-          message: errorMsg,
-          type: "error",
-        });
-      } else {
-        const unknownError = "An unknown error occurred.";
-        setError(unknownError);
-        setFlashMessage({
-          message: unknownError,
-          type: "error",
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelection = (value: string) => {
-    setSelectedValues((prev) => {
-      if (prev[0] === value) {
-        return [];
-      } else {
-        return [value];
-      }
-    });
-  };
-
-  const handleSubmit = async () => {
-    if (selectedValues.length === 0) {
-      setFlashMessage({
-        message: "Please select at least one time slot before submitting.",
-        type: "error",
-      });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      setSuccess(null);
-
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        throw new Error("Authentication token is missing.");
-      }
-
-      function getCookie(name: string) {
-        const match = document.cookie.match(
-          new RegExp("(^| )" + name + "=([^;]+)")
-        );
-        return match ? match[2] : null;
-      }
-
-      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const response = await fetch(
-        `${API_BASE_URL}/api/availability/booking/add-booking`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            date: selectedDate,
-            times: selectedValues,
-            email: "deid.unideb@gmail.com",
-            timezone: userTimezone,
-            language: getCookie("app-language") || "english",
-          }),
-          credentials: "include",
-        }
-      );
-
-      if (response.status === 401) {
-        const errorData = await response.json();
-        if (errorData.authUrl) {
-          const bookingDetails = {
-            date: selectedDate,
-            times: selectedValues,
-            email: "deid.unideb@gmail.com",
-            timezone: userTimezone,
-          };
-          localStorage.setItem(
-            "pendingBooking",
-            JSON.stringify(bookingDetails)
-          );
-          window.location.href = errorData.authUrl;
-          return;
-        }
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save availability.");
-      }
-
-      const data = await response.json();
-      setSuccess(data.message || "Availability added successfully!");
-      setFlashMessage({
-        message: data.message || "Availability added successfully!",
-        type: "success",
-      });
-      setSelectedValues([]);
-
-      if (
-        data.message === "Availability saved successfully" &&
-        data.meetingId
-      ) {
-        setTimeout(() => {
-          navigate(`/home/successful-booking?meetingId=${data.meetingId}`);
-        }, 500);
-      } else {
-        setTimeout(() => {
-          navigate("/home/successful-booking");
-        }, 500);
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-        setFlashMessage({
-          message: err.message,
-          type: "error",
-        });
-      } else {
-        const unknownError = "An unknown error occurred.";
-        setError(unknownError);
-        setFlashMessage({
-          message: unknownError,
-          type: "error",
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [showForm, setShowForm] = React.useState(false);
+  const [email, setEmail] = React.useState( localStorage.getItem("email") || "" );
+  const [firstName, setFirstName] = React.useState(
+    localStorage.getItem("firstName") || ""
+  );
+  const [lastName, setLastName] = React.useState(
+    localStorage.getItem("lastName") || ""
+  );
+  const [company, setCompany] = React.useState("");
+  const selectedTime = selectedValues[0]
+    ? formatTime(Number(selectedValues[0]))
+    : "";
+  const displayName = `${firstName || localStorage.getItem("firstName") || ""} ${lastName || localStorage.getItem("lastName") || ""}`.trim() || fullName;
 
   return (
     <div className="flex justify-center items-center md:h-full p-4">
@@ -286,7 +64,11 @@ const Booking = () => {
           <div>
             <div className="flex items-center space-x-2 text-sm md:text-base">
               <CalendarIcon className="w-5 h-5 text-blue-600" />
-              <span>{selectedDateFormated || "\u00A0"}</span>
+              <span>
+                {selectedDateFormated
+                  ? `${selectedDateFormated}${selectedTime ? ` · ${selectedTime}` : ""}`
+                  : "\u00A0"}
+              </span>
             </div>
             <div className="flex items-center space-x-2 text-sm md:text-base">
               <Clock className="w-5 h-5 text-blue-600" />
@@ -296,70 +78,161 @@ const Booking = () => {
               <Video className="w-5 h-5 text-blue-600" />
               <span>{t("googleMeet")}</span>
             </div>
-          </div>
-        </div>
-        <div className="px-3 border-t-2 xl:border-t-0 xl:border-x-2 h-[400px] md:h-[500px] w-full xl:w-auto">
-          <Calendar
-            className="!bg-white p-4 !w-full !h-[400px] md:!h-[500px] !border-none dark:!bg-[#1F2937]"
-            tileClassName="hover:!bg-[#d8bfd8] !h-[50%] transition duration-200 !rounded-md focus:!bg-[#65558F] focus:!text-white"
-            onChange={(value: Value) => {
-              setSelectedValues([]);
-              getAvailableTimeByDate(value);
-            }}
-            value={currentDate}
-            view="month"
-            onActiveStartDateChange={({ activeStartDate }) =>
-              setCurrentDate(activeStartDate || new Date())
-            }
-            showNeighboringMonth={true}
-          />
-        </div>
-        <div className="flex flex-col p-3 w-full xl:w-[30%] h-full border-t-2 xl:border-t-0">
-          <div className="text-sm md:text-base">
-            {selectedDateFormated || "\u00A0"}
-          </div>
-          <ul className="overflow-y-auto h-full max-h-[300px] md:max-h-[400px]">
-            {addableTimes.length > 0 ? (
-              addableTimes.map((timeInMinutes, index) => (
-                <li key={index} className="w-full py-1">
-                  <button
-                    key={timeInMinutes}
-                    className={`w-full px-3 md:px-4 py-2 rounded-lg text-black font-semibold border-2 text-sm md:text-base ${
-                      selectedValues.includes(timeInMinutes.toString())
-                        ? "bg-[#65558F] text-white"
-                        : "bg-white hover:bg-gray-400"
-                    }`}
-                    onClick={() => handleSelection(timeInMinutes.toString())}
-                  >
-                    {formatTime(timeInMinutes)}
-                  </button>
-                </li>
-              ))
-            ) : (
-              <div className="w-full py-1 text-center text-sm md:text-base">
-                {t("pickADate")}
+
+            {(displayName || company || email) && (
+              <div className="mt-2 space-y-1">
+                {displayName && (
+                  <div className="text-sm">
+                    <span className="font-semibold">{t("name") || "Name"}:</span> {displayName}
+                  </div>
+                )}
+                {company && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-semibold">{t("company") || "Company"}:</span> {company}
+                  </div>
+                )}
+                {email && (
+                  <div className="text-sm text-gray-600">
+                    <span className="font-semibold">{t("email") || "Email"}:</span> {email}
+                  </div>
+                )}
               </div>
             )}
-          </ul>
-          {addableTimes.length > 0 && (
+          </div>
+        </div>
+        {!showForm && (
+          <div className="px-3 border-t-2 xl:border-t-0 xl:border-x-2 h-[400px] md:h-[500px] w-full xl:w-auto">
+            <Calendar
+              className="!bg-white p-4 !w-full !h-[400px] md:!h-[500px] !border-none dark:!bg-[#1F2937]"
+              tileClassName="hover:!bg-[#d8bfd8] !h-[50%] transition duration-200 !rounded-md focus:!bg-[#65558F] focus:!text-white"
+              onChange={(value: Value) => {
+                setSelectedValues([]);
+                getAvailableTimeByDate(value);
+              }}
+              value={currentDate}
+              view="month"
+              onActiveStartDateChange={({ activeStartDate }) =>
+                setCurrentDate(activeStartDate || new Date())
+              }
+              showNeighboringMonth={true}
+            />
+          </div>
+        )}
+        <div className="flex flex-col p-3 w-full xl:w-[30%] h-full border-t-2 xl:border-t-0">
+          {!showForm && (
+            <ul className="overflow-y-auto h-full max-h-[300px] md:max-h-[400px]">
+              {addableTimes.length > 0 ? (
+                addableTimes.map((timeInMinutes, index) => (
+                  <li key={index} className="w-full py-1">
+                    <button
+                      key={timeInMinutes}
+                      className={`w-full px-3 md:px-4 py-2 rounded-lg text-black font-semibold border-2 text-sm md:text-base ${
+                        selectedValues.includes(timeInMinutes.toString())
+                          ? "bg-[#65558F] text-white"
+                          : "bg-white hover:bg-gray-400"
+                      }`}
+                      onClick={() => handleSelection(timeInMinutes.toString())}
+                    >
+                      {formatTime(timeInMinutes)}
+                    </button>
+                  </li>
+                ))
+              ) : (
+                <div className="w-full py-1 text-center text-sm md:text-base">
+                  {t("pickADate")}
+                </div>
+              )}
+            </ul>
+          )}
+          {addableTimes.length > 0 && !showForm && (
             <button
               className="mt-3 px-4 md:px-6 py-2 bg-[#65558F] text-white font-bold rounded-lg hover:bg-[#9c81db] disabled:bg-gray-400 w-full"
-              onClick={handleSubmit}
+              onClick={() => setShowForm(true)}
               disabled={selectedValues.length === 0}
             >
-              {t("submit")}
+              {t("continue") || "Continue"}
             </button>
+          )}
+
+          {showForm && (
+            <div className="mt-3 p-3 bg-white rounded-lg dark:bg-gray-800">
+              <div className="mb-2">
+                <label className="block text-sm">{t("email") || "Email"}</label>
+                <input
+                  className="w-full p-2 border rounded"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                />
+              </div>
+              <div className="mb-2 flex space-x-2">
+                <div className="flex-1">
+                  <label className="block text-sm">{t("firstName") || "First name"}</label>
+                  <input
+                    className="w-full p-2 border rounded"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    type="text"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm">{t("lastName") || "Last name"}</label>
+                  <input
+                    className="w-full p-2 border rounded"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    type="text"
+                  />
+                </div>
+              </div>
+              <div className="mb-2">
+                <label className="block text-sm">{t("company") || "Company"}</label>
+                <input
+                  className="w-full p-2 border rounded"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  type="text"
+                />
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  className="flex-1 px-4 py-2 bg-[#65558F] text-white font-bold rounded-lg hover:bg-[#9c81db] disabled:bg-gray-400"
+                  onClick={() =>
+                    handleSubmit({
+                      email,
+                      firstName,
+                      lastName,
+                      company,
+                    })
+                  }
+                  disabled={!email || isLoading}
+                >
+                  {isLoading ? t("sending") || "Sending..." : t("submit")}
+                </button>
+                <button
+                  className="flex-1 px-4 py-2 border rounded-lg"
+                  onClick={() => setShowForm(false)}
+                >
+                  {t("back") || "Back"}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
-      {flashMessage && (
-        <FlashMessage
-          key={`${flashMessage.message}-${Date.now()}`}
-          message={flashMessage.message}
-          type={flashMessage.type}
-          duration={2000}
-        />
-      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        transition={Bounce}
+      />
     </div>
   );
 };

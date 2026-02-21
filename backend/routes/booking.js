@@ -73,7 +73,7 @@ async function createGoogleMeetEvent(
   }
 }
 
-router.post("/booking/add-booking", authenticateJWT, async (req, res) => {
+router.post("/booking/add-booking", async (req, res) => {
   try {
     const redisClient = getRedisClient();
     const {
@@ -107,7 +107,6 @@ router.post("/booking/add-booking", authenticateJWT, async (req, res) => {
     const dayNumber = dateObj.getDay() || 6;
     const dayName = weekdays[dayNumber] || "Monday";
 
-    const userId = req.user.id;
     const bookingId = uuidv4();
     const timestamp = Date.now();
 
@@ -148,7 +147,7 @@ router.post("/booking/add-booking", authenticateJWT, async (req, res) => {
     }
 
     let meetLink = null;
-    const calendarData = await redisClient.get(`calendar:${userId}`);
+    const calendarData = await redisClient.get(`calendar:${email}`);
     if (calendarData) {
       const bookingData = JSON.parse(calendarData);
       const oauth2Client = new google.auth.OAuth2(
@@ -178,7 +177,7 @@ router.post("/booking/add-booking", authenticateJWT, async (req, res) => {
 
     await redisClient.hSet(`Meeting:${bookingId}`, {
       BookingId: bookingId,
-      UserId: userId,
+      UserId: email,
       Email: email,
       FullName: fullName || "",
       PhoneNumber: phoneNumber || "",
@@ -192,7 +191,7 @@ router.post("/booking/add-booking", authenticateJWT, async (req, res) => {
       Status: "confirmed",
     });
 
-    await redisClient.zAdd(`UserMeetings:${userId}`, {
+    await redisClient.zAdd(`UserMeetings:${email}`, {
       score: timestamp,
       value: bookingId,
     });
@@ -374,7 +373,7 @@ router.get("/availability/booking/latest", authenticateJWT, async (req, res) => 
   }
 });
 
-router.get("/show-available-times/:rawDate", authenticateJWT, async (req, res) => {
+router.get("/show-available-times/:rawDate", async (req, res) => {
   console.log("-------------Availability-------------------");
   const token = req.headers["authorization"]?.split(" ")[1];
   const { rawDate } = req.params;
