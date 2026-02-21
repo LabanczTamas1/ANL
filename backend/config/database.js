@@ -2,6 +2,7 @@ const redis = require("redis");
 
 let redisClient = null;
 
+console.log("REDIS_URL:", process.env.REDIS_URL);
 async function initializeRedisClient() {
   redisClient = redis.createClient({
     url: process.env.REDIS_URL,

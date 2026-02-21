@@ -106,6 +106,7 @@ const router = createBrowserRouter([
     path: "/mail/send-mail",
     element: <SendMail />,
   },
+  { path: "booking", element: <Booking /> },
   {
     path: "/information",
     element: <InformationsLayout />,
@@ -211,5 +212,5 @@ createRoot(document.getElementById("root")!).render(
         </NotificationProvider>
       </LanguageProvider>
     </HelmetProvider>
-  </StrictMode>
+  </StrictMode>,
 );
