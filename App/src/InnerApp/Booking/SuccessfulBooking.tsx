@@ -5,7 +5,14 @@ import { Calendar, Clock, Video, ArrowLeft, PlusCircle } from "lucide-react";
 const SuccessfulBooking = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [meetingDetails, setMeetingDetails] = useState({
+  const [meetingDetails, setMeetingDetails] = useState<{
+    date: string;
+    time: string;
+    link: string;
+    type: string;
+    loading: boolean;
+    error: string | null;
+  }>({
     date: "",
     time: "",
     link: "",
@@ -13,6 +20,8 @@ const SuccessfulBooking = () => {
     loading: true,
     error: null
   });
+
+  const isAuthenticated = !!(typeof window !== "undefined" && localStorage.getItem("authToken"));
 
   // Helper function to format time from minutes
   const formatTime = (minutes) => {
@@ -288,13 +297,23 @@ const SuccessfulBooking = () => {
           <ArrowLeft className="mr-1" size={16} />
           Back to Home
         </button>
-        <button
-          onClick={() => navigate("/home/booking")}
-          className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white px-4 py-2 rounded text-sm md:text-base transition-colors duration-200 flex items-center justify-center"
-        >
-          <PlusCircle className="mr-1" size={16} />
-          Book Another Appointment
-        </button>
+
+        {!isAuthenticated && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/login")}
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white px-4 py-2 rounded text-sm md:text-base transition-colors duration-200 flex items-center justify-center"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => navigate("/register")}
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded text-sm md:text-base transition-colors duration-200 flex items-center justify-center"
+            >
+              Register
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
