@@ -1,46 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import lightLogo from "/public/light-logo.png";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
+import { FaSignInAlt, FaUserPlus } from "react-icons/fa";
+import MobileNavbar from "./MobileNavbar";
 
 type Language = "english" | "magyar" | "romana";
 
 const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState<boolean>(false);
 
   const { language, setLanguage, translations } = useLanguage();
   const t = translations[language];
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-    if (isLanguageMenuOpen) setIsLanguageMenuOpen(false);
-  };
-
   const toggleLanguageMenu = () => {
     setIsLanguageMenuOpen(!isLanguageMenuOpen);
   };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollThreshold = 50;
-      setIsScrolled(window.scrollY > scrollThreshold);
-    };
-
-    let debounceTimeout: number | null = null;
-    const debouncedHandleScroll = () => {
-      if (debounceTimeout) clearTimeout(debounceTimeout);
-      debounceTimeout = window.setTimeout(handleScroll, 50);
-    };
-
-    window.addEventListener("scroll", debouncedHandleScroll);
-    return () => {
-      if (debounceTimeout) clearTimeout(debounceTimeout);
-      window.removeEventListener("scroll", debouncedHandleScroll);
-    };
-  }, []);
 
   const flags: Record<Language, JSX.Element> = {
     english: (
@@ -81,275 +57,140 @@ const Navbar: React.FC = () => {
     ),
   };
 
-  const languageNames: Record<Language, string> = {
-    english: "EN",
-    magyar: "HU",
-    romana: "RO",
-  };
+  // Responsive: show MobileNavbar on small screens
+  if (typeof window !== "undefined" && window.innerWidth <= 600) {
+    return <MobileNavbar />;
+  }
 
   return (
     <div
-      className={`relative sticky top-0 z-50 transition-all duration-300
-      p-5 md:p-0 xl:p-10
-      ${isScrolled ? "!p-0 bg-[#080A0D] lg:pb-0 lg:pt-0 lg:mt-0 m-0 !px-4" : ""}`}
+      className="relative sticky top-0 z-50 w-full"
+      style={{
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        mixBlendMode: "exclusion",
+        background: "rgba(20, 20, 30, 0.7)",
+        borderRadius: "2.5rem",
+        margin: "1.5rem auto 0 auto",
+        maxWidth: "900px",
+        boxShadow: "0 4px 32px 0 rgba(0,0,0,0.18)",
+        border: "1.5px solid rgba(255,255,255,0.08)",
+        padding: "0.5rem 2rem",
+        display: "flex",
+        alignItems: "center",
+        minHeight: "64px",
+        justifyContent: "space-between",
+      }}
     >
-      {/* Desktop Navbar >1400px */}
+      {/* Logo left */}
+      <Link to="/" className="flex items-center gap-2">
+        <img
+          src={lightLogo}
+          alt="Logo"
+          style={{ height: "2.5rem", width: "auto" }}
+        />
+      </Link>
+      {/* Center nav links - perfectly centered between logo and auth icons */}
       <div
-        className={`hidden xl:flex items-center justify-between text-white lg:py-4 ${
-          isScrolled ? "" : "lg:border-t-2 lg:border-white"
-        }`}
+        className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+        style={{ pointerEvents: "none", width: "fit-content" }}
       >
-        <Link to="/" className="pl-5">
-          <img
-            src={lightLogo}
-            alt="Logo"
-            className={`transition-all duration-300 ${
-              isScrolled ? "lg:h-16 h-[4rem] pt-1" : "lg:h-20 h-[5rem] pt-3"
-            }`}
-          />
-        </Link>
-
-        <div className="flex lg:items-center lg:h-full space-x-8 text-2xl font-bold font-inter mt-0">
-          <Link to="/contact" className="hover:text-[#343E4C] p-5">
+        <div
+          className="flex gap-6 items-center text-white font-semibold text-lg"
+          style={{ textAlign: "center", justifyContent: "center" }}
+        >
+          <Link to="/contact" className="hover:text-[#65558F] whitespace-nowrap" style={{ pointerEvents: "auto" }}>
             {t.contact}
           </Link>
-          <Link to="/services" className="hover:text-[#343E4C] p-5">
+          <Link to="/services" className="hover:text-[#65558F] whitespace-nowrap" style={{ pointerEvents: "auto" }}>
             {t.services}
           </Link>
-          <Link to="/aboutus" className="hover:text-[#343E4C] p-5">
+          <Link to="/aboutus" className="hover:text-[#65558F] whitespace-nowrap" style={{ pointerEvents: "auto" }}>
             {t.aboutUs}
           </Link>
-
-          <div className="relative">
-            <button
-              onClick={toggleLanguageMenu}
-              className="flex items-center space-x-2 hover:text-[#343E4C] p-5"
-            >
-              <span className="inline-block">{flags[language]}</span>
-              <span>{languageNames[language]}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            <AnimatePresence>
-              {isLanguageMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-40 bg-[#080A0D] border border-gray-700 rounded shadow-lg"
-                >
-                  <div className="py-1">
-                    {(["english", "magyar", "romana"] as const).map(
-                      (lang: Language) => (
-                        <button
-                          key={lang}
-                          onClick={() => {
-                            setLanguage(lang);
-                            setIsLanguageMenuOpen(false);
-                          }}
-                          className="flex items-center space-x-2 px-4 py-2 text-sm w-full text-left hover:bg-gray-800"
-                        >
-                          <span>{flags[lang]}</span>
-                          <span>
-                            {lang === "romana"
-                              ? "Română"
-                              : lang.charAt(0).toUpperCase() + lang.slice(1)}
-                          </span>
-                        </button>
-                      )
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <Link to="/login">
-            <button className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700">
-              {t.login}
-            </button>
-          </Link>
-          <Link to="/register">
-            <button className="bg-[#65558F] text-white p-4 px-20 rounded hover:bg-sky-700 whitespace-nowrap">
-              {t.signIn}
-            </button>
-          </Link>
         </div>
       </div>
-
-      {/* Mid-size Navbar 1024px–1400px */}
-      <div className="hidden lg:flex xl:hidden items-center justify-center text-white relative">
-        <Link to="/" className="mx-auto">
-          <img
-            src={lightLogo}
-            alt="Logo"
-            className={`transition-all duration-300 ${
-              isScrolled ? "h-16" : "h-20"
-            }`}
-          />
-        </Link>
-
-        <div className="absolute right-5 flex items-center gap-4">
-          <Link to="/login">
-            <div className="bg-[#65558F] text-white p-2 px-6 rounded hover:bg-sky-700">
-              {t.login}
-            </div>
-          </Link>
-          <Link to="/register">
-            <div className="bg-[#65558F] text-white p-2 px-6 rounded hover:bg-sky-700">
-              {t.signIn}
-            </div>
-          </Link>
-
-          <button
-            className="text-white focus:outline-none"
-            onClick={toggleMenu}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
-
+      {/* Right: language + auth icons */}
+      <div className="flex items-center gap-3 relative">
+        <button
+          onClick={toggleLanguageMenu}
+          className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none"
+          style={{ position: "relative" }}
+        >
+          <span>{flags[language]}</span>
+        </button>
         <AnimatePresence>
-          {isOpen && (
+          {isLanguageMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-full right-5 mt-2 w-56 bg-[#080A0D] border border-gray-700 rounded shadow-lg z-20"
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-40 bg-[#181828] border border-gray-700 rounded shadow-lg"
+              style={{ zIndex: 100, top: "100%" }}
             >
-              <div className="flex flex-col">
-                <Link to="/contact" className="px-4 py-2 hover:bg-gray-800">
-                  {t.contact}
-                </Link>
-                <Link to="/services" className="px-4 py-2 hover:bg-gray-800">
-                  {t.services}
-                </Link>
-                <Link to="/aboutus" className="px-4 py-2 hover:bg-gray-800">
-                  {t.aboutUs}
-                </Link>
-                <Link to="/blog" className="px-4 py-2 hover:bg-gray-800">
-                  {t.blog}
-                </Link>
+              <div className="py-2 px-2">
+                {(["english", "magyar", "romana"] as const).map((lang: Language) => (
+                  <button
+                    key={lang}
+                    onClick={() => {
+                      setLanguage(lang);
+                      setIsLanguageMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 text-base w-full text-left hover:bg-[#65558F]/20 rounded text-white font-medium"
+                  >
+                    <span>{flags[lang]}</span>
+                    <span style={{ fontWeight: 600, letterSpacing: "0.02em" }}>
+                      {lang === "romana"
+                        ? "Română"
+                        : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                    </span>
+                  </button>
+                ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* Mobile Navbar <1024px */}
-      <div className="lg:hidden flex items-center justify-between text-white relative">
-        <Link to="/" className="pl-5">
-          <img src={lightLogo} alt="Logo" className={`h-16`} />
-        </Link>
-
-        <div className="flex items-center gap-5">
-          <Link to="/login">
-            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700">
-              {t.login}
-            </div>
-          </Link>
-          <Link to="/register">
-            <div className="bg-[#65558F] text-white p-0 px-4 md:p-3 md:px-12 rounded hover:bg-sky-700 whitespace-nowrap">
-              {t.signIn}
-            </div>
-          </Link>
+        <Link to="/login" className="ml-2">
           <button
-            className="text-white focus:outline-none pr-3"
-            onClick={toggleMenu}
+            className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md"
+            title={t.login}
+            style={{ width: 38, height: 38 }}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <FaSignInAlt size={18} />
           </button>
-        </div>
-
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute top-full left-0 z-10 w-full flex flex-col text-xl font-inter font-extrabold text-white p-5 rounded-md bg-[#080A0D] mt-2"
-            >
-              <Link to="/contact" className="hover:text-gray-300 my-2">
-                {t.contact}
-              </Link>
-              <Link to="/services" className="hover:text-gray-300 my-2">
-                {t.services}
-              </Link>
-              <Link to="/aboutus" className="hover:text-gray-300 my-2">
-                {t.aboutUs}
-              </Link>
-              <Link to="/blog" className="hover:text-gray-300 my-2">
-                {t.blog}
-              </Link>
-
-              <div className="pt-2 border-t border-gray-700">
-                <div className="text-lg font-semibold mb-2">{t.languages}</div>
-                <div className="flex flex-col space-y-2">
-                  {(["english", "magyar", "romana"] as const).map(
-                    (lang: Language) => (
-                      <button
-                        key={lang}
-                        onClick={() => setLanguage(lang)}
-                        className={`flex items-center space-x-3 py-2 text-left hover:bg-gray-800 ${
-                          language === lang ? "text-blue-400" : ""
-                        }`}
-                      >
-                        <span>{flags[lang]}</span>
-                        <span>
-                          {lang === "romana"
-                            ? "Română"
-                            : lang.charAt(0).toUpperCase() + lang.slice(1)}
-                        </span>
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </Link>
+        <Link to="/register">
+          <button
+            className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md"
+            title={t.signIn}
+            style={{ width: 38, height: 38 }}
+          >
+            <FaUserPlus size={18} />
+          </button>
+        </Link>
       </div>
+      {/* Mobile view optimizations */}
+      <style>{`
+        @media (max-width: 600px) {
+          .sticky.top-0 {
+            border-radius: 1.2rem;
+            margin: 0.5rem auto 0 auto;
+            max-width: 98vw;
+            padding: 0.3rem 0.7rem;
+            min-height: 54px;
+          }
+          .absolute.left-1\/2.top-1\/2.transform.-translate-x-1\/2.-translate-y-1\/2 {
+            width: 100vw;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+          }
+          .flex.items-center.gap-3.relative {
+            gap: 0.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };
