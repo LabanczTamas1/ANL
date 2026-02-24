@@ -10,7 +10,6 @@ import { Helmet } from "react-helmet-async";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
-import AmoebaShape from "./components/MovingAnimation";
 import ANLShape from "./components/MovingAnimation";
 
 const LandingPage = () => {
