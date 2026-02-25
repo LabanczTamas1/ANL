@@ -170,7 +170,12 @@ const Starfield: React.FC = () => {
         const baseColor = star.color;
         const alphaMatch = baseColor.match(/[\d.]+(?=\))/);
         const baseAlpha = alphaMatch ? parseFloat(alphaMatch[0]) : 0.5;
-        const enhancedAlpha = Math.min(baseAlpha * brightness, 1);
+        
+        // Fade in based on vertical position - stars fade in as they move down
+        const fadeInDistance = window.innerHeight * 0.3; // Fade in over top 30% of screen
+        const verticalFade = Math.min(star.y / fadeInDistance, 1);
+        
+        const enhancedAlpha = Math.min(baseAlpha * brightness * verticalFade, 1);
         const enhancedColor = baseColor.replace(/[\d.]+\)$/, `${enhancedAlpha})`);
 
         ctx.strokeStyle = enhancedColor;
