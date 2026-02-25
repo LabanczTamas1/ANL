@@ -198,7 +198,7 @@ const MobileNavbar = () => {
         className="fixed inset-0"
         style={{
           zIndex: 9999,
-          backgroundColor: "#0D0D1A",
+          background: "linear-gradient(to left, #1a1a2e, #0D0D1A)",
           isolation: "isolate",
         }}
       >
@@ -346,7 +346,7 @@ const MobileNavbar = () => {
         style={{
           zIndex: 9998,
           height: 56,
-          backgroundColor: "#0D0D1A",
+          background: "linear-gradient(to left, #1a1a2e, #0D0D1A)",
           boxShadow: "0 2px 12px 0 rgba(0,0,0,0.25)",
           isolation: "isolate",
         }}
