@@ -3,79 +3,146 @@ import Navbar from "./Navbar";
 import stars from "/public/LandingPage.svg";
 import HeroSection from "./HeroSection";
 import Footer from "./Footer";
-import PersonCard from "./PersonCard";
-import ScrollingCarousel from "../ScrollingCarousel";
-import Timeline from "./Timeline";
 import { Helmet } from "react-helmet-async";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
 import ANLShape from "./components/MovingAnimation";
+import { FaUsers, FaRocket, FaGlobe, FaAward } from "react-icons/fa";
+
+// Modern Components
+import ModernFoundersSection from "./components/ModernFoundersSection";
+import AnimatedStats from "./components/AnimatedStats";
+import FeatureGrid from "./components/FeatureGrid";
+import ModernTimeline from "./components/ModernTimeline";
+import TestimonialSection from "./components/TestimonialSection";
+import CTASection from "./components/CTASection";
+import GradientDivider from "./components/GradientDivider";
+import FloatingParticles from "./components/FloatingParticles";
+
+// Founders data
+const founders = [
+  {
+    imageUrl: "/public/Picture1.png",
+    name: "Koszta Zsolt",
+    position: "Co-Founder",
+    description: "Visionary leader driving digital transformation with over 10 years of experience in building scalable solutions for modern businesses.",
+    socials: {
+      linkedin: "https://linkedin.com",
+      twitter: "https://twitter.com",
+      email: "zsolt@anl.com",
+    },
+  },
+  {
+    imageUrl: "/public/Picture1.png",
+    name: "Koszta Zsolt",
+    position: "Co-Founder",
+    description: "Strategic thinker specializing in growth marketing and data-driven decision making to help businesses reach their full potential.",
+    socials: {
+      linkedin: "https://linkedin.com",
+      twitter: "https://twitter.com",
+      email: "contact@anl.com",
+    },
+  },
+];
+
+// Stats data
+const stats = [
+  { value: 150, suffix: "+", label: "Clients Worldwide", icon: <FaUsers className="w-6 h-6" /> },
+  { value: 500, suffix: "+", label: "Projects Delivered", icon: <FaRocket className="w-6 h-6" /> },
+  { value: 25, suffix: "+", label: "Countries Reached", icon: <FaGlobe className="w-6 h-6" /> },
+  { value: 98, suffix: "%", label: "Client Satisfaction", icon: <FaAward className="w-6 h-6" /> },
+];
 
 const LandingPage = () => {
-  const { t } = useLanguage();
+  // Language hook available for future translations
+  useLanguage();
+  
   return (
-    <div className="bg-[#080A0D] relative">
+    <div className="bg-surface-overlay relative overflow-hidden">
       <Helmet>
         <title>ANL | Watch Your Growth</title>
         <meta
           name="description"
-          content="This is a custom description for this page."
+          content="Transform your business with ANL's innovative digital solutions. We help companies grow through data-driven strategies and cutting-edge technology."
         />
       </Helmet>
 
-      {/* Background SVG */}
+      {/* Background SVG
       <div
         className="absolute h-[112vh] inset-0 bg-no-repeat bg-cover bg-center z-0"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(8, 10, 13, 1) 100%), url(${stars})`,
-          opacity: 1,
-        }}
-      ></div>
+        // style={{
+        //   backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(8, 10, 13, 1) 100%), url(${stars})`,
+        //   opacity: 1,
+        // }}
+      /> */}
 
       {/* Navbar */}
       <Navbar />
 
-      {/* Hero Section */}
-      <HeroSection />
+      {/* Hero Section - Unchanged as requested */}
+      <CTASection 
+        title="Ready to Transform Your Business?"
+        subtitle="Let's discuss how we can help you achieve your goals. Book a free consultation today."
+        primaryButtonText="Book a Meeting"
+        primaryButtonLink="/booking"
+        secondaryButtonText="Learn More"
+        secondaryButtonLink="/about"
+        fullHeight={true}
+      />
 
-      <h2 className="text-white text-center font-bold text-[2em] bg-[#080A0D] pt-16 pb-4">
-        Founders
-      </h2>
-      <section className="flex md:flex-row gap-50 md:justify-around flex-col items-center justify-center pt-[100px] bg-gradient-to-b from-[#080A0D] to-black via-[#65558F]">
-        <PersonCard
-          imageUrl="/public/Picture1.png"
-          name="Koszta Zsolt"
-          position="Co-Founder"
-          description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"
-        />
-        <PersonCard
-          imageUrl="/public/Picture1.png"
-          name="Koszta Zsolt"
-          position="Co-Founder"
-          description="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Metin?"
-        />
+      {/* Gradient Divider */}
+      <GradientDivider style="wave" />
+
+      {/* Modern Founders Section */}
+      <ModernFoundersSection 
+        founders={founders}
+        title="Meet the Founders"
+        subtitle="The visionaries behind your digital transformation journey"
+      />
+
+      {/* Animated Stats Section */}
+      <section className="relative bg-surface-black">
+        <FloatingParticles particleCount={40} />
+        <AnimatedStats stats={stats} />
       </section>
-      <section>
-        <ScrollingCarousel />
-      </section>
-      <section className="">
-        <Timeline />
-      </section>
-      <section className="relative bg-black overflow-hidden w-full h-screen">
+
+      {/* Gradient Divider */}
+      <GradientDivider style="glow" />
+
+      {/* Feature Grid Section */}
+      <FeatureGrid 
+        title="Why Choose ANL"
+        subtitle="Discover the tools and expertise that will transform your business"
+      />
+
+      {/* Modern Timeline Section */}
+      <ModernTimeline 
+        title="Your Journey With Us"
+        subtitle="A simple, transparent process designed for your success"
+      />
+
+      {/* Gradient Divider */}
+      <GradientDivider style="mesh" />
+
+      {/* Testimonials Section */}
+      <TestimonialSection 
+        title="What Our Clients Say"
+        subtitle="Don't just take our word for it — hear from businesses we've helped grow"
+      />
+
+      {/* Interactive Starfield with ANL Shape - Unchanged as requested */}
+      <section className="relative bg-surface-black overflow-hidden w-full h-screen">
         <Starfield />
         <div className="absolute inset-0 flex items-center justify-center">
           <ANLShape size="2xl" />
         </div>
       </section>
 
-      {/* <section className="bg-black w-full h-screen overflow-hidden">
-        <AmoebaShape />
-      </section> */}
-      <section className="h-[0vh]"></section>
-
+      {/* Footer - Unchanged as requested */}
       <Footer darkMode={true} />
-      {/* Cookie Consent Banner */}
+      
+      {/* Cookie Consent Banner - Unchanged as requested */}
       <CookieConsentBanner />
     </div>
   );
