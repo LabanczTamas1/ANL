@@ -5,11 +5,13 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { FaSignInAlt, FaUserPlus } from "react-icons/fa";
 import MobileNavbar from "./MobileNavbar";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 type Language = "english" | "magyar" | "romana";
 
 const Navbar: React.FC = () => {
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState<boolean>(false);
+  const isMobile = useMediaQuery("(max-width: 600px)");
 
   const { language, setLanguage, translations } = useLanguage();
   const t = translations[language];
@@ -58,7 +60,7 @@ const Navbar: React.FC = () => {
   };
 
   // Responsive: show MobileNavbar on small screens
-  if (typeof window !== "undefined" && window.innerWidth <= 600) {
+  if (isMobile) {
     return <MobileNavbar />;
   }
 
