@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: anl-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: anl
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ads-network
+
   redis:
     image: redis:7-alpine
     container_name: ads-redis
@@ -14,6 +33,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - ads-network
 
   backend:
     build: .
@@ -23,17 +44,16 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/anl
       - NODE_ENV=development
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     command: npm run dev
-    networks:
-      - ads-network
-
-  redis:
     networks:
       - ads-network
 
@@ -43,3 +63,4 @@ networks:
 
 volumes:
   redis_data:
+  postgres_data:

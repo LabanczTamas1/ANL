@@ -19,6 +19,14 @@ interface BookingResponse {
   error?: string;
 }
 
+export interface BookingFormData {
+  fullName: string;
+  email: string;
+  company: string;
+  referralSource: string;
+  referralSourceOther: string;
+}
+
 export type UseBookingReturn = {
   currentDate: Date;
   setCurrentDate: (d: Date) => void;
@@ -30,17 +38,11 @@ export type UseBookingReturn = {
   setSelectedValues: (v: string[]) => void;
   selectedDate: string;
   selectedDateFormated: string;
-  fullName: string;
   formatSelectedDate: (s: string) => string;
   formatTime: (m: number) => string;
   getAvailableTimeByDate: (v: Value) => Promise<void>;
   handleSelection: (v: string) => void;
-  handleSubmit: (userDetails: {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    company?: string;
-  }) => Promise<void>;
+  handleSubmit: (formData: BookingFormData) => Promise<void>;
 };
 
 export const useBooking = (): UseBookingReturn => {
@@ -55,10 +57,6 @@ export const useBooking = (): UseBookingReturn => {
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedDateFormated, setSelectedDateFormated] = useState("");
-
-  const firstName = localStorage.getItem("firstName") || "";
-  const lastName = localStorage.getItem("lastName") || "";
-  const fullName = `${firstName} ${lastName}`.trim();
 
   const formatSelectedDate = (dateString: string): string => {
     if (!dateString) return "";
@@ -211,12 +209,7 @@ export const useBooking = (): UseBookingReturn => {
     });
   };
 
-  const handleSubmit = async (userDetails: {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    company?: string;
-  }) => {
+  const handleSubmit = async (formData: BookingFormData) => {
     if (selectedValues.length === 0) {
       const errorMsg =
         "Please select at least one time slot before submitting.";
@@ -224,41 +217,62 @@ export const useBooking = (): UseBookingReturn => {
       return;
     }
 
+    // Client-side validation – all fields required
+    if (!formData.fullName.trim()) {
+      toast.error("Full name is required.");
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error("Email is required.");
+      return;
+    }
+    if (!formData.company.trim()) {
+      toast.error("Company name is required.");
+      return;
+    }
+    if (!formData.referralSource.trim()) {
+      toast.error("Please select where you heard about us.");
+      return;
+    }
+    if (
+      formData.referralSource === "Other" &&
+      !formData.referralSourceOther.trim()
+    ) {
+      toast.error("Please specify where you heard about us.");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
       setSuccess(null);
-      function getCookie(name: string) {
-        const match = document.cookie.match(
-          new RegExp("(^| )" + name + "=([^;]+)")
-        );
-        return match ? match[2] : null;
-      }
 
       const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      // selectedValues stores minutes as string (e.g. "660"). Use that directly.
       const selectedTimeMinutes = Number(selectedValues[0]);
 
       const payload = {
         date: selectedDate,
-        time: String(Number.isFinite(selectedTimeMinutes) ? selectedTimeMinutes : 0),
-        email: userDetails.email,
+        time: String(
+          Number.isFinite(selectedTimeMinutes) ? selectedTimeMinutes : 0
+        ),
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        company: formData.company.trim(),
+        referralSource: formData.referralSource.trim(),
+        referralSourceOther:
+          formData.referralSource === "Other"
+            ? formData.referralSourceOther.trim()
+            : undefined,
         timezone: userTimezone,
-        language: getCookie("app-language") || "english",
-        fullName: `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim(),
-        company: userDetails.company || undefined,
-      } as any;
+      };
 
-      console.debug("Submitting booking, selectedValues:", selectedValues);
       console.debug("Booking payload:", payload);
 
       const response = await fetch(
         `${API_BASE_URL}/api/availability/booking/add-booking`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
           credentials: "include",
         }
@@ -267,10 +281,7 @@ export const useBooking = (): UseBookingReturn => {
       if (response.status === 401) {
         const errorData: BookingResponse = await response.json();
         if (errorData.authUrl) {
-          const bookingDetails = {
-            ...payload,
-          };
-          localStorage.setItem("pendingBooking", JSON.stringify(bookingDetails));
+          localStorage.setItem("pendingBooking", JSON.stringify(payload));
           window.location.href = errorData.authUrl;
           return;
         }
@@ -278,15 +289,15 @@ export const useBooking = (): UseBookingReturn => {
 
       if (!response.ok) {
         const errorData: BookingResponse = await response.json();
-        throw new Error(errorData.error || "Failed to save availability.");
+        throw new Error(errorData.error || "Failed to save booking.");
       }
 
       const data: BookingResponse = await response.json();
-      setSuccess(data.message || "Availability added successfully!");
-      toast.success(data.message || "Availability added successfully!");
+      setSuccess(data.message || "Booking created successfully!");
+      toast.success(data.message || "Booking created successfully!");
       setSelectedValues([]);
 
-      if (data.message === "Availability saved successfully" && data.meetingId) {
+      if (data.meetingId) {
         setTimeout(() => {
           navigate(`/home/successful-booking?meetingId=${data.meetingId}`);
         }, 500);
@@ -320,7 +331,6 @@ export const useBooking = (): UseBookingReturn => {
     setSelectedValues,
     selectedDate,
     selectedDateFormated,
-    fullName,
     formatSelectedDate,
     formatTime,
     getAvailableTimeByDate,
