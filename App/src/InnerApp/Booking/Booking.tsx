@@ -3,15 +3,27 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import darkLogo from "/public/dark-logo.png";
 import lightLogo from "/public/light-logo.png";
-import { Calendar as CalendarIcon, Clock, Video, User, Building2, Mail } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Video, User, Building2, Mail, Info } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import ThemeIcon from "../components/Logo";
 import { ToastContainer, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useBooking } from "./useBooking";
+import type { BookingFormData } from "./useBooking";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
+
+const REFERRAL_OPTIONS = [
+  "Google Search",
+  "LinkedIn",
+  "Facebook",
+  "Instagram",
+  "Referral / Word of mouth",
+  "Conference / Event",
+  "Blog / Article",
+  "Other",
+];
 
 const Booking = () => {
   const { t } = useLanguage();
@@ -23,7 +35,6 @@ const Booking = () => {
     selectedValues,
     setSelectedValues,
     selectedDateFormated,
-    fullName,
     formatTime,
     getAvailableTimeByDate,
     handleSelection,
@@ -31,18 +42,44 @@ const Booking = () => {
   } = useBooking();
 
   const [showForm, setShowForm] = React.useState(false);
-  const [email, setEmail] = React.useState( localStorage.getItem("email") || "" );
-  const [firstName, setFirstName] = React.useState(
-    localStorage.getItem("firstName") || ""
-  );
-  const [lastName, setLastName] = React.useState(
-    localStorage.getItem("lastName") || ""
-  );
+
+  // Form fields – all required, nothing from localStorage
+  const [fullName, setFullName] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [company, setCompany] = React.useState("");
+  const [referralSource, setReferralSource] = React.useState("");
+  const [referralSourceOther, setReferralSourceOther] = React.useState("");
+
+  // Validation state
+  const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
+
   const selectedTime = selectedValues[0]
     ? formatTime(Number(selectedValues[0]))
     : "";
-  const displayName = `${firstName || localStorage.getItem("firstName") || ""} ${lastName || localStorage.getItem("lastName") || ""}`.trim() || fullName;
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!fullName.trim()) errors.fullName = "Full name is required.";
+    if (!email.trim()) errors.email = "Email is required.";
+    if (!company.trim()) errors.company = "Company name is required.";
+    if (!referralSource) errors.referralSource = "Please select an option.";
+    if (referralSource === "Other" && !referralSourceOther.trim())
+      errors.referralSourceOther = "Please specify where you heard about us.";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const onSubmit = () => {
+    if (!validateForm()) return;
+    const formData: BookingFormData = {
+      fullName,
+      email,
+      company,
+      referralSource,
+      referralSourceOther,
+    };
+    handleSubmit(formData);
+  };
 
   return (
     <div className="min-h-screen bg-surface-overlay flex justify-center items-center p-4 md:p-8 relative overflow-hidden">
@@ -61,9 +98,6 @@ const Booking = () => {
           />
           
           <div className="mt-6">
-            <span className="inline-block px-3 py-1 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-3">
-              {fullName}
-            </span>
             <h3 className="font-bold text-2xl md:text-3xl text-content-inverse mb-3">
               {t("meetWithTitle")}
             </h3>
@@ -98,16 +132,16 @@ const Booking = () => {
             </div>
           </div>
 
-          {/* User Info Preview */}
-          {(displayName || company || email) && (
+          {/* User Info Preview – shows as they fill in the form */}
+          {(fullName || company || email) && (
             <div className="space-y-3">
               <h4 className="text-xs uppercase tracking-wider text-content-subtle-inverse font-semibold">Your Details</h4>
-              {displayName && (
+              {fullName && (
                 <div className="flex items-center gap-3 p-3 bg-surface-elevated/50 rounded-xl border border-line-glass">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center">
                     <User className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-content-inverse text-sm md:text-base">{displayName}</span>
+                  <span className="text-content-inverse text-sm md:text-base">{fullName}</span>
                 </div>
               )}
               {company && (
@@ -218,57 +252,124 @@ const Booking = () => {
           )}
 
           {showForm && (
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar pr-1">
               <h4 className="text-lg font-semibold text-content-inverse mb-4">Your Information</h4>
               
               <div className="space-y-4">
+                {/* Full Name */}
                 <div>
-                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">{t("email") || "Email"}</label>
+                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">
+                    Full Name <span className="text-red-400">*</span>
+                  </label>
                   <input
-                    className="w-full px-4 py-3 bg-surface-black/40 border border-line-glass rounded-xl text-white
-                      placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="your@email.com"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm text-content-subtle-inverse font-medium mb-2">{t("firstName") || "First name"}</label>
-                    <input
-                      className="w-full px-4 py-3 bg-surface-black/40 border border-line-glass rounded-xl text-white
-                        placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      type="text"
-                      placeholder="John"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-content-subtle-inverse font-medium mb-2">{t("lastName") || "Last name"}</label>
-                    <input
-                      className="w-full px-4 py-3 bg-surface-black/40 border border-line-glass rounded-xl text-white
-                        placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      type="text"
-                      placeholder="Doe"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">{t("company") || "Company"}</label>
-                  <input
-                    className="w-full px-4 py-3 bg-surface-black/40 border border-line-glass rounded-xl text-white
-                      placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
+                    className={`w-full px-4 py-3 bg-surface-black/40 border rounded-xl text-white
+                      placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all
+                      ${formErrors.fullName ? "border-red-500" : "border-line-glass"}`}
+                    value={fullName}
+                    onChange={(e) => { setFullName(e.target.value); setFormErrors((p) => ({ ...p, fullName: "" })); }}
                     type="text"
-                    placeholder="Your company"
+                    placeholder="John Doe"
                   />
+                  {formErrors.fullName && (
+                    <p className="mt-1 text-xs text-red-400">{formErrors.fullName}</p>
+                  )}
+                </div>
+
+                {/* Email (company email) */}
+                <div>
+                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">
+                    Email <span className="text-red-400">*</span>{" "}
+                    <span className="text-content-disabled text-xs">(company email)</span>
+                  </label>
+                  <input
+                    className={`w-full px-4 py-3 bg-surface-black/40 border rounded-xl text-white
+                      placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all
+                      ${formErrors.email ? "border-red-500" : "border-line-glass"}`}
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setFormErrors((p) => ({ ...p, email: "" })); }}
+                    type="email"
+                    placeholder="john@company.com"
+                  />
+                  {formErrors.email && (
+                    <p className="mt-1 text-xs text-red-400">{formErrors.email}</p>
+                  )}
+                </div>
+
+                {/* Company Name */}
+                <div>
+                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">
+                    Company Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    className={`w-full px-4 py-3 bg-surface-black/40 border rounded-xl text-white
+                      placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all
+                      ${formErrors.company ? "border-red-500" : "border-line-glass"}`}
+                    value={company}
+                    onChange={(e) => { setCompany(e.target.value); setFormErrors((p) => ({ ...p, company: "" })); }}
+                    type="text"
+                    placeholder="Acme Inc."
+                  />
+                  {formErrors.company && (
+                    <p className="mt-1 text-xs text-red-400">{formErrors.company}</p>
+                  )}
+                </div>
+
+                {/* Where did you hear about us? */}
+                <div>
+                  <label className="block text-sm text-content-subtle-inverse font-medium mb-2">
+                    Where did you hear about us? <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    className={`w-full px-4 py-3 bg-surface-black/40 border rounded-xl text-white
+                      focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all appearance-none
+                      ${formErrors.referralSource ? "border-red-500" : "border-line-glass"}
+                      ${!referralSource ? "text-content-disabled" : ""}`}
+                    value={referralSource}
+                    onChange={(e) => {
+                      setReferralSource(e.target.value);
+                      if (e.target.value !== "Other") setReferralSourceOther("");
+                      setFormErrors((p) => ({ ...p, referralSource: "", referralSourceOther: "" }));
+                    }}
+                  >
+                    <option value="" disabled>Select an option...</option>
+                    {REFERRAL_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt} className="bg-gray-800 text-white">
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.referralSource && (
+                    <p className="mt-1 text-xs text-red-400">{formErrors.referralSource}</p>
+                  )}
+                </div>
+
+                {/* "Other" free-text input */}
+                {referralSource === "Other" && (
+                  <div>
+                    <label className="block text-sm text-content-subtle-inverse font-medium mb-2">
+                      Please specify <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      className={`w-full px-4 py-3 bg-surface-black/40 border rounded-xl text-white
+                        placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all
+                        ${formErrors.referralSourceOther ? "border-red-500" : "border-line-glass"}`}
+                      value={referralSourceOther}
+                      onChange={(e) => { setReferralSourceOther(e.target.value); setFormErrors((p) => ({ ...p, referralSourceOther: "" })); }}
+                      type="text"
+                      placeholder="How did you find us?"
+                    />
+                    {formErrors.referralSourceOther && (
+                      <p className="mt-1 text-xs text-red-400">{formErrors.referralSourceOther}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Info note */}
+                <div className="flex items-start gap-2 p-3 bg-brand/10 rounded-xl border border-brand/20">
+                  <Info className="w-4 h-4 text-brand-hover mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-content-subtle-inverse leading-relaxed">
+                    All fields are required. We'll send meeting details to the email you provide.
+                  </p>
                 </div>
               </div>
               
@@ -277,17 +378,10 @@ const Booking = () => {
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-brand to-accent-teal text-white font-semibold rounded-xl 
                     hover:shadow-lg hover:shadow-brand/30 hover:scale-[1.02] transition-all duration-200
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  onClick={() =>
-                    handleSubmit({
-                      email,
-                      firstName,
-                      lastName,
-                      company,
-                    })
-                  }
-                  disabled={!email || isLoading}
+                  onClick={onSubmit}
+                  disabled={isLoading}
                 >
-                  {isLoading ? t("sending") || "Sending..." : t("submit")}
+                  {isLoading ? t("sending") || "Sending..." : t("submit") || "Book Meeting"}
                 </button>
                 <button
                   className="px-6 py-3 bg-surface-elevated/50 border border-line-glass text-content-inverse font-medium rounded-xl

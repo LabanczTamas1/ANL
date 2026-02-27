@@ -260,4 +260,83 @@ router.delete("/delete-availability-to-the-database", authenticateJWT, async (re
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /show-available-times/:date - Public route for booking page
+// Returns available time slots for a given date (no auth required)
+// ---------------------------------------------------------------------------
+router.get("/show-available-times/:rawDate", async (req, res) => {
+  const { rawDate } = req.params;
+  const currentTime = req.query.current_time;
+
+  try {
+    const redisClient = getRedisClient();
+    const dateInput = new Date(rawDate);
+    const dayNumber = dateInput.getDay() === 0 ? 6 : dateInput.getDay() - 1;
+
+    const weekdays = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    const dayName = weekdays[dayNumber] || "Monday";
+
+    const availability = await redisClient.hGetAll(
+      `StandardAvailability:${dayName}`
+    );
+
+    if (!availability || availability.IsDayOff === "true") {
+      return res.status(200).json({
+        availableTimes: [],
+        message: "No availability on this day",
+      });
+    }
+
+    const openingTimeStr = availability.OpeningTime || "09:00";
+    const closingTimeStr = availability.ClosingTime || "17:00";
+
+    const [openH, openM] = openingTimeStr.split(":").map(Number);
+    const [closeH, closeM] = closingTimeStr.split(":").map(Number);
+    const openingMinutes = openH * 60 + openM;
+    const closingMinutes = closeH * 60 + closeM;
+
+    let availableTimes = [];
+    for (let i = openingMinutes; i < closingMinutes; i += 60) {
+      availableTimes.push(i);
+    }
+
+    const customTimes = await checkCustomAvailability(
+      rawDate,
+      availableTimes,
+      "both"
+    );
+
+    const finalAvailableTimes =
+      customTimes.length > 0 ? customTimes : availableTimes;
+
+    const convertedTimes = finalAvailableTimes.map((minutes) => {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const ampm = hours >= 12 ? "PM" : "AM";
+      const displayHour = hours % 12 === 0 ? 12 : hours % 12;
+      return `${displayHour}:${mins.toString().padStart(2, "0")} ${ampm}`;
+    });
+
+    res.status(200).json({
+      date: rawDate,
+      availableTimes: convertedTimes,
+      rawMinutes: finalAvailableTimes,
+    });
+  } catch (error) {
+    console.error("Error fetching availability:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
+  }
+});
+
 module.exports = router;

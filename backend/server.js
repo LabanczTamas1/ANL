@@ -3,13 +3,17 @@ require("dotenv").config();
 const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
+const pinoHttp = require("pino-http");
 const corsMiddleware = require("./config/cors");
 const { initializeRedisClient, getRedisClient } = require("./config/database");
+const { initializePostgresPool } = require("./config/postgresql");
+const bookingRepository = require("./repositories/bookingRepository");
 const authenticateJWT = require("./middleware/authenticateJWT");
 const { authorizeRoles } = require("./helpers/authorizationHelpers");
 const blockBannedIPs = require("./utils/admin/blockBannedIPs");
 const { trackRequest } = require("./utils/admin/trackRequest");
 const ensureAdminAccount = require("./utils/ensureAdminAccount");
+const { logger, logError } = require("./config/logger");
 
 require("./passport");
 
@@ -30,9 +34,52 @@ const app = express();
 app.use(express.json());
 app.use(corsMiddleware);
 
-console.log("server.js-----------------");
-console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID);
-console.log("Google Client Secret:", process.env.GOOGLE_CLIENT_SECRET);
+// Add Pino HTTP logger middleware
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: {
+      ignore: (req) => req.url === "/health", // Don't log health checks
+    },
+    customLogLevel: (req, res, err) => {
+      if (res.statusCode >= 400 && res.statusCode < 500) {
+        return "warn";
+      } else if (res.statusCode >= 500 || err) {
+        return "error";
+      }
+      return "info";
+    },
+    serializers: {
+      req: (req) => ({
+        method: req.method,
+        url: req.url,
+        headers: {
+          host: req.headers.host,
+          userAgent: req.headers["user-agent"],
+        },
+        remoteAddress: req.remoteAddress,
+        remotePort: req.remotePort,
+      }),
+      res: (res) => ({
+        statusCode: res.statusCode,
+      }),
+    },
+  })
+);
+
+// Healthcheck endpoint - must be before any other middleware
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+logger.info("Server initialization starting", {
+  googleClientIdPresent: !!process.env.GOOGLE_CLIENT_ID,
+  googleClientSecretPresent: !!process.env.GOOGLE_CLIENT_SECRET,
+});
 
 app.use(
   session({
@@ -42,22 +89,25 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  console.log("Request Headers:", req.headers);
-  next();
-});
-
 app.use(passport.initialize());
 app.use(passport.session());
 
 (async () => {
   try {
     await initializeRedisClient();
-    console.log("Redis client initialized successfully.");
+    logger.info("Redis client initialized successfully (cache layer)");
+
+    await initializePostgresPool();
+    logger.info("PostgreSQL pool initialized successfully (primary DB)");
+
+    // Ensure booking table exists
+    await bookingRepository.createTable();
+    logger.info("Booking table ensured");
+
     ensureAdminAccount();
+    logger.info("Admin account check completed");
   } catch (err) {
-    console.error("Error during server initialization:", err);
+    logError(err, { phase: "server_initialization" });
     process.exit(1);
   }
 })();
@@ -72,7 +122,6 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/kanban", kanbanRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/booking", bookingRoutes);
-app.use("/api/availability", bookingRoutes);
 app.use("/api", fileManagementRoutes);
 app.use("/api", progressRoutes);
 app.use("/api/reviews", reviewRoutes);
@@ -89,5 +138,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+  logger.info({ port: PORT }, `Server running at http://localhost:${PORT}`);
+}); 

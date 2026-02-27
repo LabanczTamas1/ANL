@@ -4,3 +4,7 @@ credentials.json
 backend/credentials.json
 
 node_modules
+
+# Logs
+logs/
+*.log
