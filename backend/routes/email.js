@@ -8,8 +8,8 @@ const authenticateJWT = require("../middleware/authenticateJWT");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "deid.unideb@gmail.com",
-    pass: "ytke aiwa pzin kmwc",
+    user: process.env.SMTP_USER || "deid.unideb@gmail.com",
+    pass: process.env.SMTP_PASS || "ytke aiwa pzin kmwc",
   },
 });
 
@@ -87,7 +87,7 @@ router.post("/save-email", authenticateJWT, async (req, res) => {
 
     console.log(recipient);
     const mailOptions = {
-      from: "deid.unideb@gmail.com",
+      from: `"${process.env.SMTP_FROM_NAME || 'ANL - Ads and Leads'}" <${process.env.SMTP_FROM_EMAIL || 'deid.unideb@gmail.com'}>`,
       to: `${recipient}`,
       subject: `${subject}`,
       text: `Email from ANL Website:

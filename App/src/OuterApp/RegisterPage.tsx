@@ -51,7 +51,7 @@ const RegisterForm: React.FC = () => {
         username: data.username.trim(),
       };
 
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/user/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

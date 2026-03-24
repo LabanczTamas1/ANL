@@ -6,8 +6,9 @@
     font-family: 'Inter', sans-serif;
 }
 
-body{
-  
+html, body, #root {
+  height: 100%;
+  margin: 0;
 }
 
 #child-paddings > *{

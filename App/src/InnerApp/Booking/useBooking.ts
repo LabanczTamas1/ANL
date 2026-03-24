@@ -15,6 +15,7 @@ interface AvailabilityResponse {
 interface BookingResponse {
   message?: string;
   meetingId?: string;
+  accessToken?: string;
   authUrl?: string;
   error?: string;
 }
@@ -269,7 +270,7 @@ export const useBooking = (): UseBookingReturn => {
       console.debug("Booking payload:", payload);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/availability/booking/add-booking`,
+        `${API_BASE_URL}/api/booking`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -297,7 +298,11 @@ export const useBooking = (): UseBookingReturn => {
       toast.success(data.message || "Booking created successfully!");
       setSelectedValues([]);
 
-      if (data.meetingId) {
+      if (data.accessToken) {
+        setTimeout(() => {
+          navigate(`/booking/confirmation/${data.accessToken}`);
+        }, 500);
+      } else if (data.meetingId) {
         setTimeout(() => {
           navigate(`/home/successful-booking?meetingId=${data.meetingId}`);
         }, 500);
