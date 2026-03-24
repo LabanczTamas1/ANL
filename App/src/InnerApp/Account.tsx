@@ -142,20 +142,20 @@ const Account = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-300">
+    <div className="max-w-5xl mx-auto bg-gray-50 dark:bg-gray-800 rounded-lg shadow-md p-10 transition-colors duration-300">
       {/* Header Section */}
-      <div className="flex items-center mb-8 border-b border-gray-200 dark:border-gray-700 pb-6">
-        <div className="flex items-center justify-center bg-[#65558F] text-white rounded-full w-16 h-16 text-2xl font-bold mr-4">
+      <div className="flex items-center mb-10 border-b border-gray-200 dark:border-gray-700 pb-8">
+        <div className="flex items-center justify-center bg-[#65558F] text-white rounded-full w-20 h-20 text-3xl font-bold mr-5">
           {formData.firstname && formData.lastname 
             ? `${formData.firstname[0]}${formData.lastname[0]}` 
             : "??"
           }
         </div>
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">
             {formData.firstname} {formData.lastname}
           </h1>
-          <p className="text-gray-500 dark:text-gray-300">{t('manageAccount')}</p>
+          <p className="text-lg text-gray-500 dark:text-gray-300">{t('manageAccount')}</p>
         </div>
       </div>
       
@@ -171,16 +171,16 @@ const Account = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col gap-8">
         {/* Account Details Section */}
-        <div className="flex-1">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">{t('accountDetails')}</h2>
-          <form onSubmit={handleAccountSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-8 text-gray-800 dark:text-white">{t('accountDetails')}</h2>
+          <form onSubmit={handleAccountSubmit} className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-8">
               {/* First Name */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200">
-                  <User size={18} className="text-[#65558F]" />
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200">
+                  <User size={20} className="text-[#65558F]" />
                   {t('firstName')}
                 </label>
                 <input
@@ -188,14 +188,14 @@ const Account = () => {
                   name="firstname"
                   value={formData.firstname}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                  className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                 />
               </div>
 
               {/* Last Name */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200">
-                  <User size={18} className="text-[#65558F]" />
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200">
+                  <User size={20} className="text-[#65558F]" />
                   {t('lastName')}
                 </label>
                 <input
@@ -203,14 +203,14 @@ const Account = () => {
                   name="lastname"
                   value={formData.lastname}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                  className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                 />
               </div>
 
               {/* Email */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200">
-                  <Mail size={18} className="text-[#65558F]" />
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200">
+                  <Mail size={20} className="text-[#65558F]" />
                   {t('email')}
                 </label>
                 <input
@@ -218,14 +218,14 @@ const Account = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                  className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                 />
               </div>
 
               {/* Username */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 font-medium text-gray-700 dark:text-gray-200">
-                  <User size={18} className="text-[#65558F]" />
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200">
+                  <User size={20} className="text-[#65558F]" />
                   {t('username')}
                 </label>
                 <input
@@ -233,7 +233,7 @@ const Account = () => {
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                  className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                 />
               </div>
             </div>
@@ -241,7 +241,7 @@ const Account = () => {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-[#65558F] text-white rounded-md hover:bg-opacity-90 transition-all duration-200 font-medium disabled:bg-opacity-70"
+              className="flex items-center gap-2 px-8 py-3.5 text-base bg-[#65558F] text-white rounded-md hover:bg-opacity-90 transition-all duration-200 font-medium disabled:bg-opacity-70"
             >
               <Save size={18} />
               {loading ? t('saving') : t('saveChanges')}
@@ -250,23 +250,23 @@ const Account = () => {
         </div>
 
         {/* Password Section */}
-        <div className="lg:w-1/3 bg-white dark:bg-gray-700 p-6 rounded-lg shadow border border-gray-100 dark:border-gray-600">
-          <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-white flex items-center gap-2">
-            <Key size={20} className="text-[#65558F]" />
+        <div className="bg-white dark:bg-gray-700 p-8 rounded-lg shadow border border-gray-100 dark:border-gray-600">
+          <h2 className="text-2xl font-bold mb-8 text-gray-800 dark:text-white flex items-center gap-2">
+            <Key size={22} className="text-[#65558F]" />
             {t('changePassword')}
           </h2>
           
           {isOAuth ? (
             <div className="flex items-start p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md mb-4">
               <AlertCircle size={20} className="text-blue-500 dark:text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-              <p className="text-blue-700 dark:text-blue-300 text-sm">
+              <p className="text-blue-700 dark:text-blue-300 text-base">
                 {t('oauthMessage')}
               </p>
             </div>
           ) : (
-            <form onSubmit={handlePasswordSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="font-medium text-gray-700 dark:text-gray-200">{t('currentPassword')}</label>
+            <form onSubmit={handlePasswordSubmit} className="space-y-8">
+              <div className="space-y-3">
+                <label className="text-base font-medium text-gray-700 dark:text-gray-200">{t('currentPassword')}</label>
                 <div className="relative">
                   <input
                     type={passwordVisibility.currentPassword ? "text" : "password"}
@@ -274,20 +274,20 @@ const Account = () => {
                     value={formData.currentPassword}
                     onChange={handleInputChange}
                     placeholder={t('enterCurrentPassword')}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-10 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                    className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-12 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-[#65558F] dark:hover:text-[#65558F]"
                     onClick={() => togglePasswordVisibility('currentPassword')}
                   >
-                    {passwordVisibility.currentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {passwordVisibility.currentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <label className="font-medium text-gray-700 dark:text-gray-200">{t('newPassword')}</label>
+              <div className="space-y-3">
+                <label className="text-base font-medium text-gray-700 dark:text-gray-200">{t('newPassword')}</label>
                 <div className="relative">
                   <input
                     type={passwordVisibility.newPassword ? "text" : "password"}
@@ -295,20 +295,20 @@ const Account = () => {
                     value={formData.newPassword}
                     onChange={handleInputChange}
                     placeholder={t('enterNewPassword')}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-10 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                    className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-12 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-[#65558F] dark:hover:text-[#65558F]"
                     onClick={() => togglePasswordVisibility('newPassword')}
                   >
-                    {passwordVisibility.newPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {passwordVisibility.newPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <label className="font-medium text-gray-700 dark:text-gray-200">{t('confirmNewPassword')}</label>
+              <div className="space-y-3">
+                <label className="text-base font-medium text-gray-700 dark:text-gray-200">{t('confirmNewPassword')}</label>
                 <div className="relative">
                   <input
                     type={passwordVisibility.confirmPassword ? "text" : "password"}
@@ -316,14 +316,14 @@ const Account = () => {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     placeholder={t('confirmPassword')}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-10 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
+                    className="w-full p-4 text-base border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md pr-12 focus:ring-2 focus:ring-[#65558F] focus:border-transparent"
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300 hover:text-[#65558F] dark:hover:text-[#65558F]"
                     onClick={() => togglePasswordVisibility('confirmPassword')}
                   >
-                    {passwordVisibility.confirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {passwordVisibility.confirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
@@ -331,7 +331,7 @@ const Account = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full px-6 py-3 bg-[#65558F] text-white rounded-md hover:bg-opacity-90 transition-all duration-200 font-medium disabled:bg-opacity-70"
+                className="w-full px-8 py-3.5 text-base bg-[#65558F] text-white rounded-md hover:bg-opacity-90 transition-all duration-200 font-medium disabled:bg-opacity-70"
               >
                 {loading ? t('updating') : t('updatePassword')}
               </button>

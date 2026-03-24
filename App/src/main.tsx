@@ -44,6 +44,7 @@ import { LanguageProvider } from "./hooks/useLanguage";
 import { translations } from "./translations/translations";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
+import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
 
@@ -107,6 +108,10 @@ const router = createBrowserRouter([
     element: <SendMail />,
   },
   { path: "booking", element: <Booking /> },
+  {
+    path: "/booking/confirmation/:token",
+    element: <BookingConfirmation />,
+  },
   {
     path: "/information",
     element: <InformationsLayout />,
