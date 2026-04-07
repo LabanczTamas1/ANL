@@ -49,19 +49,32 @@ const Availability = () => {
     return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
   };
 
+  const formatTimeDisplay = (time: string): string => {
+    const [h, m] = time.split(":").map(Number);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const hour12 = h % 12 || 12;
+    return m === 0
+      ? `${hour12} ${suffix}`
+      : `${hour12}:${String(m).padStart(2, "0")} ${suffix}`;
+  };
+
   const parseTime = (time: string): number => {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
   };
 
-  const checkForChanges = (current: DayAvailability[], original: DayAvailability[]) => {
+  const checkForChanges = (
+    current: DayAvailability[],
+    original: DayAvailability[]
+  ) => {
     if (current.length !== original.length) return true;
     for (let i = 0; i < current.length; i++) {
       if (
         current[i].openingTime !== original[i].openingTime ||
         current[i].closingTime !== original[i].closingTime ||
         current[i].isDayOff !== original[i].isDayOff
-      ) return true;
+      )
+        return true;
     }
     return false;
   };
@@ -70,7 +83,12 @@ const Availability = () => {
     setAvailability((prev) => {
       const updated = prev.map((entry) =>
         entry.day === day
-          ? { ...entry, day: daysOfWeek[index], openingTime: formatTime(newValue[0]), closingTime: formatTime(newValue[1]) }
+          ? {
+              ...entry,
+              day: daysOfWeek[index],
+              openingTime: formatTime(newValue[0]),
+              closingTime: formatTime(newValue[1]),
+            }
           : entry
       );
       setHasUnsavedChanges(checkForChanges(updated, originalAvailability));
@@ -98,6 +116,12 @@ const Availability = () => {
     }
 
     try {
+      // Convert booleans to strings for backend compatibility
+      const payload = availability.map((entry) => ({
+        ...entry,
+        isDayOff: String(entry.isDayOff),
+      }));
+
       const response = await fetch(
         `${API_BASE_URL}/api/availability/standard-availability`,
         {
@@ -106,7 +130,7 @@ const Availability = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ availableTimes: availability }),
+          body: JSON.stringify({ availableTimes: payload }),
         }
       );
 
@@ -120,7 +144,9 @@ const Availability = () => {
       setOriginalAvailability(JSON.parse(JSON.stringify(availability)));
       setHasUnsavedChanges(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast.error(
+        err instanceof Error ? err.message : "An unknown error occurred."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -152,23 +178,44 @@ const Availability = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch availability.");
+          throw new Error(
+            errorData.error || "Failed to fetch availability."
+          );
         }
 
-        const data: Record<string, { openingTime?: string; closingTime?: string; isDayOff?: boolean }> =
-          await response.json();
+        const data = await response.json();
 
-        const formattedAvailability = Object.entries(data).map(([, details], index) => ({
-          day: daysOfWeek[index],
-          openingTime: details.openingTime || "09:00",
-          closingTime: details.closingTime || "17:00",
-          isDayOff: details.isDayOff || false,
-        }));
+        // Backend returns an array of { day, openingTime, closingTime, isDayOff }
+        // isDayOff comes as string "true"/"false" — convert to boolean
+        const formattedAvailability: DayAvailability[] = (
+          Array.isArray(data) ? data : Object.values(data)
+        ).map(
+          (
+            entry: {
+              day?: string;
+              openingTime?: string;
+              closingTime?: string;
+              isDayOff?: string | boolean;
+            },
+            index: number
+          ) => ({
+            day: entry.day || daysOfWeek[index],
+            openingTime: entry.openingTime || "09:00",
+            closingTime: entry.closingTime || "17:00",
+            isDayOff:
+              entry.isDayOff === true ||
+              entry.isDayOff === "true",
+          })
+        );
 
         setAvailability(formattedAvailability);
-        setOriginalAvailability(JSON.parse(JSON.stringify(formattedAvailability)));
+        setOriginalAvailability(
+          JSON.parse(JSON.stringify(formattedAvailability))
+        );
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+        toast.error(
+          err instanceof Error ? err.message : "An unknown error occurred."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -193,11 +240,12 @@ const Availability = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, [showMobileModal]);
 
   return (
-    <div className="h-full bg-surface-overlay flex flex-col relative overflow-y-auto custom-scrollbar">
+    <div className="h-full bg-surface-overlay flex flex-col relative overflow-y-auto scrollbar-hide">
       {/* Background gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
@@ -207,8 +255,12 @@ const Availability = () => {
         <div className="w-full max-w-4xl flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <ThemeIcon
-              lightIcon={<img src={darkLogo} alt="Light Logo" className="h-8 w-8" />}
-              darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-8 w-8" />}
+              lightIcon={
+                <img src={darkLogo} alt="Light Logo" className="h-8 w-8" />
+              }
+              darkIcon={
+                <img src={lightLogo} alt="Dark Logo" className="h-8 w-8" />
+              }
               size="m"
               ariaLabel="ANL logo"
             />
@@ -216,7 +268,9 @@ const Availability = () => {
               <h1 className="text-xl md:text-2xl font-bold text-content-inverse">
                 Manage Availability
               </h1>
-              <p className="text-xs text-content-subtle-inverse">Set your standard weekly schedule</p>
+              <p className="text-xs text-content-subtle-inverse">
+                Set your standard weekly schedule
+              </p>
             </div>
           </div>
 
@@ -265,84 +319,113 @@ const Availability = () => {
             <div
               key={dayAvailability.day}
               className={`p-4 md:p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 availability-card
-                ${dayAvailability.isDayOff
-                  ? "bg-status-error/5 border-status-error/20"
-                  : "bg-surface-elevated/50 border-line-glass"
+                ${
+                  dayAvailability.isDayOff
+                    ? "bg-surface-elevated/30 border-line-glass opacity-60"
+                    : "bg-surface-elevated/50 border-line-glass"
                 }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-                {/* Day name */}
-                <div className="flex items-center justify-between sm:w-32 shrink-0">
-                  <h3 className="text-sm font-semibold text-content-inverse">
-                    {dayAvailability.day}
-                  </h3>
-                  <div className={`text-[10px] font-medium px-2 py-0.5 rounded-full
-                    ${dayAvailability.isDayOff
-                      ? "bg-status-error/20 text-status-error"
-                      : "bg-brand/20 text-brand-hover"
-                    }`}
-                  >
-                    {dayAvailability.isDayOff
-                      ? "Day Off"
-                      : `${dayAvailability.openingTime} – ${dayAvailability.closingTime}`}
+                {/* Day info + toggle */}
+                <div className="flex items-center justify-between sm:w-56 shrink-0 gap-3">
+                  <div className="flex flex-col min-w-0">
+                    <h3
+                      className={`text-sm font-semibold ${
+                        dayAvailability.isDayOff
+                          ? "text-content-muted line-through"
+                          : "text-content-inverse"
+                      }`}
+                    >
+                      {dayAvailability.day}
+                    </h3>
+                    <span
+                      className={`text-xs mt-0.5 ${
+                        dayAvailability.isDayOff
+                          ? "text-content-disabled"
+                          : "text-content-subtle-inverse"
+                      }`}
+                    >
+                      {dayAvailability.isDayOff
+                        ? "Day off"
+                        : `${formatTimeDisplay(dayAvailability.openingTime)} – ${formatTimeDisplay(dayAvailability.closingTime)}`}
+                    </span>
                   </div>
+
+                  {/* Toggle switch */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!dayAvailability.isDayOff}
+                    aria-label={`${dayAvailability.day} ${dayAvailability.isDayOff ? "day off" : "working"}`}
+                    onClick={() => toggleDayOff(dayAvailability.day)}
+                    className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay
+                      ${!dayAvailability.isDayOff ? "bg-brand" : "bg-line-dark"}`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out
+                        ${!dayAvailability.isDayOff ? "translate-x-5" : "translate-x-0"}`}
+                    />
+                  </button>
                 </div>
 
-                {/* Slider */}
-                <div className="flex-1 px-2">
+                {/* Slider — only visible when working */}
+                <div
+                  className={`flex-1 px-2 transition-all duration-300 ${
+                    dayAvailability.isDayOff
+                      ? "opacity-30 pointer-events-none"
+                      : "opacity-100"
+                  }`}
+                >
                   <Slider
                     value={[
                       parseTime(dayAvailability.openingTime),
                       parseTime(dayAvailability.closingTime),
                     ]}
                     onChange={(_event, newValue) =>
-                      handleChange(dayAvailability.day, newValue as number[], index)
+                      handleChange(
+                        dayAvailability.day,
+                        newValue as number[],
+                        index
+                      )
                     }
                     onMouseDown={() => setIsDragging(dayAvailability.day)}
                     onTouchStart={() => setIsDragging(dayAvailability.day)}
                     onChangeCommitted={() => setIsDragging(null)}
-                    valueLabelDisplay={isDragging === dayAvailability.day ? "on" : "off"}
+                    valueLabelDisplay={
+                      isDragging === dayAvailability.day ? "on" : "off"
+                    }
                     min={0}
                     max={1440}
                     step={15}
                     valueLabelFormat={(value) => formatTime(value)}
                     disabled={dayAvailability.isDayOff}
                     sx={{
-                      color: dayAvailability.isDayOff ? "#EF4444" : "#65558F",
+                      color: "#65558F",
                       height: 6,
-                      "& .MuiSlider-track": { border: "none", borderRadius: 3 },
+                      "& .MuiSlider-track": {
+                        border: "none",
+                        borderRadius: 3,
+                      },
                       "& .MuiSlider-rail": { opacity: 0.15 },
                       "& .MuiSlider-thumb": {
                         height: 18,
                         width: 18,
                         backgroundColor: "#fff",
-                        border: dayAvailability.isDayOff ? "2px solid #EF4444" : "2px solid #65558F",
+                        border: "2px solid #65558F",
                         "&:focus, &:hover, &.Mui-active, &.Mui-focusVisible": {
-                          boxShadow: dayAvailability.isDayOff
-                            ? "0 0 0 6px rgba(239, 68, 68, 0.16)"
-                            : "0 0 0 6px rgba(101, 85, 143, 0.16)",
+                          boxShadow: "0 0 0 6px rgba(101, 85, 143, 0.16)",
                         },
                       },
                       "& .MuiSlider-valueLabel": {
-                        lineHeight: 1.2, fontSize: 11,
-                        background: dayAvailability.isDayOff ? "#EF4444" : "#65558F",
-                        padding: "3px 6px", borderRadius: "6px",
+                        lineHeight: 1.2,
+                        fontSize: 11,
+                        background: "#65558F",
+                        padding: "3px 6px",
+                        borderRadius: "6px",
                       },
                     }}
                   />
                 </div>
-
-                {/* Day off toggle */}
-                <button
-                  onClick={() => toggleDayOff(dayAvailability.day)}
-                  className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
-                    ${dayAvailability.isDayOff
-                      ? "bg-status-success/20 text-status-success hover:bg-status-success/30 border border-status-success/30"
-                      : "bg-status-error/20 text-status-error hover:bg-status-error/30 border border-status-error/30"
-                    }`}
-                >
-                  {dayAvailability.isDayOff ? "Enable" : "Day Off"}
-                </button>
               </div>
             </div>
           ))}
@@ -397,7 +480,9 @@ const Availability = () => {
             className="bg-surface-elevated border border-line-glass w-full max-w-md rounded-t-2xl p-5 mobile-modal-slide-up"
           >
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-bold text-content-inverse">Custom Availability</h2>
+              <h2 className="text-lg font-bold text-content-inverse">
+                Custom Availability
+              </h2>
               <button
                 onClick={() => setShowMobileModal(false)}
                 className="p-1.5 rounded-lg hover:bg-surface-elevated/80 border border-line-glass transition-colors"
@@ -447,10 +532,14 @@ const Availability = () => {
       />
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(101,85,143,0.5); border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(101,85,143,0.7); }
+        /* Hide all scrollbars */
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
 
         .availability-card {
           animation: card-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;

@@ -1,21 +1,21 @@
-import React, { useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import CustomNavbar from "./CustomNavbar";
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "../Navbar";
 import Footer from "../Footer";
 import CookieConsentBanner from "./CookieConsentBanner";
 
 const InformationsLayout = () => {
-  const location = useLocation().pathname;
-  console.log(location);
-  
   return (
-    <div className="relative">
-      <div className="absolute h-[100px] inset-0 bg-no-repeat bg-cover bg-center z-0"></div>
-      <CustomNavbar />
-      <div className="">
+    <div className="bg-surface-overlay relative min-h-screen flex flex-col">
+      {/* Same Navbar as landing page */}
+      <Navbar />
+
+      {/* Page content */}
+      <div className="flex-1">
         <Outlet />
       </div>
-      <Footer darkMode={false}/>
+
+      <Footer darkMode={true} />
       <CookieConsentBanner />
     </div>
   );

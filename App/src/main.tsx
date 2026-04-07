@@ -5,7 +5,9 @@ import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
+  Outlet,
 } from "react-router-dom";
+import ScrollToTop from "./ScrollToTop";
 import LandingPage from "./OuterApp/LandingPage.tsx";
 import RegisterPage from "./OuterApp/RegisterPage.tsx";
 import LoginPage from "./OuterApp/LoginPage.tsx";
@@ -61,12 +63,23 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Root layout that scrolls to top on every navigation
+const RootLayout = () => (
+  <>
+    <ScrollToTop />
+    <Outlet />
+  </>
+);
+
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <LandingPage />,
+    element: <RootLayout />,
     errorElement: <NotFoundPage />,
-  },
+    children: [
+      {
+        path: "/",
+        element: <LandingPage />,
+      },
   {
     path: "/empty",
     element: <EmptyPage />,
@@ -205,6 +218,8 @@ const router = createBrowserRouter([
   {
     path: "onboarding",
     element: <Onboarding />,
+  },
+    ],
   },
 ]);
 
