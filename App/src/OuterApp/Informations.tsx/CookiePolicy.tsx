@@ -3,11 +3,11 @@ import TermsItem from "./TermsItem";
 
 const CookiePolicy = () => {
   return (
-    <div className="flex flex-col items-center max-w-[1000px] w-full mx-auto mt-12 px-4 sm:px-6 md:px-8">
+    <div className="flex flex-col items-center max-w-[1000px] w-full mx-auto pt-28 pb-16 px-4 sm:px-6 md:px-8 text-white">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-2">
         Cookie Policy
       </h1>
-      <p className="text-center text-sm sm:text-base mb-8">
+      <p className="text-center text-sm sm:text-base mb-8 text-gray-400">
         Effective Date: November 7, 2024
       </p>
       <main className="space-y-6">

@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { FaPaperPlane } from "react-icons/fa";
 
 const ContactForm: React.FC = () => {
-  // State for form inputs
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    message: '',
+    fullName: "",
+    email: "",
+    message: "",
   });
 
-  // State for loading and errors
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -25,90 +26,124 @@ const ContactForm: React.FC = () => {
     setSuccess(false);
 
     try {
-      const response = await fetch('http://localhost:3001/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("http://localhost:3001/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send the message. Please try again later.');
+        throw new Error("Failed to send the message. Please try again later.");
       }
 
       setSuccess(true);
-      setFormData({ fullName: '', email: '', message: '' }); // Reset the form
+      setFormData({ fullName: "", email: "", message: "" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const inputClasses =
+    "w-full px-4 py-3 rounded-xl bg-surface-elevated border border-line-glass text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all duration-fast";
+
   return (
-    <div className="flex items-center justify-center bg-white/5 backdrop-blur-md text-white rounded-lg shadow-md flex flex-col items-center justify-around text-center m-4 border-4 border-gray-400">
-      <form onSubmit={handleSubmit} className="p-8 rounded-lg w-[90vw] lg:w-[35vw] lg:max-w-[450px]">
-        <h1 className="text-center text-2xl font-bold mb-6">Send message for Us</h1>
+    <div className="rounded-2xl border border-line-glass bg-glass backdrop-blur-md p-8 md:p-10">
+      {/* Form header */}
+      <h2 className="text-2xl font-bold text-white mb-2">Send Us a Message</h2>
+      <p className="text-content-muted text-sm mb-8">
+        Fill out the form below and we&apos;ll get back to you as soon as
+        possible.
+      </p>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-sm mb-4">Message sent successfully!</p>}
+      {/* Status messages */}
+      {error && (
+        <div className="flex items-center gap-2 px-4 py-3 mb-6 rounded-xl bg-status-error/10 border border-status-error/30 text-status-error text-sm">
+          <span className="shrink-0">&#x26A0;</span>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-2 px-4 py-3 mb-6 rounded-xl bg-status-success/10 border border-status-success/30 text-status-success text-sm">
+          <span className="shrink-0">&#x2714;</span>
+          Message sent successfully! We&apos;ll be in touch soon.
+        </div>
+      )}
 
-        <div className="mb-4 text-black">
-          <label className="block text-sm text-left font-medium text-white mb-2" htmlFor="fullName">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Full Name */}
+        <div>
+          <label
+            htmlFor="fullName"
+            className="block text-sm font-medium text-content-subtle-inverse mb-2"
+          >
             Full Name
           </label>
           <input
             type="text"
             id="fullName"
             name="fullName"
-            placeholder="Full Name"
+            placeholder="John Doe"
             value={formData.fullName}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className={inputClasses}
             required
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm text-left font-medium mb-2" htmlFor="email">
-            Email
+        {/* Email */}
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-content-subtle-inverse mb-2"
+          >
+            Email Address
           </label>
           <input
             type="email"
             id="email"
             name="email"
-            placeholder="Email"
+            placeholder="you@example.com"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className={inputClasses}
             required
           />
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm text-left font-medium mb-2" htmlFor="message">
-            Write your message
+        {/* Message */}
+        <div>
+          <label
+            htmlFor="message"
+            className="block text-sm font-medium text-content-subtle-inverse mb-2"
+          >
+            Your Message
           </label>
           <textarea
             id="message"
             name="message"
-            placeholder="Write your message"
+            placeholder="Tell us about your project or question..."
             value={formData.message}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-purple-500 h-[100px]"
+            rows={5}
+            className={`${inputClasses} resize-none`}
             required
-          ></textarea>
+          />
         </div>
 
+        {/* Submit */}
         <button
           type="submit"
-          className={`w-full text-white font-medium py-2 rounded-lg transition ${
-            isLoading ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'
-          }`}
           disabled={isLoading}
+          className="group relative w-full inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-brand to-accent-teal rounded-xl text-white font-semibold text-base overflow-hidden transition-all duration-normal hover:shadow-lg hover:shadow-brand/30 hover:scale-[1.01] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          {isLoading ? 'Sending...' : 'Send'}
+          {/* Shine effect */}
+          <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <FaPaperPlane className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          <span>{isLoading ? "Sending..." : "Send Message"}</span>
         </button>
       </form>
     </div>
