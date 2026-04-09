@@ -7,6 +7,7 @@ COMPOSE_DIR="/opt/anl/backend"
 echo "🚀 Deploying..."
 
 cd $APP_DIR
+git checkout main
 git pull origin main
 
 cd $COMPOSE_DIR
