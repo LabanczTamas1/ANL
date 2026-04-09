@@ -7,9 +7,9 @@ COMPOSE_DIR="/opt/anl/backend"
 echo "🚀 Deploying..."
 
 cd $APP_DIR
+git fetch origin main
 git checkout main
 git reset --hard origin/main
-git pull origin main
 
 cd $COMPOSE_DIR
 docker compose down
