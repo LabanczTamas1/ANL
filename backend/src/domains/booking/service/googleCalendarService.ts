@@ -1,75 +1,183 @@
 // ---------------------------------------------------------------------------
-// Google Calendar Service — service-account based Meet + Calendar integration
+// Google Calendar Service — OAuth-based Meet + Calendar integration
+// ---------------------------------------------------------------------------
+// Uses the admin's personal Google account (OAuth2 refresh token stored in
+// Redis) to create Calendar events with automatic Google Meet links.
+// No service account or Google Workspace required.
 // ---------------------------------------------------------------------------
 
 import { google, calendar_v3 } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../../../config/env.js';
-import { createLogger } from '../../../utils/logger.js';
+import { getRedisClient } from '../../../config/database.js';
+import { createLogger, logError } from '../../../utils/logger.js';
 
 const logger = createLogger('booking', 'service');
 
 // ---------------------------------------------------------------------------
-// Configuration
+// Constants
 // ---------------------------------------------------------------------------
+
+const MEETING_HOSTS_KEY = 'settings:meeting_hosts';
+const CALENDAR_TOKENS_KEY = 'settings:google_calendar_tokens';
+
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
+
+
+
+// ---------------------------------------------------------------------------
+// OAuth2 helper
+// ---------------------------------------------------------------------------
+
+function createOAuth2Client() {
+  const frontendUrl = env.ALLOWED_ORIGINS.split(',')[0].trim() || 'http://localhost:5173';
+  return new google.auth.OAuth2(
+    env.GOOGLE_CLIENT_ID,
+    env.GOOGLE_CLIENT_SECRET,
+    `${frontendUrl}/admin/calendar-callback`,
+  );
+}
 
 /**
- * All ANL team members who should be invited to every booking meeting.
- * Comma-separated in the ANL_TEAM_EMAILS env var.
+ * Generate the URL the admin clicks to authorize calendar access.
  */
-const ANL_TEAM_MEMBERS: string[] = (env.ANL_TEAM_EMAILS || '')
-  .split(',')
-  .map((e) => e.trim())
-  .filter(Boolean);
+function getAuthUrl(): string {
+  const oauth2Client = createOAuth2Client();
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent', // force consent to always get refresh_token
+    scope: SCOPES,
+    state: 'calendar_connect',
+  });
+}
 
 /**
- * The Google Workspace user whose calendar the event is created on.
- * The service account impersonates this user via domain-wide delegation.
+ * Exchange an authorization code for tokens and persist to Redis.
  */
-const CALENDAR_OWNER = env.ANL_CALENDAR_OWNER || '';
+async function handleAuthCallback(code: string): Promise<{ email: string }> {
+  const oauth2Client = createOAuth2Client();
+  const { tokens } = await oauth2Client.getToken(code);
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
-
-// ---------------------------------------------------------------------------
-// Auth helper
-// ---------------------------------------------------------------------------
-
-function getAuthClient() {
-  let credentials: Record<string, unknown> | undefined;
-
-  if (env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-    try {
-      credentials = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_KEY);
-    } catch (err) {
-      throw new Error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY JSON');
-    }
-  } else if (env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE) {
-    // Dynamic import of the JSON file
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    credentials = require(env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE);
-  }
-
-  if (!credentials) {
+  if (!tokens.refresh_token) {
     throw new Error(
-      'Missing Google service-account credentials. ' +
-        'Set GOOGLE_SERVICE_ACCOUNT_KEY (JSON string) or GOOGLE_SERVICE_ACCOUNT_KEY_FILE (path).',
+      'No refresh token received. Revoke app access at https://myaccount.google.com/permissions and try again.',
     );
   }
 
-  if (!CALENDAR_OWNER) {
-    throw new Error(
-      'ANL_CALENDAR_OWNER env var is required (e.g. meetings@adsandleads.com).',
-    );
-  }
+  oauth2Client.setCredentials(tokens);
 
-  const auth = new google.auth.JWT({
-    email: credentials.client_email as string,
-    key: credentials.private_key as string,
-    scopes: SCOPES,
-    subject: CALENDAR_OWNER, // impersonate via domain-wide delegation
+  // Get the authorized user's email
+  const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+  const { data } = await oauth2.userinfo.get();
+  const email = data.email || 'unknown';
+
+  // Store in Redis (persistent)
+  const r = getRedisClient();
+  await r.hSet(CALENDAR_TOKENS_KEY, {
+    access_token: tokens.access_token || '',
+    refresh_token: tokens.refresh_token,
+    expiry_date: String(tokens.expiry_date || ''),
+    email,
+    connected_at: new Date().toISOString(),
   });
 
-  return auth;
+  logger.info({ email }, 'Google Calendar connected via OAuth');
+  return { email };
+}
+
+/**
+ * Get the stored OAuth2 client with valid tokens, or null if not connected.
+ */
+async function getAuthenticatedClient(): Promise<InstanceType<typeof google.auth.OAuth2> | null> {
+  try {
+    const r = getRedisClient();
+    const data = await r.hGetAll(CALENDAR_TOKENS_KEY);
+
+    if (!data.refresh_token) {
+      logger.debug('No calendar tokens found in Redis');
+      return null;
+    }
+
+    const oauth2Client = createOAuth2Client();
+    oauth2Client.setCredentials({
+      access_token: data.access_token || undefined,
+      refresh_token: data.refresh_token,
+      expiry_date: data.expiry_date ? parseInt(data.expiry_date, 10) : undefined,
+    });
+
+    // If the token is expired or about to expire, refresh it
+    const tokenInfo = oauth2Client.credentials;
+    if (tokenInfo.expiry_date && Date.now() >= tokenInfo.expiry_date - 60_000) {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+
+      // Persist updated tokens
+      await r.hSet(CALENDAR_TOKENS_KEY, {
+        access_token: credentials.access_token || '',
+        expiry_date: String(credentials.expiry_date || ''),
+      });
+
+      logger.debug('Refreshed Google Calendar access token');
+    }
+
+    return oauth2Client;
+  } catch (err) {
+    logError(err, { context: 'getAuthenticatedClient' });
+    return null;
+  }
+}
+
+/**
+ * Check the connection status.
+ */
+async function getConnectionStatus(): Promise<{
+  connected: boolean;
+  email: string | null;
+  connectedAt: string | null;
+}> {
+  try {
+    const r = getRedisClient();
+    const data = await r.hGetAll(CALENDAR_TOKENS_KEY);
+
+    if (!data.refresh_token) {
+      return { connected: false, email: null, connectedAt: null };
+    }
+
+    return {
+      connected: true,
+      email: data.email || null,
+      connectedAt: data.connected_at || null,
+    };
+  } catch {
+    return { connected: false, email: null, connectedAt: null };
+  }
+}
+
+/**
+ * Disconnect — remove stored tokens.
+ */
+async function disconnect(): Promise<void> {
+  const r = getRedisClient();
+  await r.del(CALENDAR_TOKENS_KEY);
+  logger.info('Google Calendar disconnected');
+}
+
+// ---------------------------------------------------------------------------
+// Meeting hosts
+// ---------------------------------------------------------------------------
+
+async function getMeetingHosts(): Promise<string[]> {
+  try {
+    const r = getRedisClient();
+    return await r.sMembers(MEETING_HOSTS_KEY);
+  } catch {
+    logger.warn('Failed to read meeting hosts from Redis');
+    return [];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -98,8 +206,8 @@ export interface CalendarEventResult {
 
 /**
  * Creates a Google Calendar event with an auto-generated Google Meet link.
- * The event is created on CALENDAR_OWNER's calendar.
- * All ANL_TEAM_MEMBERS are added as attendees (pre-accepted).
+ * The event is created on the connected admin's primary calendar.
+ * All meeting hosts are added as attendees.
  * The external booker is also invited.
  *
  * Google sends calendar invites to all attendees automatically.
@@ -107,19 +215,26 @@ export interface CalendarEventResult {
 async function createMeetingEvent(
   input: CalendarEventInput,
 ): Promise<CalendarEventResult> {
-  const auth = getAuthClient();
+  const auth = await getAuthenticatedClient();
+  if (!auth) {
+    throw new Error('Google Calendar not connected. An admin must connect their Google account first.');
+  }
+
   const calendar = google.calendar({ version: 'v3', auth });
+
+  // Fetch meeting hosts from Redis (falls back to env var)
+  const teamMembers = await getMeetingHosts();
 
   // Build attendees: team members + external booker
   const attendees: calendar_v3.Schema$EventAttendee[] = [
-    // ANL team members — auto-accepted so it shows on their calendars
-    ...ANL_TEAM_MEMBERS.map((email) => ({
+    // Meeting hosts
+    ...teamMembers.map((email) => ({
       email,
       responseStatus: 'accepted' as const,
     })),
     // External booker
     ...input.attendeeEmails
-      .filter((e) => !ANL_TEAM_MEMBERS.includes(e))
+      .filter((e) => !teamMembers.includes(e))
       .map((email) => ({ email })),
   ];
 
@@ -159,16 +274,16 @@ async function createMeetingEvent(
       summary: input.summary,
       start: input.startDateTime,
       attendeeCount: attendees.length,
-      teamMembers: ANL_TEAM_MEMBERS.length,
+      teamMembers: teamMembers.length,
     },
     'Creating Google Calendar event with Meet',
   );
 
   const response = await calendar.events.insert({
-    calendarId: CALENDAR_OWNER,
+    calendarId: 'primary',
     requestBody: event,
     conferenceDataVersion: 1,
-    sendUpdates: 'all', // sends calendar invite emails to everyone
+    sendUpdates: 'all',
   });
 
   const meetLink =
@@ -196,10 +311,6 @@ async function createMeetingEvent(
 // Helper — convert booking date + minutes to ISO timestamps
 // ---------------------------------------------------------------------------
 
-/**
- * Converts a date string (YYYY-MM-DD) + time in minutes-past-midnight
- * to a pair of ISO-like timestamps for a meeting of `durationMinutes`.
- */
 function bookingToISO(
   dateStr: string,
   timeMinutes: number,
@@ -223,14 +334,13 @@ function bookingToISO(
 // ---------------------------------------------------------------------------
 
 /**
- * Returns true if Google Calendar integration is configured.
- * If false, callers should skip calendar creation gracefully.
+ * Returns true if Google Calendar OAuth credentials are available.
+ * Callers should use this before attempting event creation.
  */
-function isConfigured(): boolean {
-  return !!(
-    (env.GOOGLE_SERVICE_ACCOUNT_KEY || env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE) &&
-    CALENDAR_OWNER
-  );
+async function isConfigured(): Promise<boolean> {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return false;
+  const status = await getConnectionStatus();
+  return status.connected;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,8 +348,15 @@ function isConfigured(): boolean {
 // ---------------------------------------------------------------------------
 
 export const googleCalendarService = {
+  // OAuth flow
+  getAuthUrl,
+  handleAuthCallback,
+  getConnectionStatus,
+  disconnect,
+
+  // Calendar operations
   createMeetingEvent,
   bookingToISO,
   isConfigured,
-  ANL_TEAM_MEMBERS,
+  getMeetingHosts,
 };

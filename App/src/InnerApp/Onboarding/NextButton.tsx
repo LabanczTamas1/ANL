@@ -1,34 +1,38 @@
 import React from "react";
+import { ChevronRight } from "lucide-react";
 
-interface NextButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface NextButtonProps {
   children: React.ReactNode;
-  icon?: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
 }
 
-export const NextButton: React.FC<NextButtonProps> = ({ children, icon, ...props }) => {
+export const NextButton: React.FC<NextButtonProps> = ({ children, onClick, disabled = false }) => {
   return (
-    <div
-      {...props}
-      className="btn btn-neutral btn-sm md:btn-md gap-1 h-auto lg:gap-3 cursor-pointer max-w-[42vw] flex-wrap p-2"
-      style={{ minHeight: '2.5rem' }}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={disabled ? "No next step" : `Next: ${children}`}
+      className={[
+        "group flex items-center gap-2 sm:gap-3 rounded-xl px-3 py-2.5 sm:px-5 sm:py-3",
+        "min-h-[2.75rem] min-w-[2.75rem] max-w-[45%]",
+        "text-sm sm:text-base font-medium leading-tight",
+        "transition-all duration-normal",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus",
+        disabled
+          ? "opacity-0 pointer-events-none"
+          : "bg-brand text-content-inverse shadow-card hover:shadow-card-hover hover:bg-brand-hover active:scale-[0.97]",
+      ].join(" ")}
     >
-      <div className="flex flex-col items-end whitespace-normal break-words leading-tight">
-        <span className="text-neutral-content/50 hidden text-xs font-normal md:block">
-          Next
-        </span>
-        <span className="block">{children}</span>
+      <div className="flex flex-col items-end overflow-hidden">
+        <span className="hidden sm:block text-xs text-content-inverse/60">Next</span>
+        <span className="truncate">{children}</span>
       </div>
-      {icon && (
-        <svg
-          className="h-6 w-6 fill-current md:h-8 md:w-8"
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-        >
-          <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"></path>
-        </svg>
-      )}
-    </div>
+      <ChevronRight
+        className="h-5 w-5 shrink-0 transition-transform duration-normal group-hover:translate-x-0.5"
+        aria-hidden="true"
+      />
+    </button>
   );
 };

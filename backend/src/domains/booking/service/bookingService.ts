@@ -4,12 +4,11 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
-import { google } from 'googleapis';
 import nodemailer from 'nodemailer';
 import { bookingRepository, BookingRow } from '../repository/bookingRepository.js';
 import { getRedisClient } from '../../../config/database.js';
 import { env } from '../../../config/env.js';
-import { convertMinutesToTime } from '../../../utils/timeHelpers.js';
+import { convertMinutesToTime, getDayNameFromDateString } from '../../../utils/timeHelpers.js';
 import { checkCustomAvailability } from '../../../utils/availabilityHelpers.js';
 import { googleCalendarService } from './googleCalendarService.js';
 import {
@@ -58,19 +57,7 @@ class BookingService {
   async getAvailableTimesForDate(date: string): Promise<number[]> {
     const redisClient = getRedisClient();
 
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-
-    const dateObj = new Date(date);
-    const dayNumber = dateObj.getDay() === 0 ? 6 : dateObj.getDay() - 1;
-    const dayName = weekdays[dayNumber] || 'Monday';
+    const dayName = getDayNameFromDateString(date);
 
     const standardAvailability = await redisClient.hGetAll(
       `StandardAvailability:${dayName}`,
@@ -96,59 +83,13 @@ class BookingService {
       'both',
     );
 
-    return customAvailability.length > 0 ? customAvailability : availableTimes;
-  }
+    const timesAfterCustom = customAvailability.length > 0 ? customAvailability : availableTimes;
 
-  async createGoogleMeetEvent(
-    date: string,
-    time: string,
-    email: string,
-    oauth2Client: any,
-    timezone = 'America/New_York',
-  ) {
-    try {
-      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-      const eventDateTime = new Date(`${date}T${time}:00`);
+    // Exclude times that already have a confirmed booking
+    const existingBookings = await bookingRepository.findByDate(date);
+    const bookedMinutes = new Set(existingBookings.map((b) => b.time));
 
-      const meetRequestBody = {
-        summary: `Meeting with ${email}`,
-        description: 'Meeting scheduled via ANL Website',
-        start: {
-          dateTime: eventDateTime.toISOString(),
-          timeZone: timezone,
-        },
-        end: {
-          dateTime: new Date(
-            eventDateTime.getTime() + 60 * 60 * 1000,
-          ).toISOString(),
-          timeZone: timezone,
-        },
-        conferenceData: {
-          createRequest: {
-            requestId: uuidv4(),
-            conferenceSolution: { key: { conferenceType: 'hangoutsMeet' } },
-          },
-        },
-        attendees: [{ email }],
-      };
-
-      const event: any = await calendar.events.insert({
-        calendarId: 'primary',
-        resource: meetRequestBody,
-        conferenceDataVersion: 1,
-      } as any);
-
-      return {
-        success: true,
-        eventId: event.data.id,
-        meetLink:
-          event.data.conferenceData?.entryPoints?.[0]?.uri || null,
-        calendarLink: event.data.htmlLink,
-      };
-    } catch (error) {
-      logError(error, { context: 'createGoogleMeetEvent', email, date, time });
-      return null;
-    }
+    return timesAfterCustom.filter((t) => !bookedMinutes.has(t));
   }
 
   async createBooking(bookingData: Record<string, any>) {
@@ -172,8 +113,8 @@ class BookingService {
     let calendarEventId: string | null = null;
     const redisClient = getRedisClient();
 
-    // ── Create Google Calendar event with Meet link (service account) ─────
-    if (googleCalendarService.isConfigured()) {
+    // ── Create Google Calendar event with Meet link (OAuth) ───────────────
+    if (await googleCalendarService.isConfigured()) {
       try {
         const { startDateTime, endDateTime } = googleCalendarService.bookingToISO(
           bookingData.date,
@@ -213,42 +154,6 @@ class BookingService {
           email: bookingData.email,
           date: bookingData.date,
         });
-      }
-    } else {
-      // Fallback: try per-user OAuth tokens from Redis (legacy flow)
-      const calendarData = await redisClient.get(
-        `calendar:${bookingData.email}`,
-      );
-
-      if (calendarData) {
-        try {
-          const bookingCalData = JSON.parse(calendarData);
-          const oauth2Client = new google.auth.OAuth2(
-            env.GOOGLE_CLIENT_ID,
-            env.GOOGLE_CLIENT_SECRET,
-            'http://localhost:5173/oauth-callback',
-          );
-          oauth2Client.setCredentials({
-            access_token: bookingCalData.googleAccessToken,
-            refresh_token: bookingCalData.googleRefreshToken,
-          });
-
-          const result = await this.createGoogleMeetEvent(
-            bookingData.date,
-            convertMinutesToTime(timeInMinutes),
-            bookingData.email,
-            oauth2Client,
-            bookingData.timezone || 'America/New_York',
-          );
-
-          if (result) meetLink = result.meetLink;
-        } catch (meetError) {
-          logError(meetError, {
-            context: 'createBooking_meetLink_legacy',
-            email: bookingData.email,
-            date: bookingData.date,
-          });
-        }
       }
     }
 
@@ -297,6 +202,40 @@ class BookingService {
     const frontendUrl = env.ALLOWED_ORIGINS.split(',')[0].trim() || 'http://localhost:5173';
     const bookingDetailsUrl = `${frontendUrl}/booking/confirmation/${accessToken}`;
 
+    // ── Build calendar links ────────────────────────────────────────────
+    const startDate = new Date(bookingData.date);
+    const startHours = Math.floor(timeInMinutes / 60);
+    const startMins = timeInMinutes % 60;
+    startDate.setHours(startHours, startMins, 0, 0);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour
+
+    const toCalStr = (d: Date) =>
+      d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+    const gcalParams = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: bookingData.meetingType || 'Kick Off Meeting',
+      dates: `${toCalStr(startDate)}/${toCalStr(endDate)}`,
+      details: meetLink ? `Join: ${meetLink}` : '',
+      ...(meetLink ? { location: meetLink } : {}),
+    });
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?${gcalParams}`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//ANL//Booking//EN',
+      'BEGIN:VEVENT',
+      `DTSTART:${toCalStr(startDate)}`,
+      `DTEND:${toCalStr(endDate)}`,
+      `SUMMARY:${bookingData.meetingType || 'Kick Off Meeting'}`,
+      `DESCRIPTION:${meetLink ? `Join: ${meetLink}` : ''}`,
+      `URL:${meetLink || ''}`,
+      `LOCATION:${meetLink || ''}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -306,7 +245,9 @@ class BookingService {
         },
       });
 
-      const emailHtml = `
+      // ── Client confirmation email (no personal details) ─────────────────
+      const dayName = getDayNameFromDateString(bookingData.date);
+      const clientHtml = `
         <div style="font-family: Inter, system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; border-radius: 16px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #65558F 0%, #7AA49F 100%); padding: 32px 24px; text-align: center;">
             <h1 style="color: #fff; margin: 0; font-size: 24px;">Booking Confirmed!</h1>
@@ -316,51 +257,142 @@ class BookingService {
             <h2 style="font-size: 16px; color: #374151; margin: 0 0 16px;">Meeting Details</h2>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date</td>
-                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.date}</td>
+                <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📅 Date</td>
+                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${dayName}, ${bookingData.date}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time</td>
-                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${formattedTime}</td>
+                <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🕐 Time</td>
+                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${formattedTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Name</td>
-                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.fullName.trim()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Company</td>
-                <td style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.company.trim()}</td>
+                <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">🌐 Timezone</td>
+                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.timezone || 'America/New_York'}</td>
               </tr>
             </table>
             ${meetLink ? `
             <div style="margin: 24px 0 16px; text-align: center;">
-              <a href="${meetLink}" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">Join Google Meet</a>
+              <a href="${meetLink}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(59,130,246,0.3);">🎥 Join Google Meet</a>
             </div>` : ''}
             <div style="margin: 16px 0; text-align: center;">
-              <a href="${bookingDetailsUrl}" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #65558F, #7AA49F); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px;">View Booking Details</a>
+              <a href="${bookingDetailsUrl}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #65558F, #7AA49F); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(101,85,143,0.3);">View Booking Details</a>
+            </div>
+            <div style="margin: 16px 0; text-align: center;">
+              <a href="${googleCalendarUrl}" target="_blank" style="display: inline-block; padding: 14px 36px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; color: #374151; text-decoration: none; font-weight: 600; font-size: 14px;">📅 Add to Google Calendar</a>
             </div>
             <p style="margin: 24px 0 0; color: #9ca3af; font-size: 12px; text-align: center;">
-              This is an automated email. Please do not reply directly.
+              This is an automated email from ANL. Please do not reply directly.
             </p>
           </div>
         </div>
       `;
 
       await transporter.sendMail({
-        from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_FROM_EMAIL}>`,
+        from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_USER}>`,
         to: bookingData.email.trim(),
-        subject: `Booking Confirmed — ${bookingData.date} at ${formattedTime}`,
-        html: emailHtml,
+        subject: `Booking Confirmed — ${dayName}, ${bookingData.date} at ${formattedTime}`,
+        html: clientHtml,
+        attachments: [
+          {
+            filename: 'booking.ics',
+            content: icsContent,
+            contentType: 'text/calendar; method=REQUEST',
+          },
+        ],
         headers: {
           'X-Auto-Response-Suppress': 'All',
           'Precedence': 'bulk',
         },
       });
 
-      logger.info({ bookingId, email: bookingData.email }, 'Booking confirmation email sent');
+      logger.info({ bookingId, email: bookingData.email }, 'Client confirmation email sent');
+
+      // ── Host notification email (full booking details) ──────────────────
+      const meetingHosts = await googleCalendarService.getMeetingHosts();
+
+      if (meetingHosts.length > 0) {
+        const hostHtml = `
+          <div style="font-family: Inter, system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; border-radius: 16px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2d6a4f 100%); padding: 32px 24px; text-align: center;">
+              <h1 style="color: #fff; margin: 0; font-size: 24px;">New Booking Received</h1>
+              <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">A new meeting has been booked via the website.</p>
+            </div>
+            <div style="padding: 24px;">
+              <h2 style="font-size: 16px; color: #374151; margin: 0 0 16px;">Client Information</h2>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">👤 Name</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.fullName.trim()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📧 Email</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;"><a href="mailto:${bookingData.email.trim()}" style="color: #3b82f6; text-decoration: none;">${bookingData.email.trim()}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🏢 Company</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.company.trim()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📣 Referral</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.referralSource}${bookingData.referralSourceOther ? ` — ${bookingData.referralSourceOther}` : ''}</td>
+                </tr>
+                ${bookingData.notes ? `<tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">📝 Notes</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.notes}</td>
+                </tr>` : ''}
+              </table>
+
+              <h2 style="font-size: 16px; color: #374151; margin: 0 0 16px;">Meeting Details</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📅 Date</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${dayName}, ${bookingData.date}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🕐 Time</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${formattedTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">🌐 Timezone</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.timezone || 'America/New_York'}</td>
+                </tr>
+              </table>
+              ${meetLink ? `
+              <div style="margin: 24px 0 16px; text-align: center;">
+                <a href="${meetLink}" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(59,130,246,0.3);">🎥 Join Google Meet</a>
+              </div>` : ''}
+              <div style="margin: 16px 0; text-align: center;">
+                <a href="${googleCalendarUrl}" target="_blank" style="display: inline-block; padding: 14px 36px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; color: #374151; text-decoration: none; font-weight: 600; font-size: 14px;">📅 Add to Google Calendar</a>
+              </div>
+              <p style="margin: 24px 0 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                Booking ID: ${bookingId}
+              </p>
+            </div>
+          </div>
+        `;
+
+        await transporter.sendMail({
+          from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_USER}>`,
+          to: meetingHosts.join(', '),
+          subject: `New Booking — ${bookingData.fullName.trim()} (${bookingData.company.trim()}) — ${dayName}, ${bookingData.date} at ${formattedTime}`,
+          html: hostHtml,
+          attachments: [
+            {
+              filename: 'booking.ics',
+              content: icsContent,
+              contentType: 'text/calendar; method=REQUEST',
+            },
+          ],
+          headers: {
+            'X-Auto-Response-Suppress': 'All',
+            'Precedence': 'bulk',
+          },
+        });
+
+        logger.info({ bookingId, hosts: meetingHosts }, 'Host notification email sent');
+      }
     } catch (emailError) {
       // Email failure should not break the booking flow
-      logError(emailError, { context: 'sendBookingConfirmationEmail', bookingId });
+      logError(emailError, { context: 'sendBookingEmails', bookingId });
     }
 
     return {

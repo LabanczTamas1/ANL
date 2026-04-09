@@ -50,7 +50,7 @@ const DeleteAvailability = () => {
     try {
       const dateValue = Array.isArray(value) ? value[0] : value;
       if (dateValue) setSelectedDateFormatted(formatSelectedDate(dateValue));
-      const formattedDate = dateValue ? dateValue.toISOString().split("T")[0] : "";
+      const formattedDate = dateValue ? dateValue.toLocaleDateString("en-CA") : "";
 
       const response = await fetch(
         `${API_BASE_URL}/api/availability/delete-availability/${formattedDate}`,

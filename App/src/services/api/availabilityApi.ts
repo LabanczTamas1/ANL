@@ -36,3 +36,17 @@ export const showAvailableTimes = (
   date: string,
   params?: { current_time?: string },
 ) => apiClient.get(`/availability/show-available-times/${date}`, { params });
+
+// ─── Admin: availability overview ───────────────────────────────────────────
+
+/** GET /api/v1/availability/admin-day-overview/:startDate/:endDate */
+export const getAdminDayOverview = (startDate: string, endDate: string) =>
+  apiClient.get(`/availability/admin-day-overview/${startDate}/${endDate}`);
+
+/** DELETE /api/v1/availability/remove-added-time */
+export const removeAddedTime = (payload: { date: string; times: number[] }) =>
+  apiClient.delete('/availability/remove-added-time', { data: payload });
+
+/** DELETE /api/v1/availability/remove-deleted-time */
+export const removeDeletedTime = (payload: { date: string; times: number[] }) =>
+  apiClient.delete('/availability/remove-deleted-time', { data: payload });

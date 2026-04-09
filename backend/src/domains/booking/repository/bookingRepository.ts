@@ -171,6 +171,30 @@ class BookingRepository {
     );
     return result.rows[0];
   }
+
+  /**
+   * Find all confirmed bookings for a specific date.
+   */
+  async findByDate(date: string): Promise<BookingRow[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT * FROM bookings WHERE date = $1 AND status = 'confirmed' ORDER BY time ASC`,
+      [date],
+    );
+    return result.rows;
+  }
+
+  /**
+   * Find all confirmed bookings within a date range (inclusive).
+   */
+  async findByDateRange(startDate: string, endDate: string): Promise<BookingRow[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT * FROM bookings WHERE date >= $1 AND date <= $2 AND status = 'confirmed' ORDER BY date ASC, time ASC`,
+      [startDate, endDate],
+    );
+    return result.rows;
+  }
 }
 
 export const bookingRepository = new BookingRepository();

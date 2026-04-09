@@ -8,8 +8,8 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
-  Mail,
   PartyPopper,
+  CalendarPlus,
 } from "lucide-react";
 import darkLogo from "/public/dark-logo.png";
 import lightLogo from "/public/light-logo.png";
@@ -60,6 +60,8 @@ const SuccessfulBooking = () => {
     time: string;
     link: string;
     type: string;
+    rawDate: string;
+    rawTime: number;
     loading: boolean;
     error: string | null;
   }>({
@@ -67,6 +69,8 @@ const SuccessfulBooking = () => {
     time: "",
     link: "",
     type: "Kick Off Meeting",
+    rawDate: "",
+    rawTime: 0,
     loading: true,
     error: null,
   });
@@ -89,6 +93,66 @@ const SuccessfulBooking = () => {
       day: "numeric",
       year: "numeric",
     }).format(date);
+  };
+
+  // ── OS detection ──────────────────────────────────────────────────────────
+  const isAppleDevice = /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  // ── Calendar helpers ──────────────────────────────────────────────────────
+  const buildCalendarDates = () => {
+    if (!meetingDetails.rawDate) return null;
+    const d = new Date(meetingDetails.rawDate);
+    if (Number.isNaN(d.getTime())) return null;
+    const hours = Math.floor(meetingDetails.rawTime / 60);
+    const mins = meetingDetails.rawTime % 60;
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, mins);
+    const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour default
+    return { start, end };
+  };
+
+  const toGCalDateStr = (date: Date) =>
+    date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const toICSDateStr = (date: Date) =>
+    date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const handleGoogleCalendar = () => {
+    const dates = buildCalendarDates();
+    if (!dates) return;
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: meetingDetails.type,
+      dates: `${toGCalDateStr(dates.start)}/${toGCalDateStr(dates.end)}`,
+      details: meetingDetails.link ? `Join: ${meetingDetails.link}` : "",
+      ...(meetingDetails.link ? { location: meetingDetails.link } : {}),
+    });
+    window.open(`https://calendar.google.com/calendar/render?${params}`, "_blank");
+  };
+
+  const handleAppleCalendar = () => {
+    const dates = buildCalendarDates();
+    if (!dates) return;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//ANL//Booking//EN",
+      "BEGIN:VEVENT",
+      `DTSTART:${toICSDateStr(dates.start)}`,
+      `DTEND:${toICSDateStr(dates.end)}`,
+      `SUMMARY:${meetingDetails.type}`,
+      `DESCRIPTION:${meetingDetails.link ? `Join: ${meetingDetails.link}` : ""}`,
+      `URL:${meetingDetails.link || ""}`,
+      `LOCATION:${meetingDetails.link || ""}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "booking.ics";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // ── Staggered reveal ──────────────────────────────────────────────────────
@@ -141,6 +205,8 @@ const SuccessfulBooking = () => {
         time: booking.formattedTime || formatTime(booking.time || booking.startTime || booking.at || 0),
         link: booking.meet_link || booking.meetLink || booking.link || "",
         type: booking.meetingType || booking.type || "Kick Off Meeting",
+        rawDate: booking.date || "",
+        rawTime: booking.time || booking.startTime || booking.at || 0,
         loading: false,
         error: null,
       });
@@ -177,6 +243,8 @@ const SuccessfulBooking = () => {
           time: booking.formattedTime || formatTime(booking.time || booking.startTime || booking.at || 0),
           link: booking.meet_link || booking.meetLink || booking.link || "",
           type: booking.meetingType || booking.type || "Kick Off Meeting",
+          rawDate: booking.date || "",
+          rawTime: booking.time || booking.startTime || booking.at || 0,
           loading: false,
           error: null,
         });
@@ -191,6 +259,8 @@ const SuccessfulBooking = () => {
         time: "",
         link: "",
         type: "Kick Off Meeting",
+        rawDate: "",
+        rawTime: 0,
         loading: false,
         error: null,
       });
@@ -237,7 +307,7 @@ const SuccessfulBooking = () => {
             Booking Confirmed! <PartyPopper className="w-7 h-7 md:w-8 md:h-8 text-accent-teal party-pop" />
           </h2>
           <p className="text-content-subtle-inverse text-sm md:text-base leading-relaxed max-w-md mx-auto">
-            Your appointment has been scheduled successfully. A confirmation with all the details has been sent to your email.
+            Your appointment has been scheduled successfully. We look forward to meeting you!
           </p>
         </div>
 
@@ -283,12 +353,24 @@ const SuccessfulBooking = () => {
                 {meetingDetails.type}
               </GlassInfoCard>
 
-              <GlassInfoCard
-                icon={<Mail className="w-4 h-4 text-white" />}
-                gradient="from-brand-hover to-accent-teal"
-              >
-                Confirmation sent to your email
-              </GlassInfoCard>
+
+
+              {/* Add to calendar — primary CTA */}
+              {meetingDetails.rawDate && (
+                <div className="mt-4 relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-brand to-accent-teal rounded-2xl blur-md opacity-30 animate-pulse pointer-events-none" />
+                  <button
+                    onClick={isAppleDevice ? handleAppleCalendar : handleGoogleCalendar}
+                    className="relative flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl font-semibold text-sm
+                      bg-gradient-to-r from-brand to-accent-teal text-white
+                      hover:shadow-lg hover:shadow-brand/40 hover:scale-[1.02] transition-all duration-200"
+                  >
+                    <CalendarPlus className="w-5 h-5" />
+                    {isAppleDevice ? 'Add to Apple Calendar' : 'Add to Google Calendar'}
+                    <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                  </button>
+                </div>
+              )}
 
               {meetingDetails.link && (
                 <a
@@ -296,8 +378,8 @@ const SuccessfulBooking = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
-                    bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold text-sm
-                    hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] transition-all duration-200"
+                    bg-surface-elevated/50 border border-line-glass text-content-inverse font-semibold text-sm
+                    hover:border-blue-500/40 hover:scale-[1.02] transition-all duration-200"
                 >
                   <Video className="w-4 h-4" />
                   Join Google Meet

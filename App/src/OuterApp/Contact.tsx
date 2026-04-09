@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ContactForm from "./ContactForm";
@@ -6,6 +6,7 @@ import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaClock } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
+import RippleHelpModal from "./components/RippleHelpModal";
 
 interface DayAvailability {
   day: string;
@@ -55,6 +56,15 @@ const Contact = () => {
   const { language, translations } = useLanguage();
   const t = translations[language];
   const [hours, setHours] = useState<DayAvailability[]>(DEFAULT_HOURS);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+  const badgeRef = useRef<HTMLButtonElement>(null);
+
+  const openHelpModal = useCallback(() => {
+    if (badgeRef.current) setTriggerRect(badgeRef.current.getBoundingClientRect());
+    setHelpModalOpen(true);
+  }, []);
+  const closeHelpModal = useCallback(() => setHelpModalOpen(false), []);
 
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -102,13 +112,17 @@ const Contact = () => {
 
       {/* Hero header */}
       <section className="relative z-10 pt-32 pb-8 px-6 text-center max-w-3xl mx-auto">
-        <span className="inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-6">
+        <button
+          ref={badgeRef}
+          onClick={openHelpModal}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-6 cursor-pointer hover:bg-brand/30 hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay"
+        >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-hover opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-hover" />
           </span>
           We&apos;re here to help
-        </span>
+        </button>
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4">
           {t.contactUs || "Get in Touch"}
         </h1>
@@ -207,6 +221,13 @@ const Contact = () => {
 
       <Footer darkMode={true} />
       <CookieConsentBanner />
+
+      {/* Ripple help modal */}
+      <RippleHelpModal
+        isOpen={helpModalOpen}
+        onClose={closeHelpModal}
+        triggerRect={triggerRect}
+      />
     </div>
   );
 };

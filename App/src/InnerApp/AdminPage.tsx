@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import FlashMessage from '../FlashMessage';
 import RequestStats from './admin/RequestStats';
 import AdminIPBan from './admin/AdminIPBan';
+import MeetingHosts from './admin/MeetingHosts';
+import CalendarConnection from './admin/CalendarConnection';
 
 // Updated interface to match the backend model
 interface User {
@@ -14,12 +17,13 @@ interface User {
 }
 
 const AdminPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('users');
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'users');
   const [flashMessage, setFlashMessage] = useState<{ message: string; type: 'success' | 'error'; duration: number } | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('user');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -177,6 +181,18 @@ const AdminPage: React.FC = () => {
           IP Bans
         </button>
         <button
+          className={`pb-2 ${activeTab === 'meeting_hosts' ? 'border-b-2 border-blue-500' : ''}`}
+          onClick={() => handleTabClick('meeting_hosts')}
+        >
+          Meeting Hosts
+        </button>
+        <button
+          className={`pb-2 ${activeTab === 'calendar' ? 'border-b-2 border-blue-500' : ''}`}
+          onClick={() => handleTabClick('calendar')}
+        >
+          Calendar
+        </button>
+        <button
           className={`pb-2 ${activeTab === 'active' ? 'border-b-2 border-blue-500' : ''}`}
           onClick={() => handleTabClick('active')}
         >
@@ -258,6 +274,8 @@ const AdminPage: React.FC = () => {
       {/* API Stats Tab */}
       {activeTab === 'stats' && <RequestStats userRole={currentUserRole} />}
       {activeTab === 'ip_ban' && <AdminIPBan/>}
+      {activeTab === 'meeting_hosts' && <MeetingHosts />}
+      {activeTab === 'calendar' && <CalendarConnection />}
 
       {/* Other existing tabs would be here... */}
 
