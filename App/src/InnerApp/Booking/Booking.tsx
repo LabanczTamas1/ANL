@@ -286,6 +286,7 @@ const Booking = () => {
             <div className="lg:flex-1 lg:min-h-0">
               <Calendar
                 className="booking-calendar !bg-transparent !w-full !border-none min-h-[320px] lg:!h-full"
+                minDate={new Date()}
                 tileClassName={() => `
                   !rounded-xl !transition-all !duration-200
                   hover:!bg-brand/30 hover:!text-white
@@ -585,8 +586,7 @@ const Booking = () => {
                   </span>
                   <span className="text-content-subtle-inverse/30 text-[10px]">·</span>
                   <span className="text-[10px] text-content-subtle-inverse/70">No commitment</span>
-                  <span className="text-content-subtle-inverse/30 text-[10px]">·</span>
-                  <span className="text-[10px] text-content-subtle-inverse/70">Confirmed by email</span>
+
                 </div>
               </div>
             </div>

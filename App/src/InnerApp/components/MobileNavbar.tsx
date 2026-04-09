@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import lightLogo from "/public/light-logo.png";
@@ -48,6 +48,14 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
                 <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
                   <FaEnvelope className="text-lg" />
                   <span>Availability</span>
+                </div>
+              </Link>
+            ) : ""}
+            {(role === "admin" || role === "owner") ? (
+              <Link to="/home/booking/availability/overview" onClick={closeMenu}>
+                <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                  <FaCalendarCheck className="text-lg" />
+                  <span>Availability Overview</span>
                 </div>
               </Link>
             ) : ""}

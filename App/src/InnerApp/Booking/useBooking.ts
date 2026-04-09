@@ -168,6 +168,22 @@ export const useBooking = (): UseBookingReturn => {
           .filter((n) => !Number.isNaN(n));
       }
 
+      // ── Safeguard: remove times too close to now ──────────────────────
+      // If the selected date is today, remove any time within 8 hours.
+      // If the selected date is in the past, remove all times.
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+      if (formattedDate < todayStr) {
+        // Past date — no times available
+        normalizedTimes = [];
+      } else if (formattedDate === todayStr) {
+        // Today — remove times within the next 8 hours
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const cutoffMinutes = currentMinutes + 480; // 8 hours = 480 minutes
+        normalizedTimes = normalizedTimes.filter((t) => t >= cutoffMinutes);
+      }
+
       setAddableTimes(normalizedTimes);
       setSuccess(data.message || "Availability fetched successfully!");
       if (data.message !== undefined) {

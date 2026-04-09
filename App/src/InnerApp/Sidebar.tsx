@@ -2,6 +2,7 @@ import React from 'react';
 import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
+import { FaCalendarCheck } from 'react-icons/fa';
 import lightLogo from "/public/light-logo.png";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from './../hooks/useLanguage';
@@ -50,6 +51,14 @@ const Sidebar: React.FC = () => {
               <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
                 <FaEnvelope className="text-lg" />
                 <span>{t('sidebar.availability')}</span>
+              </div>
+            </Link>
+          : ""}
+          {(role === "admin" || role === "owner") ?
+            <Link to="/home/booking/availability/overview">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaCalendarCheck className="text-lg" />
+                <span>{t('sidebar.availabilityOverview')}</span>
               </div>
             </Link>
           : ""}

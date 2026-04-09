@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
-  Mail,
   PartyPopper,
   Building2,
   User,
@@ -61,6 +60,8 @@ interface MeetingDetails {
   fullName: string;
   email: string;
   company: string;
+  rawDate: string;
+  rawTime: number;
   loading: boolean;
   error: string | null;
 }
@@ -85,6 +86,8 @@ const BookingConfirmation: React.FC = () => {
     fullName: "",
     email: "",
     company: "",
+    rawDate: "",
+    rawTime: 0,
     loading: true,
     error: null,
   });
@@ -107,6 +110,63 @@ const BookingConfirmation: React.FC = () => {
       day: "numeric",
       year: "numeric",
     }).format(date);
+  };
+
+  // ── OS detection ──────────────────────────────────────────────────────
+  const isAppleDevice = /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  // ── Calendar helpers ──────────────────────────────────────────────────
+  const buildCalendarDates = () => {
+    if (!details.rawDate) return null;
+    const d = new Date(details.rawDate);
+    if (Number.isNaN(d.getTime())) return null;
+    const hours = Math.floor(details.rawTime / 60);
+    const mins = details.rawTime % 60;
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, mins);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    return { start, end };
+  };
+
+  const toCalDateStr = (date: Date) =>
+    date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const handleGoogleCalendar = () => {
+    const dates = buildCalendarDates();
+    if (!dates) return;
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: details.type,
+      dates: `${toCalDateStr(dates.start)}/${toCalDateStr(dates.end)}`,
+      details: details.link ? `Join: ${details.link}` : "",
+      ...(details.link ? { location: details.link } : {}),
+    });
+    window.open(`https://calendar.google.com/calendar/render?${params}`, "_blank");
+  };
+
+  const handleAppleCalendar = () => {
+    const dates = buildCalendarDates();
+    if (!dates) return;
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//ANL//Booking//EN",
+      "BEGIN:VEVENT",
+      `DTSTART:${toCalDateStr(dates.start)}`,
+      `DTEND:${toCalDateStr(dates.end)}`,
+      `SUMMARY:${details.type}`,
+      `DESCRIPTION:${details.link ? `Join: ${details.link}` : ""}`,
+      `URL:${details.link || ""}`,
+      `LOCATION:${details.link || ""}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "booking.ics";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // ── Staggered reveal ──────────────────────────────────────────────────
@@ -159,6 +219,8 @@ const BookingConfirmation: React.FC = () => {
           fullName: booking.full_name || booking.fullName || "",
           email: booking.email || "",
           company: booking.company || "",
+          rawDate: booking.date || "",
+          rawTime: typeof booking.time === "number" ? booking.time : (booking.startTime || booking.at || 0),
           loading: false,
           error: null,
         });
@@ -338,21 +400,34 @@ const BookingConfirmation: React.FC = () => {
                     label={details.type}
                   />
 
-                  <DetailRow
-                    icon={<Mail className="w-4 h-4 text-white" />}
-                    gradient="from-[#7c6bb7] to-[#7AA49F]"
-                    label="Confirmation sent to your email"
-                  />
 
-                  {/* Join Meet button */}
+
+                  {/* Add to calendar — primary CTA */}
+                  {details.rawDate && (
+                    <div className="mt-4 relative">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-[#65558F] to-[#7AA49F] rounded-2xl blur-md opacity-30 animate-pulse pointer-events-none" />
+                      <button
+                        onClick={isAppleDevice ? handleAppleCalendar : handleGoogleCalendar}
+                        className="relative flex items-center justify-center gap-2 w-full px-4 py-4 rounded-xl font-semibold text-sm
+                          bg-gradient-to-r from-[#65558F] to-[#7AA49F] text-white
+                          hover:shadow-lg hover:shadow-[#65558F]/40 hover:scale-[1.02] transition-all duration-200"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                        {isAppleDevice ? 'Add to Apple Calendar' : 'Add to Google Calendar'}
+                        <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Join Meet button — secondary */}
                   {details.link && (
                     <a
                       href={details.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3.5 rounded-xl
-                        bg-gradient-to-r from-[#3B82F6] to-[#06b6d4] text-white font-semibold text-sm
-                        hover:shadow-lg hover:shadow-[#3B82F6]/30 hover:scale-[1.02] transition-all duration-200"
+                      className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
+                        bg-white/[0.04] border border-white/[0.08] text-[#D1D5DB] font-semibold text-sm
+                        hover:border-[#3B82F6]/40 hover:text-white hover:scale-[1.02] transition-all duration-200"
                     >
                       <Video className="w-4 h-4" />
                       Join Google Meet

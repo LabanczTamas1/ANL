@@ -1,34 +1,38 @@
 import React from "react";
+import { ChevronLeft } from "lucide-react";
 
-interface BackButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface BackButtonProps {
   children: React.ReactNode;
-  icon?: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
 }
 
-export const BackButton: React.FC<BackButtonProps> = ({ children, icon, ...props }) => {
+export const BackButton: React.FC<BackButtonProps> = ({ children, onClick, disabled = false }) => {
   return (
-    <div
-      {...props}
-      className="btn btn-neutral btn-sm md:btn-md gap-1 h-auto lg:gap-3 cursor-pointer max-w-[42vw] flex-wrap p-2"
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={disabled ? "No previous step" : `Back to ${children}`}
+      className={[
+        "group flex items-center gap-2 sm:gap-3 rounded-xl px-3 py-2.5 sm:px-5 sm:py-3",
+        "min-h-[2.75rem] min-w-[2.75rem] max-w-[45%]",
+        "text-sm sm:text-base font-medium leading-tight",
+        "transition-all duration-normal",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus",
+        disabled
+          ? "opacity-0 pointer-events-none"
+          : "bg-glass text-content-inverse backdrop-blur-glass shadow-card hover:shadow-card-hover hover:bg-brand/30 active:scale-[0.97]",
+      ].join(" ")}
     >
-      {icon && (
-       <svg
-       className="h-6 w-6 fill-current md:h-8 md:w-8 transform rotate-180"
-       xmlns="http://www.w3.org/2000/svg"
-       width="24"
-       height="24"
-       viewBox="0 0 24 24"
-     >
-       <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"></path>
-     </svg>
-     
-      )}
-      <div className="flex flex-col items-end">
-        <span className="text-neutral-content/50 hidden text-xs font-normal md:block">
-          Back
-        </span>
-        <span>{children}</span>
+      <ChevronLeft
+        className="h-5 w-5 shrink-0 transition-transform duration-normal group-hover:-translate-x-0.5"
+        aria-hidden="true"
+      />
+      <div className="flex flex-col items-start overflow-hidden">
+        <span className="hidden sm:block text-xs text-content-muted">Back</span>
+        <span className="truncate">{children}</span>
       </div>
-    </div>
+    </button>
   );
 };

@@ -43,4 +43,50 @@ router.get(
   ac.getEmails,
 );
 
+// ── Meeting Hosts management ─────────────────────────────────────────────
+router.get(
+  '/meeting-hosts',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.getMeetingHosts,
+);
+router.post(
+  '/meeting-hosts',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.addMeetingHost,
+);
+router.delete(
+  '/meeting-hosts',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.removeMeetingHost,
+);
+
+// ── Google Calendar connection ────────────────────────────────────────────
+router.get(
+  '/calendar/status',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.getCalendarStatus,
+);
+router.get(
+  '/calendar/auth-url',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.getCalendarAuthUrl,
+);
+router.post(
+  '/calendar/callback',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.handleCalendarCallback,
+);
+router.post(
+  '/calendar/disconnect',
+  authMiddleware,
+  authorizeRole(UserRole.ADMIN, UserRole.OWNER),
+  ac.disconnectCalendar,
+);
+
 export default router;

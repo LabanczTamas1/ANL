@@ -25,6 +25,7 @@ export const brand = {
 export const accent = {
   teal: '#7AA49F',
   rose: '#9A4647',
+  purple: '#9B7ADB',
 } as const;
 
 // ─── Surfaces (backgrounds) ─────────────────────────────────────────────────

@@ -48,11 +48,7 @@ export const env = {
   FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID || '',
   FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET || '',
 
-  // Google Calendar — service account for automatic Meet + Calendar
-  GOOGLE_SERVICE_ACCOUNT_KEY: process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '',
-  GOOGLE_SERVICE_ACCOUNT_KEY_FILE:
-    process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || '',
-  ANL_CALENDAR_OWNER: process.env.ANL_CALENDAR_OWNER || '',
+  // Google Calendar — OAuth (admin connects via UI)
   ANL_TEAM_EMAILS: process.env.ANL_TEAM_EMAILS || '',
 
   // SMTP

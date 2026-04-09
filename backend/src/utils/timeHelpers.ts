@@ -62,3 +62,22 @@ export function utcToMinutes(gmtString: string): number | null {
   const hours = parseInt(match[2], 10);
   return sign * hours * 60;
 }
+
+const WEEKDAYS = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday',
+  'Thursday', 'Friday', 'Saturday',
+] as const;
+
+/**
+ * Get the weekday name from a "YYYY-MM-DD" date string.
+ *
+ * Parses the date parts directly to avoid the timezone shift that
+ * `new Date("YYYY-MM-DD")` (parsed as UTC midnight) causes when
+ * `.getDay()` converts to local time.
+ */
+export function getDayNameFromDateString(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  // Month is 0-indexed in the Date constructor when parts are passed
+  const d = new Date(year, month - 1, day);
+  return WEEKDAYS[d.getDay()];
+}

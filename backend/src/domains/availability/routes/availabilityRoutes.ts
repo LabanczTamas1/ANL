@@ -12,4 +12,9 @@ router.post('/add-availability-to-the-database', authMiddleware, ac.addAvailabil
 router.delete('/delete-availability-to-the-database', authMiddleware, ac.deleteAvailabilityFromDb);
 router.get('/show-available-times/:rawDate', ac.showAvailableTimes);
 
+// Admin — overview & custom-time management
+router.get('/admin-day-overview/:startDate/:endDate', authMiddleware, ac.adminDayOverview);
+router.delete('/remove-added-time', authMiddleware, ac.removeAddedTime);
+router.delete('/remove-deleted-time', authMiddleware, ac.removeDeletedTime);
+
 export default router;

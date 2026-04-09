@@ -25,6 +25,7 @@ import Kanban from "./InnerApp/Kanban/Kanban.tsx";
 import AdminPage from "./InnerApp/AdminPage.tsx";
 import Booking from "./InnerApp/Booking/Booking.tsx";
 import Availability from "./InnerApp/Booking/Availability.tsx";
+import AvailabilityOverview from "./InnerApp/Booking/AvailabilityOverview.tsx";
 import PrivacyPolicy from "./OuterApp/Informations.tsx/PrivacyPolicy.tsx";
 import CookiePolicy from "./OuterApp/Informations.tsx/CookiePolicy.tsx";
 import InformationsLayout from "./OuterApp/Informations.tsx/InformationsLayout.tsx";
@@ -49,6 +50,7 @@ import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
+import CalendarCallback from "./InnerApp/admin/CalendarCallback.tsx";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -126,6 +128,10 @@ const router = createBrowserRouter([
     element: <BookingConfirmation />,
   },
   {
+    path: "/admin/calendar-callback",
+    element: <CalendarCallback />,
+  },
+  {
     path: "/information",
     element: <InformationsLayout />,
     children: [
@@ -165,6 +171,14 @@ const router = createBrowserRouter([
       {
         path: "booking/availability",
         element: <Availability />,
+      },
+      {
+        path: "booking/availability/overview",
+        element: (
+          <AdminRoute>
+            <AvailabilityOverview />
+          </AdminRoute>
+        ),
       },
       {
         path: "booking/availability/add-availability",
