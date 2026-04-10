@@ -35,6 +35,7 @@ log "🔨 Building new image (no cache)..."
 docker compose build --no-cache backend
 
 log "♻️  Restarting services..."
+docker compose rm -f backend 2>/dev/null || true
 docker compose up -d --remove-orphans
 
 # ── Health check ────────────────────────────────────────────────────────────
