@@ -40,7 +40,7 @@ function buildProductionTargets() {
 
   if (seqUrl) {
     targets.push({
-      target: 'pino-seq',
+      target: '@autotelic/pino-seq-transport',
       options: {
         serverUrl: seqUrl,
         ...(seqApiKey ? { apiKey: seqApiKey } : {}),
