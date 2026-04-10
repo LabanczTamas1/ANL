@@ -1,10 +1,9 @@
 // ---------------------------------------------------------------------------
-// Seq CLEF stream — pino DestinationStream that batches ndjson log lines
-// and POSTs them to Seq's /api/events/raw?clef endpoint.
+// Seq CLEF stream — pino DestinationStream that batches ndjson log lines,
+// converts them from pino format → CLEF, and POSTs to Seq's ingestion API.
 //
-// Implemented as a plain DestinationStream (write(msg: string) interface)
-// which is what pino.multistream actually calls, avoiding any Node.js
-// WritableStream backpressure / _write routing issues.
+// Pino: { level, time, pid, hostname, msg, ...rest }
+// CLEF: { @t, @l, @mt, @p (pid), ...rest }
 // ---------------------------------------------------------------------------
 
 import http from 'http';
@@ -24,6 +23,41 @@ export interface SeqDestinationStream {
   write(msg: string): void;
 }
 
+const PINO_TO_CLEF_LEVEL: Record<number, string> = {
+  10: 'Verbose',
+  20: 'Debug',
+  30: 'Information',
+  40: 'Warning',
+  50: 'Error',
+  60: 'Fatal',
+};
+
+/** Convert a pino ndjson line to a CLEF object */
+function pinoToClef(line: string): string | null {
+  try {
+    const parsed = JSON.parse(line);
+
+    // Extract and remove pino-specific fields
+    const { level, time, pid, hostname, msg, ...rest } = parsed;
+
+    const clef: Record<string, unknown> = {
+      '@t': typeof time === 'string' ? time : new Date(time).toISOString(),
+      '@mt': msg ?? '',
+      '@l': PINO_TO_CLEF_LEVEL[level as number] ?? 'Information',
+    };
+
+    if (pid !== undefined) clef['pid'] = pid;
+    if (hostname !== undefined) clef['hostname'] = hostname;
+
+    // Merge remaining structured fields
+    Object.assign(clef, rest);
+
+    return JSON.stringify(clef);
+  } catch {
+    return null;
+  }
+}
+
 export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
   const { serverUrl, apiKey, batchSize = 10, flushIntervalMs = 500 } = opts;
 
@@ -31,8 +65,6 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
   const isHttps = parsedUrl.protocol === 'https:';
   const agent = isHttps ? https : http;
   const port = parsedUrl.port || (isHttps ? '443' : '80');
-
-  process.stderr.write(`[seqStream] created, serverUrl=${serverUrl} batchSize=${batchSize}\n`);
 
   let buffer: string[] = [];
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -42,7 +74,6 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
 
     const payload = buffer.join('\n');
     buffer = [];
-    process.stderr.write(`[seqStream] flushing ${payload.split('\n').length} events to ${parsedUrl.href}\n`);
 
     const options: http.RequestOptions = {
       hostname: parsedUrl.hostname,
@@ -70,11 +101,10 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
 
   return {
     write(msg: string) {
-      const line = msg.trim();
-      if (!line) return;
+      const clef = pinoToClef(msg.trim());
+      if (!clef) return;
 
-      buffer.push(line);
-      process.stderr.write(`[seqStream] write called, buffer=${buffer.length}\n`);
+      buffer.push(clef);
 
       if (buffer.length >= batchSize) {
         if (flushTimer) {
@@ -84,7 +114,6 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
         flush();
       } else if (!flushTimer) {
         flushTimer = setTimeout(() => {
-          process.stderr.write(`[seqStream] timer fired, flushing ${buffer.length} events\n`);
           flush();
           flushTimer = null;
         }, flushIntervalMs);
@@ -92,4 +121,5 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
     },
   };
 }
+
 
