@@ -16,6 +16,8 @@ const logFile = path.join(logsDir, 'app.log');
 const errorLogFile = path.join(logsDir, 'error.log');
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const seqUrl = process.env.SEQ_URL;
+const seqApiKey = process.env.SEQ_API_KEY;
 
 type LogLayer =
   | 'controller'
@@ -26,10 +28,34 @@ type LogLayer =
   | 'infra';
 
 /**
+ * Build the production transport targets array.
+ * Always includes file + stdout; adds Seq when SEQ_URL is set.
+ */
+function buildProductionTargets() {
+  const targets: pino.TransportTargetOptions[] = [
+    { target: 'pino/file', options: { destination: logFile, append: true } },
+    { target: 'pino/file', level: 'error', options: { destination: errorLogFile, append: true } },
+    { target: 'pino/file', options: { destination: 1 } }, // stdout fd
+  ];
+
+  if (seqUrl) {
+    targets.push({
+      target: 'pino-seq',
+      options: {
+        serverUrl: seqUrl,
+        ...(seqApiKey ? { apiKey: seqApiKey } : {}),
+      },
+    });
+  }
+
+  return targets;
+}
+
+/**
  * Root logger — Pino with multiple transports.
  *
  * Dev  → pino-pretty to stdout
- * Prod → app.log + error.log + stdout
+ * Prod → app.log + error.log + stdout + Seq (when SEQ_URL is set)
  */
 export const logger = pino(
   {
@@ -54,14 +80,7 @@ export const logger = pino(
           singleLine: false,
         },
       })
-    : pino.multistream([
-        { stream: fs.createWriteStream(logFile, { flags: 'a' }) },
-        {
-          level: 'error',
-          stream: fs.createWriteStream(errorLogFile, { flags: 'a' }),
-        },
-        { stream: process.stdout },
-      ]),
+    : pino.transport({ targets: buildProductionTargets() }),
 );
 
 /**
