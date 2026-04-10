@@ -32,6 +32,8 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
   const agent = isHttps ? https : http;
   const port = parsedUrl.port || (isHttps ? '443' : '80');
 
+  process.stderr.write(`[seqStream] created, serverUrl=${serverUrl} batchSize=${batchSize}\n`);
+
   let buffer: string[] = [];
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -40,6 +42,7 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
 
     const payload = buffer.join('\n');
     buffer = [];
+    process.stderr.write(`[seqStream] flushing ${payload.split('\n').length} events to ${parsedUrl.href}\n`);
 
     const options: http.RequestOptions = {
       hostname: parsedUrl.hostname,
@@ -71,6 +74,7 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
       if (!line) return;
 
       buffer.push(line);
+      process.stderr.write(`[seqStream] write called, buffer=${buffer.length}\n`);
 
       if (buffer.length >= batchSize) {
         if (flushTimer) {
@@ -80,6 +84,7 @@ export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
         flush();
       } else if (!flushTimer) {
         flushTimer = setTimeout(() => {
+          process.stderr.write(`[seqStream] timer fired, flushing ${buffer.length} events\n`);
           flush();
           flushTimer = null;
         }, flushIntervalMs);
