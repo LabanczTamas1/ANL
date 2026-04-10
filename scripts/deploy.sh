@@ -23,8 +23,8 @@ cd $COMPOSE_DIR
 # Store current image ID for rollback
 PREV_IMAGE=$(docker compose images -q backend 2>/dev/null || echo "")
 
-log "🔨 Building new image..."
-docker compose build backend
+log "🔨 Building new image (no cache)..."
+docker compose build --no-cache backend
 
 log "♻️  Restarting services..."
 docker compose up -d --remove-orphans
@@ -34,9 +34,9 @@ log "⏳ Waiting for backend to be healthy..."
 ELAPSED=0
 until curl -sf $HEALTH_URL > /dev/null 2>&1; do
   if [ $ELAPSED -ge $MAX_WAIT ]; then
-    log "❌ Health check failed after ${MAX_WAIT}s — rolling back!"
-    docker compose down
-    docker compose up -d
+    log "❌ Health check failed after ${MAX_WAIT}s"
+    log "📋 Backend logs:"
+    docker compose logs backend --tail=30
     exit 1
   fi
   sleep 3
