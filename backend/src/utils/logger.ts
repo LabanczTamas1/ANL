@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+import { createSeqStream } from './seqStream.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,27 +29,23 @@ type LogLayer =
   | 'infra';
 
 /**
- * Build the production transport targets array.
+ * Build the production multistream destinations.
  * Always includes file + stdout; adds Seq when SEQ_URL is set.
  */
-function buildProductionTargets() {
-  const targets: pino.TransportTargetOptions[] = [
-    { target: 'pino/file', options: { destination: logFile, append: true } },
-    { target: 'pino/file', level: 'error', options: { destination: errorLogFile, append: true } },
-    { target: 'pino/file', options: { destination: 1 } }, // stdout fd
+function buildProductionStream() {
+  const streams: pino.StreamEntry[] = [
+    { stream: fs.createWriteStream(logFile, { flags: 'a' }) },
+    { level: 'error' as const, stream: fs.createWriteStream(errorLogFile, { flags: 'a' }) },
+    { stream: process.stdout },
   ];
 
   if (seqUrl) {
-    targets.push({
-      target: '@autotelic/pino-seq-transport',
-      options: {
-        serverUrl: seqUrl,
-        ...(seqApiKey ? { apiKey: seqApiKey } : {}),
-      },
+    streams.push({
+      stream: createSeqStream({ serverUrl: seqUrl, apiKey: seqApiKey }),
     });
   }
 
-  return targets;
+  return pino.multistream(streams);
 }
 
 /**
@@ -80,7 +77,7 @@ export const logger = pino(
           singleLine: false,
         },
       })
-    : pino.transport({ targets: buildProductionTargets() }),
+    : buildProductionStream(),
 );
 
 /**
