@@ -40,6 +40,10 @@ export const env = {
     10,
   ),
 
+  // URLs
+  BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+
   // OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
