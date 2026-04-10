@@ -11,6 +11,9 @@ export async function initializePostgresPool(): Promise<pg.Pool> {
   pool = new Pool({
     connectionString: env.DATABASE_URL,
     max: 10,
+    idleTimeoutMillis: 30_000,       // close idle connections after 30s
+    connectionTimeoutMillis: 5_000,  // fail fast if can't connect in 5s
+    allowExitOnIdle: false,
   });
 
   pool.on('error', (err) => {

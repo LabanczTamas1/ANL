@@ -63,6 +63,7 @@ services:
       - "8081:80"
     environment:
       ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: "anl-best-admin"
     volumes:
       - seq_data:/data
     networks:
