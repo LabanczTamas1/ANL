@@ -11,8 +11,8 @@ import {
   PartyPopper,
   CalendarPlus,
 } from "lucide-react";
-import darkLogo from "/public/dark-logo.png";
-import lightLogo from "/public/light-logo.png";
+const darkLogo = "/dark-logo.png";
+const lightLogo = "/light-logo.png";
 import ThemeIcon from "../components/Logo";
 import BookingPageLayout from "../components/BookingPageLayout";
 import GlassInfoCard from "../components/GlassInfoCard";

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
-import background from "/public/Onboarding-background.svg";
-import lightLogo from "/public/light-logo.png";
+const background = "/Onboarding-background.svg";
+const lightLogo = "/light-logo.png";
 import { BackButton } from "./BackButton";
 import { NextButton } from "./NextButton";
 import { Progress } from "./Progress";

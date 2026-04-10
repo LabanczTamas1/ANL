@@ -1,6 +1,6 @@
 import React from 'react';
-import googleLogo from '/public/GoogleLogo.svg';
-import FacebookLogo from '/public/FacebookLogo.svg';
+const googleLogo = '/GoogleLogo.svg';
+const FacebookLogo = '/FacebookLogo.svg';
 
 interface SocialLoginButtonsProps {
   onGoogleLogin: () => void;

@@ -3,7 +3,7 @@ import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-i
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import { FaCalendarCheck } from 'react-icons/fa';
-import lightLogo from "/public/light-logo.png";
+const lightLogo = "/light-logo.png";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from './../hooks/useLanguage';
 import { useNotification } from './../contexts/NotificationContext';

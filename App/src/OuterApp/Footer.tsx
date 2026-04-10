@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
-import lightLogo from "/public/light-logo.png";
-import darkLogo from "/public/dark-logo.png";
+const lightLogo = "/light-logo.png";
+const darkLogo = "/dark-logo.png";
 import { Link } from "react-router-dom";
 import { useLanguage } from "./../hooks/useLanguage";
 

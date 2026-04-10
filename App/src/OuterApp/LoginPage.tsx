@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import Navbar from "./Navbar";
-import stars from "/public/LoginStars.svg";
-import googleLogo from "/public/GoogleLogo.svg";
-import FacebookLogo from "/public/FacebookLogo.svg";
+const stars = "/LoginStars.svg";
+const googleLogo = "/GoogleLogo.svg";
+const FacebookLogo = "/FacebookLogo.svg";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 

@@ -1,6 +1,5 @@
 import React from "react";
 import Navbar from "./Navbar";
-import stars from "/public/LandingPage.svg";
 import HeroSection from "./HeroSection";
 import Footer from "./Footer";
 import { Helmet } from "react-helmet-async";
@@ -23,7 +22,7 @@ import FloatingParticles from "./components/FloatingParticles";
 // Founders data
 const founders = [
   {
-    imageUrl: "/public/Picture1.png",
+    imageUrl: "/Picture1.png",
     name: "Koszta Zsolt",
     position: "Co-Founder",
     description: "Visionary leader driving digital transformation with over 10 years of experience in building scalable solutions for modern businesses.",
@@ -34,7 +33,7 @@ const founders = [
     },
   },
   {
-    imageUrl: "/public/Picture1.png",
+    imageUrl: "/Picture1.png",
     name: "Koszta Zsolt",
     position: "Co-Founder",
     description: "Strategic thinker specializing in growth marketing and data-driven decision making to help businesses reach their full potential.",
