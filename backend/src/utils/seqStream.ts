@@ -1,12 +1,12 @@
 // ---------------------------------------------------------------------------
-// Seq CLEF stream — in-process Writable stream that batches pino ndjson
-// log lines and POSTs them to Seq's /api/events/raw?clef endpoint.
+// Seq CLEF stream — pino DestinationStream that batches ndjson log lines
+// and POSTs them to Seq's /api/events/raw?clef endpoint.
 //
-// Using this instead of a pino worker-thread transport avoids ESM resolution
-// issues inside Docker and keeps the transport fully synchronous.
+// Implemented as a plain DestinationStream (write(msg: string) interface)
+// which is what pino.multistream actually calls, avoiding any Node.js
+// WritableStream backpressure / _write routing issues.
 // ---------------------------------------------------------------------------
 
-import { Writable } from 'stream';
 import http from 'http';
 import https from 'https';
 
@@ -19,12 +19,18 @@ interface SeqStreamOptions {
   flushIntervalMs?: number;
 }
 
-export function createSeqStream(opts: SeqStreamOptions): Writable {
+/** pino DestinationStream compatible interface */
+export interface SeqDestinationStream {
+  write(msg: string): void;
+}
+
+export function createSeqStream(opts: SeqStreamOptions): SeqDestinationStream {
   const { serverUrl, apiKey, batchSize = 10, flushIntervalMs = 500 } = opts;
 
   const parsedUrl = new URL('/api/events/raw?clef', serverUrl);
   const isHttps = parsedUrl.protocol === 'https:';
   const agent = isHttps ? https : http;
+  const port = parsedUrl.port || (isHttps ? '443' : '80');
 
   let buffer: string[] = [];
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -37,7 +43,7 @@ export function createSeqStream(opts: SeqStreamOptions): Writable {
 
     const options: http.RequestOptions = {
       hostname: parsedUrl.hostname,
-      port: parsedUrl.port || (isHttps ? 443 : 80),
+      port,
       path: parsedUrl.pathname + parsedUrl.search,
       method: 'POST',
       headers: {
@@ -59,10 +65,12 @@ export function createSeqStream(opts: SeqStreamOptions): Writable {
     req.end();
   }
 
-  return new Writable({
-    write(chunk: Buffer, _encoding: BufferEncoding, callback: () => void) {
-      const line = chunk.toString().trim();
-      if (line) buffer.push(line);
+  return {
+    write(msg: string) {
+      const line = msg.trim();
+      if (!line) return;
+
+      buffer.push(line);
 
       if (buffer.length >= batchSize) {
         if (flushTimer) {
@@ -76,17 +84,7 @@ export function createSeqStream(opts: SeqStreamOptions): Writable {
           flushTimer = null;
         }, flushIntervalMs);
       }
-
-      callback();
     },
-
-    final(callback: () => void) {
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
-      }
-      flush();
-      callback();
-    },
-  });
+  };
 }
+
