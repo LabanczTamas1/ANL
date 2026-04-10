@@ -52,11 +52,6 @@ services:
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/anl
       - SEQ_URL=http://seq:5341
-    volumes:
-      - .:/usr/src/app
-      # use a named volume for node_modules so it can be easily refreshed
-      - backend_node_modules:/usr/src/app/node_modules
-    command: sh -c "npm install --include=dev && npm run dev:watch"
     networks:
       - ads-network
 
@@ -81,5 +76,3 @@ volumes:
   redis_data:
   postgres_data:
   seq_data:
-  # named volume for node_modules to avoid stale dependency issues
-  backend_node_modules:
