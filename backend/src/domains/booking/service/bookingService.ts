@@ -199,7 +199,7 @@ class BookingService {
 
     // ── Send confirmation email ───────────────────────────────────────────
     const formattedTime = convertMinutesToTime(timeInMinutes);
-    const frontendUrl = env.ALLOWED_ORIGINS.split(',')[0].trim() || 'http://localhost:5173';
+    const frontendUrl = env.FRONTEND_URL || env.ALLOWED_ORIGINS.split(',')[0].trim();
     const bookingDetailsUrl = `${frontendUrl}/booking/confirmation/${accessToken}`;
 
     // ── Build calendar links ────────────────────────────────────────────

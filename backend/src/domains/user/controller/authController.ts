@@ -42,12 +42,12 @@ export function googleCallback(req: Request, res: Response): void {
   }
 
   const handler = passport.authenticate('google', {
-    failureRedirect: 'http://localhost:5173/login',
+    failureRedirect: `${env.FRONTEND_URL}/login`,
   });
 
   handler(req, res, async () => {
     if (!req.user) {
-      res.redirect('http://localhost:5173/oauth-callback?error=oauth_failed');
+      res.redirect(`${env.FRONTEND_URL}/oauth-callback?error=oauth_failed`);
       return;
     }
 
@@ -83,12 +83,12 @@ export function googleCallback(req: Request, res: Response): void {
         );
 
         res.redirect(
-          `http://localhost:5173/oauth-callback?token=${token}&calendar=true`,
+          `${env.FRONTEND_URL}/oauth-callback?token=${token}&calendar=true`,
         );
       } catch (error) {
         logError(error, { context: 'googleCallback_calendar' });
         res.redirect(
-          'http://localhost:5173/oauth-callback?error=server_error',
+          `${env.FRONTEND_URL}/oauth-callback?error=server_error`,
         );
       }
     } else {
@@ -99,7 +99,7 @@ export function googleCallback(req: Request, res: Response): void {
       });
 
       res.redirect(
-        `http://localhost:5173/oauth-callback?token=${token}`,
+        `${env.FRONTEND_URL}/oauth-callback?token=${token}`,
       );
     }
   });
@@ -115,10 +115,10 @@ export const facebookAuth = passport.authenticate('facebook', {
 
 export function facebookCallback(req: Request, res: Response): void {
   passport.authenticate('facebook', {
-    failureRedirect: 'http://localhost:5173/login',
+    failureRedirect: `${env.FRONTEND_URL}/login`,
   })(req, res, () => {
     if (!req.user) {
-      res.redirect('http://localhost:5173/login');
+      res.redirect(`${env.FRONTEND_URL}/login`);
       return;
     }
 
@@ -129,7 +129,7 @@ export function facebookCallback(req: Request, res: Response): void {
     });
 
     res.redirect(
-      `http://localhost:5173/oauth-callback?token=${token}`,
+      `${env.FRONTEND_URL}/oauth-callback?token=${token}`,
     );
   });
 }
