@@ -12,9 +12,17 @@ log "🚀 Starting deployment..."
 
 # ── Pull latest code ────────────────────────────────────────────────────────
 cd $APP_DIR
+
+# Preserve .env.docker before reset
+cp $COMPOSE_DIR/.env.docker /tmp/.env.docker.bak 2>/dev/null || true
+
 git fetch origin main
 git checkout main
 git reset --hard origin/main
+
+# Restore .env.docker after reset
+cp /tmp/.env.docker.bak $COMPOSE_DIR/.env.docker 2>/dev/null || true
+
 log "✅ Code updated to $(git rev-parse --short HEAD)"
 
 # ── Rebuild and restart containers ──────────────────────────────────────────
