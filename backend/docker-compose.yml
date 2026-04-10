@@ -64,6 +64,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_ADMINPASSWORD: "anl-best-admin"
+      SEQ_FIRSTRUN_REQUIREAPIKEYFORWRITINGEVENTS: "false"
     volumes:
       - seq_data:/data
     networks:
