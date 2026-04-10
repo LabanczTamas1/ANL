@@ -34,7 +34,7 @@ const SCOPES = [
 // ---------------------------------------------------------------------------
 
 function createOAuth2Client() {
-  const frontendUrl = env.ALLOWED_ORIGINS.split(',')[0].trim() || 'http://localhost:5173';
+  const frontendUrl = env.FRONTEND_URL || env.ALLOWED_ORIGINS.split(',')[0].trim();
   return new google.auth.OAuth2(
     env.GOOGLE_CLIENT_ID,
     env.GOOGLE_CLIENT_SECRET,
