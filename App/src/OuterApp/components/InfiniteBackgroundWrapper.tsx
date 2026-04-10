@@ -1,5 +1,5 @@
 import React from "react";
-import stars from "/public/LandingPage.svg";
+const stars = "/LandingPage.svg";
 
 interface InfiniteBackgroundWrapperProps {
   children: React.ReactNode;

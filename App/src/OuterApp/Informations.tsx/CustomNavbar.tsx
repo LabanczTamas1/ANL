@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import darkLogo from "/public/dark-logo.png";
+const darkLogo = "/dark-logo.png";
 import { Link } from "react-router-dom";
 import NavigationButton from "../components/NavigationButton";
 

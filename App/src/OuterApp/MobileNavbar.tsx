@@ -209,7 +209,7 @@ const MobileNavbar = () => {
         >
           <Link to="/" onClick={closeMenu} className="flex items-center gap-2">
             <img
-              src="/public/light-logo.png"
+              src="/light-logo.png"
               alt="Logo"
               style={{ height: "2rem", width: "auto" }}
             />
@@ -353,7 +353,7 @@ const MobileNavbar = () => {
       >
         <Link to="/" className="flex items-center gap-2">
           <img
-            src="/public/light-logo.png"
+            src="/light-logo.png"
             alt="Logo"
             style={{ height: "2rem", width: "auto" }}
           />

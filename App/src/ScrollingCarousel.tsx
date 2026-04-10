@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import personalized from '/public/LandingPage/personalized.png';
+const personalized = '/LandingPage/personalized.png';
 
 const cards = [
   { title: 'Personalized ads', img: personalized },

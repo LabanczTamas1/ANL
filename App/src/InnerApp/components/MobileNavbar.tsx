@@ -2,7 +2,7 @@ import React from 'react';
 import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
-import lightLogo from "/public/light-logo.png";
+const lightLogo = "/light-logo.png";
 import { Link, useNavigate } from 'react-router-dom';
 
 interface MobileNavbarProps{

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import lightLogo from "/public/light-logo.png";
+const lightLogo = "/light-logo.png";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { FaSignInAlt, FaUserPlus } from "react-icons/fa";

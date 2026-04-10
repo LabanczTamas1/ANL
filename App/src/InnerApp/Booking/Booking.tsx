@@ -1,8 +1,8 @@
 import React from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import darkLogo from "/public/dark-logo.png";
-import lightLogo from "/public/light-logo.png";
+const darkLogo = "/dark-logo.png";
+const lightLogo = "/light-logo.png";
 import { Calendar as CalendarIcon, Clock, Video, User, Building2, Mail, CheckCircle2, Lock, ArrowLeft, Sunrise, Sun, Sunset } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import ThemeIcon from "../components/Logo";
