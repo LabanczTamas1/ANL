@@ -106,7 +106,7 @@ const Booking = () => {
   };
 
   return (
-    <div className="h-full bg-surface-overlay flex justify-center items-start lg:items-stretch p-3 md:p-4 lg:p-5 relative overflow-y-auto lg:overflow-hidden custom-scrollbar">
+    <div className="h-full bg-surface-overlay flex justify-center items-start lg:items-stretch p-3 md:p-4 lg:p-5 relative overflow-x-hidden overflow-y-auto lg:overflow-hidden custom-scrollbar">
       {/* Background gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
