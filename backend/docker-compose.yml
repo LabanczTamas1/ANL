@@ -52,7 +52,6 @@ services:
     image: datalust/seq:latest
     container_name: anl-seq
     ports:
-      - "5341:5341"
       - "8081:80"
     environment:
       ACCEPT_EULA: "Y"
