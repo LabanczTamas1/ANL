@@ -197,46 +197,46 @@ class BookingService {
       hasMeetLink: !!meetLink,
     });
 
-    // ── Send confirmation email ───────────────────────────────────────────
+    // ── Send confirmation emails (fire-and-forget — does not block response) ──
     const formattedTime = convertMinutesToTime(timeInMinutes);
     const frontendUrl = env.FRONTEND_URL || env.ALLOWED_ORIGINS.split(',')[0].trim();
     const bookingDetailsUrl = `${frontendUrl}/booking/confirmation/${accessToken}`;
 
-    // ── Build calendar links ────────────────────────────────────────────
-    const startDate = new Date(bookingData.date);
-    const startHours = Math.floor(timeInMinutes / 60);
-    const startMins = timeInMinutes % 60;
-    startDate.setHours(startHours, startMins, 0, 0);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour
+    ;(async () => {
+      // ── Build calendar links ──────────────────────────────────────────
+      const startDate = new Date(bookingData.date);
+      const startHours = Math.floor(timeInMinutes / 60);
+      const startMins = timeInMinutes % 60;
+      startDate.setHours(startHours, startMins, 0, 0);
+      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour
 
-    const toCalStr = (d: Date) =>
-      d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const toCalStr = (d: Date) =>
+        d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 
-    const gcalParams = new URLSearchParams({
-      action: 'TEMPLATE',
-      text: bookingData.meetingType || 'Kick Off Meeting',
-      dates: `${toCalStr(startDate)}/${toCalStr(endDate)}`,
-      details: meetLink ? `Join: ${meetLink}` : '',
-      ...(meetLink ? { location: meetLink } : {}),
-    });
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?${gcalParams}`;
+      const gcalParams = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: bookingData.meetingType || 'Kick Off Meeting',
+        dates: `${toCalStr(startDate)}/${toCalStr(endDate)}`,
+        details: meetLink ? `Join: ${meetLink}` : '',
+        ...(meetLink ? { location: meetLink } : {}),
+      });
+      const googleCalendarUrl = `https://calendar.google.com/calendar/render?${gcalParams}`;
 
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//ANL//Booking//EN',
-      'BEGIN:VEVENT',
-      `DTSTART:${toCalStr(startDate)}`,
-      `DTEND:${toCalStr(endDate)}`,
-      `SUMMARY:${bookingData.meetingType || 'Kick Off Meeting'}`,
-      `DESCRIPTION:${meetLink ? `Join: ${meetLink}` : ''}`,
-      `URL:${meetLink || ''}`,
-      `LOCATION:${meetLink || ''}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n');
+      const icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//ANL//Booking//EN',
+        'BEGIN:VEVENT',
+        `DTSTART:${toCalStr(startDate)}`,
+        `DTEND:${toCalStr(endDate)}`,
+        `SUMMARY:${bookingData.meetingType || 'Kick Off Meeting'}`,
+        `DESCRIPTION:${meetLink ? `Join: ${meetLink}` : ''}`,
+        `URL:${meetLink || ''}`,
+        `LOCATION:${meetLink || ''}`,
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n');
 
-    try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -245,7 +245,7 @@ class BookingService {
         },
       });
 
-      // ── Client confirmation email (no personal details) ─────────────────
+      // ── Client confirmation email (no personal details) ──────────────
       const dayName = getDayNameFromDateString(bookingData.date);
       const clientHtml = `
         <div style="font-family: Inter, system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb; border-radius: 16px; overflow: hidden;">
@@ -306,7 +306,7 @@ class BookingService {
 
       logger.info({ bookingId, email: bookingData.email }, 'Client confirmation email sent');
 
-      // ── Host notification email (full booking details) ──────────────────
+      // ── Host notification email (full booking details) ────────────────
       const meetingHosts = await googleCalendarService.getMeetingHosts();
 
       if (meetingHosts.length > 0) {
@@ -390,10 +390,9 @@ class BookingService {
 
         logger.info({ bookingId, hosts: meetingHosts }, 'Host notification email sent');
       }
-    } catch (emailError) {
-      // Email failure should not break the booking flow
+    })().catch((emailError) => {
       logError(emailError, { context: 'sendBookingEmails', bookingId });
-    }
+    });
 
     return {
       id: bookingId,
