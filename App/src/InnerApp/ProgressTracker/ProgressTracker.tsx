@@ -33,7 +33,7 @@ const ProgressTracker = () => {
           return;
         }
 
-        const response = await axios.get(`${API_BASE_URL}/api/userData/${userId}`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/user/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

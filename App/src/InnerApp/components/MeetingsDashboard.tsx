@@ -31,7 +31,7 @@ const MeetingsDashboard = () => {
         throw new Error("Authentication required. Please log in again.");
       }
       
-      const response = await fetch(`${API_BASE_URL}/api/meeting`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/booking`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const MeetingsDashboard = () => {
         throw new Error(data.message || `Error: ${response.statusText}`);
       }
 
-      setMeetings(data.meetings || []);
+      setMeetings(data.bookings || []);
     } catch (err) {
       console.error("Failed to fetch meetings:", err);
       if (err.name === "SyntaxError") {
@@ -95,7 +95,7 @@ const MeetingsDashboard = () => {
         throw new Error("Authentication required. Please log in again.");
       }
       
-      const response = await fetch(`${API_BASE_URL}/api/meetings/${meetingToDelete.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/booking/${meetingToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
