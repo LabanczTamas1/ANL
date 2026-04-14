@@ -186,7 +186,7 @@ const SuccessfulBooking = () => {
       setMeetingDetails((prev) => ({ ...prev, loading: true, error: null }));
       const token = localStorage.getItem("authToken");
 
-      const response = await fetch(`${API_BASE_URL}/api/booking/${meetingId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/booking/${meetingId}`, {
         method: "GET",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -224,7 +224,7 @@ const SuccessfulBooking = () => {
       setMeetingDetails((prev) => ({ ...prev, loading: true, error: null }));
       const token = localStorage.getItem("authToken");
 
-      const response = await fetch(`${API_BASE_URL}/api/booking/latest`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/booking/latest`, {
         method: "GET",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

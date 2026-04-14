@@ -286,7 +286,7 @@ export const useBooking = (): UseBookingReturn => {
       console.debug("Booking payload:", payload);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/booking`,
+        `${API_BASE_URL}/api/v1/booking`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -198,7 +198,7 @@ const BookingConfirmation: React.FC = () => {
       try {
         setDetails((prev) => ({ ...prev, loading: true, error: null }));
         const response = await fetch(
-          `${API_BASE_URL}/api/booking/view/${token}`,
+          `${API_BASE_URL}/api/v1/booking/view/${token}`,
           { method: "GET", headers: { "Content-Type": "application/json" } }
         );
 
