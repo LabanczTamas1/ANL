@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: anl
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Hetzner Volume-ANL (ID: 105365621) mounted at /mnt/HC_Volume_105365621
+      # Run: mkdir -p /mnt/HC_Volume_105365621/postgres on first deploy
+      - /mnt/HC_Volume_105365621/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -68,5 +70,5 @@ networks:
 
 volumes:
   redis_data:
-  postgres_data:
   seq_data:
+  # postgres_data removed — using Hetzner Volume bind mount instead

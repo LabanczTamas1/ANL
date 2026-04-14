@@ -39,6 +39,16 @@ docker compose rm -sf backend 2>/dev/null || true
 docker compose up -d --remove-orphans
 
 # ── Health check ────────────────────────────────────────────────────────────
+# ── Prepare Hetzner volume directory ───────────────────────────────────────
+HETZNER_VOL="/mnt/HC_Volume_105365621"
+if mountpoint -q "$HETZNER_VOL"; then
+  mkdir -p "$HETZNER_VOL/postgres"
+  log "✅ Hetzner volume ready at $HETZNER_VOL"
+else
+  log "⚠️  WARNING: $HETZNER_VOL is not mounted — postgres data will not persist!"
+  log "   Mount the Hetzner volume and re-deploy."
+fi
+
 log "⏳ Waiting for backend to be healthy..."
 ELAPSED=0
 until curl -sf $HEALTH_URL > /dev/null 2>&1; do

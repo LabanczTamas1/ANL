@@ -26,6 +26,9 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /usr/src/app/dist ./dist
 
+# Migrations are plain JS — no compilation needed, copied directly
+COPY migrations ./migrations
+
 # Copy non-TS assets that the app may still need at runtime
 COPY credentials.json usersList.json exported_data.json ./
 COPY logs ./logs

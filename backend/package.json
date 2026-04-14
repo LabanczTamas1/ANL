@@ -9,7 +9,10 @@
     "dev": "tsx src/server.ts",
     "dev:watch": "tsx watch src/server.ts",
     "lint": "tsc --noEmit",
-    "legacy:start": "node server.js"
+    "legacy:start": "node server.js",
+    "migrate": "node-pg-migrate up --migrations-dir migrations --migrations-table pgmigrations",
+    "migrate:down": "node-pg-migrate down --migrations-dir migrations --migrations-table pgmigrations",
+    "migrate:create": "node-pg-migrate create --migrations-dir migrations"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +30,7 @@
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "node-pg-migrate": "^8.0.4",
     "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
