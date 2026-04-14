@@ -8,7 +8,9 @@ import { createLogger } from '../logger.js';
 const logger = createLogger('contact', 'controller');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // STARTTLS on port 587
   auth: {
     user: env.SMTP_USER || 'deid.unideb@gmail.com',
     pass: env.SMTP_PASS || '',

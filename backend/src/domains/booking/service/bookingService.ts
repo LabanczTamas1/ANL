@@ -238,7 +238,9 @@ class BookingService {
       ].join('\r\n');
 
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // STARTTLS on port 587
         auth: {
           user: env.SMTP_USER,
           pass: env.SMTP_PASS,
