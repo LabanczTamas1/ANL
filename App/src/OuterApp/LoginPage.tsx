@@ -40,7 +40,9 @@ const LoginPage: React.FC = () => {
       if (response.ok) {
         const responseData = await response.json();
 
-        localStorage.setItem("authToken", responseData.token);
+        // Backend returns accessToken (not token)
+        const token = responseData.accessToken || responseData.token;
+        localStorage.setItem("authToken", token);
         localStorage.setItem("userId", responseData.userId);
         localStorage.setItem(
           "username",
@@ -50,6 +52,9 @@ const LoginPage: React.FC = () => {
           "userEmail",
           responseData.user?.email || data.email
         );
+
+        // Store verified status so route guards can check it
+        localStorage.setItem("verified", responseData.user?.verified === 'true' ? 'true' : 'false');
 
         // Handle name data
         const fullName = responseData.user?.name || "";
@@ -64,8 +69,13 @@ const LoginPage: React.FC = () => {
 
         localStorage.setItem("superRole", `${responseData.user?.role || "user"}`);
 
-        alert(t("loginSuccessful"));
-        navigate("/home/progress-tracker");
+        if (responseData.user?.verified !== 'true') {
+          alert(t("loginSuccessful"));
+          navigate("/check-email");
+        } else {
+          alert(t("loginSuccessful"));
+          navigate("/home/progress-tracker");
+        }
       } else {
         const errorData = await response.json();
         alert(`${t("loginFailed")} ${errorData.error}`);
