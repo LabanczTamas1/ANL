@@ -68,7 +68,8 @@ const OAuthCallback: React.FC = () => {
       console.log('User data received:', userData);
 
       // Store user data in localStorage
-      
+      // OAuth users are always verified
+      localStorage.setItem('verified', 'true');
       localStorage.setItem('userId', userData.userId || '');
       localStorage.setItem('firstName', userData.firstName || '');
       localStorage.setItem('lastName', userData.lastName || '');

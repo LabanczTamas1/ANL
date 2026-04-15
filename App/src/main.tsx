@@ -73,6 +73,17 @@ const RootLayout = () => (
   </>
 );
 
+// Requires valid authToken AND verified status
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const authToken = localStorage.getItem('authToken');
+  if (!authToken) return <Navigate to="/login" replace />;
+
+  const verified = localStorage.getItem('verified');
+  if (verified !== 'true') return <Navigate to="/check-email" replace />;
+
+  return <>{children}</>;
+};
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -144,7 +155,11 @@ const router = createBrowserRouter([
 
   {
     path: "/home",
-    element: <Layout />,
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Home /> }, // Default child route for "/home"
       { path: "mail/inbox", element: <Inbox /> }, // Renders Inbox under "/home/inbox"
