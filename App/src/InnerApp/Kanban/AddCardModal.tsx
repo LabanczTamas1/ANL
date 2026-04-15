@@ -34,7 +34,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Card Name"
               value={cardData.name}
               onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white hover:border-gray-300 dark:placeholder-gray-400 rounded-lg px-3 py-2"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -45,7 +45,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Contact Name"
               value={cardData.contactName}
               onChange={(e) => setCardData({ ...cardData, contactName: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -56,7 +56,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Business Name"
               value={cardData.businessName}
               onChange={(e) => setCardData({ ...cardData, businessName: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -67,7 +67,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Phone number"
               value={cardData.phoneNumber}
               onChange={(e) => setCardData({ ...cardData, phoneNumber: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -78,7 +78,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Email"
               value={cardData.email}
               onChange={(e) => setCardData({ ...cardData, email: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -89,7 +89,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Website"
               value={cardData.website}
               onChange={(e) => setCardData({ ...cardData, website: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -100,7 +100,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Instagram"
               value={cardData.instagram}
               onChange={(e) => setCardData({ ...cardData, instagram: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
@@ -111,7 +111,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               placeholder="Facebook"
               value={cardData.facebook}
               onChange={(e) => setCardData({ ...cardData, facebook: e.target.value })}
-              className="flex-1 border border-transparent dark:bg-[#1e1e1e] hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
+              className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           {/* Add more fields as needed */}

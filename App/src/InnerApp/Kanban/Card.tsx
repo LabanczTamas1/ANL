@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
 import CardMessageSection from "./CardMessageSection";
-import axios from "axios";
+import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
 import timeAgo from "./../../utils/calculateTimeAgo";
 
@@ -35,7 +35,6 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [cardData, setCardData] = useState(card);
   const [isEditing, setIsEditing] = useState<CardKey | null>(null);
   const [value, setValue] = useState<string | boolean>(cardData.name);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const keyOrder = [
     "id",
@@ -94,13 +93,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
     const updatedValue = value;
 
     try {
-      const token = localStorage.getItem("authToken");
-
-      await axios.put(
-        `${API_BASE_URL}/api/cards/${card.id}`,
-        { name: key, updatedValue },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await updateCard(card.id, { name: key, updatedValue });
 
       setCardData((prevData) => ({
         ...prevData,
@@ -158,11 +151,11 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       }}
     >
       <div
-        className="relative bg-white rounded-lg shadow-lg p-6 w-[30vw] max-w-md"
+        className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[30vw] max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-4 text-center">Confirm Deletion</h2>
-        <p className="text-center mb-6">Are you really want to delete this card?</p>
+        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">Confirm Deletion</h2>
+        <p className="text-center mb-6 dark:text-gray-300">Are you really want to delete this card?</p>
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleConfirmDelete}

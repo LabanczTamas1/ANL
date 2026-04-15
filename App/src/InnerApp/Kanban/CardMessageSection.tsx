@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import {
+  getComments,
+  createComment,
+  deleteComment,
+  updateComment,
+} from "../../services/api/kanbanApi";
 
 interface Comment {
   commentId: string;
@@ -19,20 +24,13 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
   const [error, setError] = useState<string | null>(null); // Error state
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null); // Comment ID being edited
   const [editingBody, setEditingBody] = useState<string>(""); // Temporary body for editing
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch comments on component mount
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("authToken");
-        const response = await axios.get(
-          `${API_BASE_URL}/api/cards/comments/${cardId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await getComments(cardId);
 
         if (response.status === 200) {
           const commentsData = response.data.CommentsDetails || [];
@@ -60,18 +58,11 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("authToken");
       const firstName = localStorage.getItem("firstName");
       const lastName = localStorage.getItem("lastName");
       const userName = firstName && lastName ? `${firstName} ${lastName}` : "Anonymous";
 
-      const response = await axios.post(
-        `${API_BASE_URL}/api/cards/comments/${cardId}`,
-        { userName, body: comment },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await createComment(cardId, { userName, body: comment });
 
       if (response.status === 200) {
         const newComment: Comment = {
@@ -93,11 +84,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      const token = localStorage.getItem("authToken");
-
-      await axios.delete(`${API_BASE_URL}/api/cards/comments/${commentId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await deleteComment(commentId);
 
       setCommentsList((prev) => prev.filter((comment) => comment.commentId !== commentId));
     } catch (error) {
@@ -110,15 +97,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
     try {
       setLoading(true);
-      const token = localStorage.getItem("authToken");
-
-      await axios.put(
-        `${API_BASE_URL}/api/cards/comments/${editingCommentId}`,
-        { body: editingBody },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await updateComment(editingCommentId, { body: editingBody });
 
       setCommentsList((prev) =>
         prev.map((comment) =>
