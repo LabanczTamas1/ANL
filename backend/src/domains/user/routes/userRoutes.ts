@@ -11,6 +11,7 @@ router.get('/profile', authMiddleware, uc.getProfile);
 router.put('/profile', authMiddleware, uc.updateProfile);
 router.patch('/updateUserRole/:userId', uc.updateUserRole);
 router.patch('/modifyUserData', authMiddleware, uc.modifyUserData);
+router.patch('/change-password', authMiddleware, uc.changePassword);
 router.get('/:userId', authMiddleware, uc.getUserById);
 router.get('/:username', uc.getUserByUsername);
 

@@ -254,6 +254,55 @@ export async function getUserById(
   }
 }
 
+export async function changePassword(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const redisClient = getRedisClient();
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: 'currentPassword and newPassword are required' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      res.status(400).json({ error: 'New password must be at least 8 characters' });
+      return;
+    }
+
+    const userKey = `user:${req.user!.id}`;
+    const userData = await redisClient.hGetAll(userKey);
+
+    if (!userData || Object.keys(userData).length === 0) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const storedHash = userData.hashedPassword || userData.password || '';
+    if (!storedHash) {
+      res.status(400).json({ error: 'Password change not available for OAuth accounts' });
+      return;
+    }
+
+    const { default: bcrypt } = await import('bcrypt');
+    const isMatch = await bcrypt.compare(currentPassword, storedHash);
+    if (!isMatch) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await redisClient.hSet(userKey, 'hashedPassword', newHash);
+
+    logger.info({ userId: req.user!.id }, 'Password changed successfully');
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    logError(error, { context: 'changePassword' });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 export async function modifyUserData(
   req: Request,
   res: Response,

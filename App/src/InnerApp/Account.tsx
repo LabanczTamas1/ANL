@@ -34,29 +34,32 @@ const Account = () => {
         const token = localStorage.getItem("authToken");
         if (!token) return;
 
-        const response = await axios.get(`${API_BASE_URL}/api/user/profile`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/user/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        const userData = response.data.user;
+        // getProfile returns the user object directly (no wrapper)
+        const userData = response.data;
         
-        setFormData({
-          ...formData,
+        setFormData(prev => ({
+          ...prev,
           firstname: userData.firstName || "",
           lastname: userData.lastName || "",
           email: userData.email || "",
           username: userData.username || ""
-        });
-        
-        // Set OAuth status
-        setIsOAuth(userData.provider === "google");
+        }));
+
+        // OAuth users have no hashedPassword — check role field presence as proxy
+        // If provider info is stored in Redis it will appear here
+        setIsOAuth(!!(userData.provider && userData.provider !== "local"));
       } catch (err) {
         console.error("Error fetching user data:", err);
+        setError(t('failedUpdate'));
       }
     };
 
     fetchUserData();
-  }, []);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -72,8 +75,9 @@ const Account = () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error(t('notAuthenticated'));
-      
-      const response = await axios.put(`${API_BASE_URL}/api/user/profile`, {
+
+      // modifyUserData supports firstName, lastName, email, username in one call
+      await axios.patch(`${API_BASE_URL}/api/v1/user/modifyUserData`, {
         firstName: formData.firstname,
         lastName: formData.lastname,
         email: formData.email,
@@ -82,13 +86,8 @@ const Account = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Update token if a new one is returned
-      if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
-      }
-      
       setSuccess(t('successMessage'));
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.error || t('failedUpdate'));
     } finally {
       setLoading(false);
@@ -112,7 +111,7 @@ const Account = () => {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error(t('notAuthenticated'));
       
-      const response = await axios.put(`${API_BASE_URL}/api/user/profile`, {
+      await axios.patch(`${API_BASE_URL}/api/v1/user/change-password`, {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       }, {
@@ -120,14 +119,13 @@ const Account = () => {
       });
       
       setSuccess(t('passwordUpdated'));
-      // Clear password fields
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         currentPassword: "",
         newPassword: "",
         confirmPassword: ""
-      });
-    } catch (err) {
+      }));
+    } catch (err: any) {
       setError(err.response?.data?.error || t('failedPassword'));
     } finally {
       setLoading(false);
