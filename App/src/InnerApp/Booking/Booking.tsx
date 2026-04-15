@@ -229,7 +229,7 @@ const Booking = () => {
                   <span className="text-content-inverse text-xs md:text-sm truncate">
                     {selectedDateFormated
                       ? `${selectedDateFormated}${selectedTime ? ` · ${selectedTime}` : ""}`
-                      : t("selectDate") || "Select a date"}
+                      : t("pickADate")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
