@@ -46,22 +46,23 @@ const Kanban: React.FC = () => {
         const response = await getColumns();
 
         const updatedColumns = await Promise.all(
-          response.data.columns.map(async (column: any) => {
-            const cardResponse = await getCards(column.id);
-            console.log("Response Column: ", response.data.columns);
-            console.log(`Column Data: ${column.id}`, cardResponse);
+          response.data.columns.map(async (col: any) => {
+            // Normalise backend keys → frontend keys
+            const columnId = col.columnId ?? col.id;
+            const cardResponse = await getCards(columnId);
 
             const cardsWithIds = cardResponse.data.cardDetails.map(
-              (card: any, index: number) => {
-                return {
-                  ...card,
-                  id: cardResponse.data.cardIds[index] || card.id,
-                };
-              }
+              (card: any, index: number) => ({
+                ...card,
+                id: cardResponse.data.cardIds[index] || card.id,
+              })
             );
 
             return {
-              ...column,
+              id: columnId,
+              name: col.ColumnName ?? col.name ?? '',
+              tagColor: col.tagColor ?? '',
+              cardNumber: col.CardNumber ?? col.cardNumber ?? 0,
               cards: cardsWithIds,
               cardIds: cardResponse.data.cardIds || [],
             };

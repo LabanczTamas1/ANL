@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
 import CardMessageSection from "./CardMessageSection";
+import ActivityLog from "./ActivityLog";
+import ModalHeader from "./ModalHeader";
 import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
 import timeAgo from "./../../utils/calculateTimeAgo";
@@ -180,19 +182,24 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       onClick={handleCloseModal}
     >
       <div
-        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 pb-[80px] w-full sm:w-4/5 md:w-3/4 lg:w-[40vw] max-h-[90vh] overflow-y-auto"
+        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full sm:w-4/5 md:w-3/4 lg:w-[40vw] max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={handleCloseModal}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 text-2xl md:text-4xl"
-        >
-          &times;
-        </button>
-        <h2 className="text-lg md:text-xl font-bold mb-4 dark:text-white">
-          {cardData.BusinessName}
-        </h2>
+        {/* Sticky header — stays pinned while body scrolls */}
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg flex-shrink-0">
+          <h2 className="text-lg md:text-xl font-bold dark:text-white truncate pr-4">
+            {cardData.BusinessName || cardData.name || 'Card Details'}
+          </h2>
+          <button
+            onClick={handleCloseModal}
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
 
+        {/* Scrollable body */}
+        <div className="p-4 md:p-6 overflow-y-auto flex-1">
         <div className="space-y-4 md:space-y-6">
           {Object.keys(reorderedObject)
             .slice(0, 10)
@@ -357,6 +364,8 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
           </button>
         </div>
         <CardMessageSection cardId={card.id} />
+        <ActivityLog cardId={card.id} />
+        </div>{/* end scrollable body */}
       </div>
     </div>
   );
