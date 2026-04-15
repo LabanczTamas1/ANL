@@ -23,4 +23,12 @@ router.get('/cards/comments/:cardId', authMiddleware, kc.getComments);
 router.put('/cards/comments/:commentId', authMiddleware, kc.updateComment);
 router.delete('/cards/comments/:commentId', authMiddleware, kc.deleteComment);
 
+// Templates
+router.post('/templates', authMiddleware, kc.createTemplate);
+router.get('/templates', authMiddleware, kc.getTemplates);
+router.delete('/templates/:id', authMiddleware, kc.deleteTemplate);
+
+// Card Activity
+router.get('/cards/:cardId/activity', authMiddleware, kc.getCardActivity);
+
 export default router;

@@ -64,3 +64,22 @@ export const updateComment = (
 /** DELETE /api/v1/kanban/cards/comments/:commentId */
 export const deleteComment = (commentId: string) =>
   apiClient.delete(`/kanban/cards/comments/${commentId}`);
+
+// ── Templates ────────────────────────────────────────────────────────────────
+
+/** POST /api/v1/kanban/templates */
+export const createTemplate = (payload: Record<string, unknown>) =>
+  apiClient.post('/kanban/templates', payload);
+
+/** GET /api/v1/kanban/templates */
+export const getTemplates = () => apiClient.get('/kanban/templates');
+
+/** DELETE /api/v1/kanban/templates/:id */
+export const deleteTemplate = (id: string) =>
+  apiClient.delete(`/kanban/templates/${id}`);
+
+// ── Card Activity ────────────────────────────────────────────────────────────
+
+/** GET /api/v1/kanban/cards/:cardId/activity */
+export const getCardActivity = (cardId: string) =>
+  apiClient.get(`/kanban/cards/${cardId}/activity`);
