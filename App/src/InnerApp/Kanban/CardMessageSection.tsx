@@ -15,9 +15,10 @@ interface Comment {
 
 interface CardMessageSectionProps {
   cardId: string;
+  onCommentAction?: (action: string, details: string) => void;
 }
 
-const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
+const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId, onCommentAction }) => {
   const [comment, setComment] = useState<string>(""); // Input field
   const [commentsList, setCommentsList] = useState<Comment[]>([]); // List of comments
   const [loading, setLoading] = useState<boolean>(false); // Loading state
@@ -74,6 +75,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
         setCommentsList((prev) => [...prev, newComment]);
         setComment("");
+        onCommentAction?.('commented', 'Added a comment');
       }
     } catch (error) {
       setError("Failed to add comment. Please try again.");
@@ -87,6 +89,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
       await deleteComment(commentId);
 
       setCommentsList((prev) => prev.filter((comment) => comment.commentId !== commentId));
+      onCommentAction?.('comment_deleted', 'Deleted a comment');
     } catch (error) {
       setError("Failed to delete comment. Please try again.");
     }
@@ -109,6 +112,7 @@ const CardMessageSection: React.FC<CardMessageSectionProps> = ({ cardId }) => {
 
       setEditingCommentId(null);
       setEditingBody("");
+      onCommentAction?.('updated', 'Updated a comment');
     } catch (error) {
       setError("Failed to update comment. Please try again.");
     } finally {

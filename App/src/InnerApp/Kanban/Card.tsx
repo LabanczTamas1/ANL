@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
 import CardMessageSection from "./CardMessageSection";
-import ActivityLog from "./ActivityLog";
+import ActivityLog, { ActivityLogHandle } from "./ActivityLog";
 import ModalHeader from "./ModalHeader";
 import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
@@ -37,6 +37,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [cardData, setCardData] = useState(card);
   const [isEditing, setIsEditing] = useState<CardKey | null>(null);
   const [value, setValue] = useState<string | boolean>(cardData.name);
+  const activityRef = useRef<ActivityLogHandle>(null);
 
   const keyOrder = [
     "id",
@@ -103,6 +104,9 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       }));
 
       setIsEditing(null);
+
+      // Show instant activity update
+      activityRef.current?.addLocal('updated', `Updated field "${key}"`);
     } catch (error) {
       console.error("Error updating field:", error);
     }
@@ -363,8 +367,8 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             Delete
           </button>
         </div>
-        <CardMessageSection cardId={card.id} />
-        <ActivityLog cardId={card.id} />
+        <CardMessageSection cardId={card.id} onCommentAction={(action, details) => activityRef.current?.addLocal(action, details)} />
+        <ActivityLog ref={activityRef} cardId={card.id} />
         </div>{/* end scrollable body */}
       </div>
     </div>
