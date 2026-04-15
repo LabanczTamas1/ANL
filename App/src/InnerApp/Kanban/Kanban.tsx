@@ -3,7 +3,6 @@ import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import {
   getColumns,
   getCards,
-  createCard,
   deleteCard,
   createColumn,
   deleteColumn,
@@ -13,7 +12,8 @@ import {
 import Column from "./Column";
 import KanbanHeader from './KanbanHeader';
 import AddColumnModal from './AddColumnModal';
-import AddCardModal from './AddCardModal';
+import CardCreationModal from './CardCreationModal';
+import type { FieldDef } from './CardCreationModal';
 import TrashBin from './TrashBin';
 
 const Kanban: React.FC = () => {
@@ -26,19 +26,6 @@ const Kanban: React.FC = () => {
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteMode, setIsDeleteMode] = useState(false);
-  const [cardData, setCardData] = useState({
-    name: "",
-    contactName: "",
-    businessName: "",
-    phoneNumber: "",
-    email: "",
-    website: "",
-    instagram: "",
-    facebook: "",
-    firstContact: "",
-    dateOfAdded: "",
-    isCommented: false,
-  });
 
   useEffect(() => {
     const fetchColumns = async () => {
@@ -114,59 +101,27 @@ const Kanban: React.FC = () => {
     setFilteredColumns(filtered);
   }, [searchQuery, columns]);
 
-  const handleAddCard = async () => {
-    if (!selectedColumnId) return;
+  const handleCardCreated = (colId: string, cardId: string, cardName: string, fields: FieldDef[]) => {
+    // Build a card object that matches the shape the column expects
+    const newCard: Record<string, any> = {
+      id: cardId,
+      Name: cardName,
+      DateOfAdded: String(Date.now()),
+      IsCommented: 'false',
+    };
 
-    try {
-      const response = await createCard({ ...cardData, columnId: selectedColumnId });
-
-      const newCard = {
-        id: response.data.cardId,
-        Name: cardData.name,
-        ContactName: cardData.contactName, // Ensure consistent naming
-        BusinessName: cardData.businessName,
-        PhoneNumber: cardData.phoneNumber,
-        Email: cardData.email,
-        IsCommented: cardData.isCommented,
-        Website: cardData.website,
-        Instagram: cardData.instagram,
-        Facebook: cardData.facebook,
-        FirstContact: cardData.firstContact,
-        DateOfAdded: cardData.dateOfAdded,
-      };
-
-      console.log("New caaaaaaaaaaaaaard:", newCard);
-
-      setColumns((prevColumns) =>
-        prevColumns.map((col) =>
-          col.id === selectedColumnId
-            ? {
-                ...col,
-                cardNumber: col.cardNumber + 1,
-                cards: [...col.cards, newCard],
-              }
-            : col
-        )
-      );
-
-      setShowCardModal(false);
-
-      setCardData({
-        name: "",
-        contactName: "",
-        businessName: "",
-        phoneNumber: "",
-        email: "",
-        website: "",
-        instagram: "",
-        facebook: "",
-        dateOfAdded: Math.floor(Date.now() / 1000).toString(),
-        firstContact: "",
-        isCommented: false,
-      });
-    } catch (error) {
-      console.error("Error adding card:", error);
+    // Map dynamic fields to PascalCase keys (legacy compat)
+    for (const f of fields) {
+      newCard[f.name] = f.value;
     }
+
+    setColumns((prev) =>
+      prev.map((col) =>
+        col.id === colId
+          ? { ...col, cardNumber: (Number(col.cardNumber) || 0) + 1, cards: [...col.cards, newCard] }
+          : col
+      )
+    );
   };
 
   const handleDeleteCard = async (columnId: string, cardId: string) => {
@@ -457,13 +412,12 @@ const Kanban: React.FC = () => {
         )}
       </DragDropContext>
 
-      {/* Add Card Modal */}
-      <AddCardModal
+      {/* Card Creation Modal — template or scratch */}
+      <CardCreationModal
         show={showCardModal}
         onClose={() => setShowCardModal(false)}
-        cardData={cardData}
-        setCardData={setCardData}
-        onAddCard={handleAddCard}
+        columnId={selectedColumnId}
+        onCardCreated={handleCardCreated}
       />
     </div>
   );
