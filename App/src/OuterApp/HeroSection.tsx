@@ -15,7 +15,7 @@ const HeroSection = () => {
         `}
       </style>
 
-      <section className="relative h-screen flex justify-center pb-[20vh] items-center">
+      <section className="relative h-screen flex justify-center pb-[20vh] items-center pt-14 sm:pt-0">
         <div className="flex flex-col items-center relative text-center z-10">
           <h1 className="text-4xl bg-gradient-to-r from-[#7AA49F] via-[#9A4647] to-[#7AA49F] bg-[length:200%_100%] bg-left bg-clip-text text-transparent animate-[moveGradient_10s_linear_infinite] px-2 md:max-w-[40vw] max-w-[80vw] md:text-6xl font-bold break-words">
             {t('heroHeading')}

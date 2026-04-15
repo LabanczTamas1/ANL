@@ -5,7 +5,7 @@ import SocialLoginButtons from "./components/SocialLoginButtons";
 import FormInput from "./components/FormInput";
 import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
-import StaticNavbar from "./StaticNavbar";
+import Navbar from "./Navbar";
 import InfiniteBackgroundWrapper from "./components/InfiniteBackgroundWrapper";
 
 interface RegisterFormInputs {
@@ -87,9 +87,9 @@ const RegisterForm: React.FC = () => {
 
   return (
     <InfiniteBackgroundWrapper>
-      <StaticNavbar />
+      <Navbar />
 
-      <div className="relative flex justify-center items-start px-4 py-10 text-white">
+      <div className="relative flex justify-center items-start px-4 pt-16 sm:pt-10 pb-10 text-white">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 rounded-lg shadow-lg w-full max-w-md bg-white/5 backdrop-blur"

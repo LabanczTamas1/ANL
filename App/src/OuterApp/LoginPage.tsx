@@ -111,7 +111,7 @@ const LoginPage: React.FC = () => {
           onClose={() => setFlashMessage(null)}
         />
       )}
-      <div className="relative h-[75vh] flex justify-center text-white">
+      <div className="relative h-[75vh] flex justify-center text-white pt-14 sm:pt-0">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-6 rounded-lg shadow-lg w-full max-w-md"
