@@ -100,8 +100,8 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[650px] max-h-[90vh] flex flex-col overflow-hidden">
+        <ModalHeader title="Template Builder" onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <ModalHeader title="Template Builder" onClose={onClose} />
 
           {/* Existing templates list */}
           {!showForm && (

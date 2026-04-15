@@ -20,8 +20,8 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-[#1e1e1e] dark:text-white rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] flex flex-col overflow-hidden">
+        <ModalHeader title="Add Card" onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <ModalHeader title="Add Card" onClose={onClose} />
         <form
           onSubmit={(e) => {
             e.preventDefault();

@@ -24,8 +24,8 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[400px] max-h-[90vh] flex flex-col overflow-hidden">
+        <ModalHeader title="Add column" onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <ModalHeader title="Add column" onClose={onClose} />
         <div className="mb-4">
           <label className="block font-semibold mb-1 dark:text-gray-200">Column name</label>
           <input
