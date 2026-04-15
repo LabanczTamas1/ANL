@@ -9,6 +9,28 @@ import { createLogger, logError } from '../../../utils/logger.js';
 
 const logger = createLogger('kanban', 'controller');
 
+// ---- Activity Logging Helper ----
+
+async function logActivity(
+  cardId: string,
+  action: string,
+  userName: string,
+  details?: string,
+): Promise<void> {
+  try {
+    const r = getRedisClient();
+    const entry = JSON.stringify({
+      action,
+      userName,
+      details: details || '',
+      timestamp: Date.now(),
+    });
+    await r.lPush(`CardActivity:${cardId}`, entry);
+  } catch (err) {
+    logError(err, { context: 'logActivity', cardId });
+  }
+}
+
 // ---- Columns ----
 
 export async function createColumn(req: Request, res: Response): Promise<void> {
@@ -109,19 +131,39 @@ export async function createCard(req: Request, res: Response): Promise<void> {
       CardNumber: String(parseInt(columnData.CardNumber, 10) + 1),
     });
 
-    await r.hSet(`CardDetails:${cardId}`, {
+    // Support dynamic fields
+    const { fields, templateId } = req.body;
+
+    const hash: Record<string, string> = {
       ColumnId: columnId,
-      ContactName: contactName || '',
-      BusinessName: businessName || '',
       DateOfAdded: String(timestamp),
-      FirstContact: firstContact || '',
-      PhoneNumber: phoneNumber || '',
-      Email: email || '',
-      Website: website || '',
-      Instagram: instagram || '',
-      Facebook: facebook || '',
-      IsCommented: String(isCommented),
-    });
+      IsCommented: String(isCommented ?? false),
+    };
+
+    if (fields && Array.isArray(fields)) {
+      // new-style dynamic fields
+      hash.Fields = JSON.stringify(fields);
+      if (templateId) hash.TemplateId = templateId;
+    } else {
+      // legacy hardcoded fields
+      hash.ContactName = contactName || '';
+      hash.BusinessName = businessName || '';
+      hash.FirstContact = firstContact || '';
+      hash.PhoneNumber = phoneNumber || '';
+      hash.Email = email || '';
+      hash.Website = website || '';
+      hash.Instagram = instagram || '';
+      hash.Facebook = facebook || '';
+    }
+
+    await r.hSet(`CardDetails:${cardId}`, hash);
+
+    // Log activity
+    const userName =
+      (req as any).user?.firstName && (req as any).user?.lastName
+        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
+        : 'Unknown';
+    await logActivity(cardId, 'created', userName, `Card "${name}" created`);
 
     res.status(200).json({ message: 'Card saved successfully', cardId });
   } catch (error) {
@@ -141,7 +183,21 @@ export async function updateCard(req: Request, res: Response): Promise<void> {
 
   try {
     const r = getRedisClient();
-    await r.hSet(`CardDetails:${cardId}`, name, updatedValue);
+
+    // Support updating dynamic Fields array
+    if (name === 'Fields' && typeof updatedValue === 'object') {
+      await r.hSet(`CardDetails:${cardId}`, 'Fields', JSON.stringify(updatedValue));
+    } else {
+      await r.hSet(`CardDetails:${cardId}`, name, updatedValue);
+    }
+
+    // Log activity
+    const userName =
+      (req as any).user?.firstName && (req as any).user?.lastName
+        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
+        : 'Unknown';
+    await logActivity(cardId, 'updated', userName, `Updated field "${name}"`);
+
     res.status(200).json({ message: 'Update was successful', cardId });
   } catch (error) {
     logError(error, { context: 'updateCard' });
@@ -243,6 +299,16 @@ export async function moveCard(req: Request, res: Response): Promise<void> {
       });
     }
 
+    // Log activity
+    const userName =
+      (req as any).user?.firstName && (req as any).user?.lastName
+        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
+        : 'Unknown';
+    await logActivity(cardId, 'moved', userName,
+      sourceColumnId === destinationColumnId
+        ? 'Reordered within column'
+        : `Moved from column ${sourceColumnId} to ${destinationColumnId}`);
+
     res.status(200).json({ message: 'Card priority updated successfully' });
   } catch (error) {
     logError(error, { context: 'moveCard' });
@@ -271,7 +337,10 @@ export async function createComment(req: Request, res: Response): Promise<void> 
     await r.hSet(`CardDetails:${cardId}`, { IsCommented: 'true' });
     await r.sAdd(`CardComments:${cardId}`, commentId);
 
-    res.status(200).json({ message: 'Comment saved successfully' });
+    // Log activity
+    await logActivity(cardId, 'commented', userName, `Added a comment`);
+
+    res.status(200).json({ message: 'Comment saved successfully', commentId });
   } catch (error) {
     logError(error, { context: 'createComment' });
     res.status(500).json({ error: 'Failed to save comment' });
@@ -360,6 +429,13 @@ export async function deleteComment(req: Request, res: Response): Promise<void> 
       await r.hSet(`CardDetails:${associatedCardId}`, { IsCommented: 'false' });
     }
 
+    // Log activity
+    const userName =
+      (req as any).user?.firstName && (req as any).user?.lastName
+        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
+        : 'Unknown';
+    await logActivity(associatedCardId, 'comment_deleted', userName, 'Deleted a comment');
+
     res.status(200).json({
       message: 'Comment deleted successfully',
       deletedComment: {
@@ -371,5 +447,85 @@ export async function deleteComment(req: Request, res: Response): Promise<void> 
   } catch (error) {
     logError(error, { context: 'deleteComment' });
     res.status(500).json({ error: 'Failed to delete comment' });
+  }
+}
+
+// ---- Templates ----
+
+export async function createTemplate(req: Request, res: Response): Promise<void> {
+  const { name, fields } = req.body;
+  if (!name || !Array.isArray(fields) || fields.length === 0) {
+    res.status(400).json({ error: 'Template name and at least one field are required' });
+    return;
+  }
+
+  try {
+    const r = getRedisClient();
+    const templateId = uuidv4();
+    const timestamp = Date.now();
+
+    await r.hSet(`KanbanTemplate:${templateId}`, {
+      Name: name,
+      Fields: JSON.stringify(fields),
+      CreatedAt: String(timestamp),
+    });
+    await r.sAdd('KanbanTemplates', templateId);
+
+    res.status(200).json({ templateId, name, fields });
+  } catch (error) {
+    logError(error, { context: 'createTemplate' });
+    res.status(500).json({ error: 'Failed to create template' });
+  }
+}
+
+export async function getTemplates(_req: Request, res: Response): Promise<void> {
+  try {
+    const r = getRedisClient();
+    const templateIds = await r.sMembers('KanbanTemplates');
+
+    const templates = await Promise.all(
+      templateIds.map(async (id) => {
+        const data = await r.hGetAll(`KanbanTemplate:${id}`);
+        return {
+          id,
+          name: data.Name,
+          fields: JSON.parse(data.Fields || '[]'),
+          createdAt: data.CreatedAt,
+        };
+      }),
+    );
+
+    res.status(200).json({ templates });
+  } catch (error) {
+    logError(error, { context: 'getTemplates' });
+    res.status(500).json({ error: 'Failed to fetch templates' });
+  }
+}
+
+export async function deleteTemplate(req: Request, res: Response): Promise<void> {
+  const { id } = req.params;
+  try {
+    const r = getRedisClient();
+    await r.del(`KanbanTemplate:${id}`);
+    await r.sRem('KanbanTemplates', id);
+    res.status(200).json({ message: 'Template deleted successfully' });
+  } catch (error) {
+    logError(error, { context: 'deleteTemplate' });
+    res.status(500).json({ error: 'Failed to delete template' });
+  }
+}
+
+// ---- Card Activity ----
+
+export async function getCardActivity(req: Request, res: Response): Promise<void> {
+  const { cardId } = req.params;
+  try {
+    const r = getRedisClient();
+    const raw = await r.lRange(`CardActivity:${cardId}`, 0, 99);
+    const activities = raw.map((entry) => JSON.parse(entry));
+    res.status(200).json({ activities });
+  } catch (error) {
+    logError(error, { context: 'getCardActivity' });
+    res.status(500).json({ error: 'Failed to fetch activity' });
   }
 }
