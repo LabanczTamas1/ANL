@@ -13,6 +13,7 @@ import Column from "./Column";
 import KanbanHeader from './KanbanHeader';
 import AddColumnModal from './AddColumnModal';
 import CardCreationModal from './CardCreationModal';
+import TemplateBuilder from './TemplateBuilder';
 import type { FieldDef } from './CardCreationModal';
 import TrashBin from './TrashBin';
 
@@ -26,6 +27,7 @@ const Kanban: React.FC = () => {
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
 
   useEffect(() => {
     const fetchColumns = async () => {
@@ -351,6 +353,7 @@ const Kanban: React.FC = () => {
         isDeleteMode={isDeleteMode}
         onAddColumn={() => setShowColumnModal(true)}
         onToggleDeleteMode={toggleDeleteMode}
+        onOpenTemplateBuilder={() => setShowTemplateBuilder(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
@@ -418,6 +421,12 @@ const Kanban: React.FC = () => {
         onClose={() => setShowCardModal(false)}
         columnId={selectedColumnId}
         onCardCreated={handleCardCreated}
+      />
+
+      {/* Template Builder Modal */}
+      <TemplateBuilder
+        show={showTemplateBuilder}
+        onClose={() => setShowTemplateBuilder(false)}
       />
     </div>
   );
