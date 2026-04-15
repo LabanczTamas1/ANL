@@ -132,11 +132,11 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
+        <ModalHeader
+          title={step === "choose" ? "Create New Card" : "New Card (From Scratch)"}
+          onClose={onClose}
+        />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <ModalHeader
-            title={step === "choose" ? "Create New Card" : "New Card (From Scratch)"}
-            onClose={onClose}
-          />
 
           {/* STEP 1: Choose template or scratch */}
           {step === "choose" && (
