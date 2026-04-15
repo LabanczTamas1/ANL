@@ -1,4 +1,5 @@
 import React from "react";
+import ModalHeader from "./ModalHeader";
 
 interface AddCardModalProps {
   show: boolean;
@@ -18,8 +19,9 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-      <div className="bg-white dark:bg-[#1e1e1e] dark:text-white p-4 sm:p-6 rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg sm:text-xl font-bold mb-4 text-center">Add Card</h3>
+      <div className="bg-white dark:bg-[#1e1e1e] dark:text-white rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <ModalHeader title="Add Card" onClose={onClose} />
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -132,6 +134,7 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

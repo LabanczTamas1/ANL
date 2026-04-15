@@ -1,4 +1,5 @@
 import React from "react";
+import ModalHeader from "./ModalHeader";
 
 interface AddColumnModalProps {
   show: boolean;
@@ -22,14 +23,9 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-[400px] relative">
-        <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 dark:text-white">Add column</h2>
-        <button
-          onClick={onClose}
-          className="text-black dark:text-white px-3 py-1 sm:px-4 sm:py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
-        >
-          X
-        </button>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[400px] max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <ModalHeader title="Add column" onClose={onClose} />
         <div className="mb-4">
           <label className="block font-semibold mb-1 dark:text-gray-200">Column name</label>
           <input
@@ -62,6 +58,7 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
           >
             + Add Board
           </button>
+        </div>
         </div>
       </div>
     </div>
