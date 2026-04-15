@@ -3,7 +3,6 @@ import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
 import CardMessageSection from "./CardMessageSection";
 import ActivityLog, { ActivityLogHandle } from "./ActivityLog";
-import ModalHeader from "./ModalHeader";
 import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
 import timeAgo from "./../../utils/calculateTimeAgo";
@@ -12,6 +11,8 @@ interface CardProps {
   card: {
     id: string;
     name: string;
+    Name?: string;
+    Fields?: string;
     ContactName: string;
     BusinessName: string;
     businessName: string;
@@ -38,6 +39,15 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [isEditing, setIsEditing] = useState<CardKey | null>(null);
   const [value, setValue] = useState<string | boolean>(cardData.name);
   const activityRef = useRef<ActivityLogHandle>(null);
+  const [editingFieldIdx, setEditingFieldIdx] = useState<number | null>(null);
+  const [fieldEditValue, setFieldEditValue] = useState('');
+
+  // Parse dynamic fields for template-based cards
+  let parsedFields: Array<{ name: string; type: string; value: string }> = [];
+  try {
+    const raw = (cardData as any).Fields;
+    if (raw) parsedFields = JSON.parse(raw);
+  } catch {}
 
   const keyOrder = [
     "id",
@@ -115,7 +125,21 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const handleCancel = () => {
     setIsEditing(null);
     if (isEditing) {
-      setValue(cardData[isEditing]);
+      setValue(cardData[isEditing] ?? '');
+    }
+  };
+
+  const handleSaveField = async (idx: number) => {
+    const updatedFields = parsedFields.map((f, i) =>
+      i === idx ? { ...f, value: fieldEditValue } : f
+    );
+    try {
+      await updateCard(card.id, { name: 'Fields', updatedValue: updatedFields });
+      setCardData((prev: any) => ({ ...prev, Fields: JSON.stringify(updatedFields) }));
+      setEditingFieldIdx(null);
+      activityRef.current?.addLocal('updated', `Updated field "${parsedFields[idx].name}"`);
+    } catch (error) {
+      console.error('Error updating field:', error);
     }
   };
 
@@ -192,7 +216,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         {/* Sticky header — stays pinned while body scrolls */}
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg flex-shrink-0">
           <h2 className="text-lg md:text-xl font-bold dark:text-white truncate pr-4">
-            {cardData.BusinessName || cardData.name || 'Card Details'}
+            {(cardData as any).Name || cardData.BusinessName || cardData.name || 'Card Details'}
           </h2>
           <button
             onClick={handleCloseModal}
@@ -205,7 +229,45 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         {/* Scrollable body */}
         <div className="p-4 md:p-6 overflow-y-auto flex-1">
         <div className="space-y-4 md:space-y-6">
-          {Object.keys(reorderedObject)
+          {parsedFields.length > 0 ? (
+            parsedFields.map((field, idx) => (
+              <div key={idx} className="mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-0 sm:mr-2 sm:w-1/4">
+                    {field.name}
+                    {field.type === "link" && (
+                      <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"> link</span>
+                    )}
+                  </label>
+                  <div className="relative flex-1">
+                    <input
+                      type={field.type === "link" ? "url" : "text"}
+                      value={editingFieldIdx === idx ? fieldEditValue : field.value}
+                      onChange={(e) => setFieldEditValue(e.target.value)}
+                      onClick={() => { setEditingFieldIdx(idx); setFieldEditValue(field.value); }}
+                      className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
+                    />
+                    {field.type === "link" && editingFieldIdx !== idx && field.value && (
+                      <a href={field.value} target="_blank" rel="noopener noreferrer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 hover:text-blue-700"
+                        onClick={(e) => e.stopPropagation()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
+                {editingFieldIdx === idx && (
+                  <div className="mt-2 flex flex-row space-x-2">
+                    <button onClick={() => handleSaveField(idx)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Save</button>
+                    <button onClick={() => setEditingFieldIdx(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700">Cancel</button>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            Object.keys(reorderedObject)
             .slice(0, 10)
             .map((key) => {
               const cardKey = key as CardKey;
@@ -297,7 +359,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                       <input
                         type="text"
                         name={cardKey}
-                        value={isEditing === cardKey ? (formatDate(value || null) as string) : (formatDate(cardData[cardKey]) as string)}
+                        value={isEditing === cardKey ? (formatDate(value as string | boolean | null)) : (formatDate(cardData[cardKey] ?? null))}
                         onChange={(e) => setValue(e.target.value)}
                         onClick={() => handleClick(cardKey)}
                         className="mt-1 p-2 block w-full sm:w-3/4 border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
@@ -356,7 +418,8 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                   )}
                 </div>
               );
-            })}
+            })
+          )}
         </div>
 
         <div className="flex justify-between mt-6">
@@ -401,7 +464,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
               </div>
             </div>
             <p className="flex flex-row items-center text-base font-semibold text-gray-800 dark:text-[white] truncate px-4">
-              {cardData.BusinessName}
+              {(cardData as any).Name || cardData.BusinessName || 'Untitled'}
               <div className="pl-2">
                 {Object.keys(reorderedObject)
                   .slice(4, 5)

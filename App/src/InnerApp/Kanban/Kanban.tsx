@@ -128,7 +128,7 @@ const Kanban: React.FC = () => {
 
   const handleDeleteCard = async (columnId: string, cardId: string) => {
     try {
-      await deleteCard(cardId);
+      await deleteCard(cardId, columnId);
       // Update the state to remove the card from the specified column
       setColumns((prevColumns) =>
         prevColumns.map((col) =>

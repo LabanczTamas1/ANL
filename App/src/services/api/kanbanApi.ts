@@ -32,8 +32,8 @@ export const updateCard = (cardId: string, payload: Record<string, unknown>) =>
   apiClient.put(`/kanban/cards/${cardId}`, payload);
 
 /** DELETE /api/v1/kanban/cards/:cardId */
-export const deleteCard = (cardId: string) =>
-  apiClient.delete(`/kanban/cards/${cardId}`);
+export const deleteCard = (cardId: string, columnId: string) =>
+  apiClient.delete(`/kanban/cards/${cardId}`, { data: { columnId } });
 
 /** GET /api/v1/kanban/cards/:columnId */
 export const getCards = (columnId: string) =>
