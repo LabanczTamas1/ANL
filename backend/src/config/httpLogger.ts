@@ -29,4 +29,9 @@ export const httpLogger = createHttpLogger({
       statusCode: res.statusCode,
     }),
   },
+  // Add correlationId to every HTTP log line
+  genReqId: (req: any) => req.correlationId || req.headers['x-request-id'],
+  customProps: (req: any) => ({
+    correlationId: req.correlationId || req.headers['x-request-id'],
+  }),
 });

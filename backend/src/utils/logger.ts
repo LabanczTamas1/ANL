@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 import { createSeqStream } from './seqStream.js';
+import { getCorrelationId } from '../middleware/correlationId.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -65,6 +66,11 @@ export const logger = pino(
       pid: process.pid,
       hostname: process.env.HOSTNAME || os.hostname(),
       env: process.env.NODE_ENV || 'development',
+    },
+    // Inject correlationId from AsyncLocalStorage into every log line
+    mixin() {
+      const id = getCorrelationId();
+      return id ? { correlationId: id } : {};
     },
   },
   isDevelopment
