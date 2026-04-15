@@ -158,6 +158,14 @@ export async function createCard(req: Request, res: Response): Promise<void> {
 
     await r.hSet(`CardDetails:${cardId}`, hash);
 
+    // Update LastUsedAt on the template so it sorts to the top next time
+    if (templateId) {
+      const templateExists = await r.exists(`KanbanTemplate:${templateId}`);
+      if (templateExists) {
+        await r.hSet(`KanbanTemplate:${templateId}`, 'LastUsedAt', String(timestamp));
+      }
+    }
+
     // Log activity
     const userName =
       (req as any).user?.firstName && (req as any).user?.lastName
@@ -491,9 +499,18 @@ export async function getTemplates(_req: Request, res: Response): Promise<void> 
           name: data.Name,
           fields: JSON.parse(data.Fields || '[]'),
           createdAt: data.CreatedAt,
+          lastUsedAt: data.LastUsedAt || null,
         };
       }),
     );
+
+    // Sort: most recently used first, then most recently created
+    templates.sort((a, b) => {
+      const aT = Number(a.lastUsedAt) || 0;
+      const bT = Number(b.lastUsedAt) || 0;
+      if (bT !== aT) return bT - aT;
+      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
+    });
 
     res.status(200).json({ templates });
   } catch (error) {

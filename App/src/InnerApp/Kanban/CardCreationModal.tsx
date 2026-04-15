@@ -37,6 +37,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
   const [newFieldName, setNewFieldName] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "link">("text");
   const [saving, setSaving] = useState(false);
+  const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     if (show) {
@@ -45,6 +46,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
       setCardName("");
       setFields([]);
       setNewFieldName("");
+      setSavingTemplateId(null);
 
       getTemplates()
         .then((res) => setTemplates(res.data.templates || []))
@@ -54,12 +56,32 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
 
   if (!show || !columnId) return null;
 
-  const handlePickTemplate = (template: Template) => {
-    setSelectedTemplate(template);
-    setFields(
-      template.fields.map((f) => ({ name: f.name, type: f.type, value: "" }))
-    );
-    setStep("form");
+  /** Clicking a template instantly creates the card with empty fields from the template */
+  const handlePickTemplate = async (template: Template) => {
+    setSavingTemplateId(template.id);
+    try {
+      const templateFields: FieldDef[] = template.fields.map((f) => ({
+        name: f.name,
+        type: f.type,
+        value: "",
+      }));
+
+      const payload: Record<string, unknown> = {
+        name: template.name,
+        columnId,
+        fields: templateFields.map((f) => ({ name: f.name, type: f.type, value: f.value })),
+        templateId: template.id,
+        isCommented: false,
+      };
+
+      const res = await createCard(payload);
+      onCardCreated(columnId, res.data.cardId, template.name, templateFields);
+      onClose();
+    } catch (err) {
+      console.error("Error creating card from template:", err);
+    } finally {
+      setSavingTemplateId(null);
+    }
   };
 
   const handleStartFromScratch = () => {
@@ -112,7 +134,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           <ModalHeader
-            title={step === "choose" ? "Create New Card" : selectedTemplate ? `Template: ${selectedTemplate.name}` : "New Card (From Scratch)"}
+            title={step === "choose" ? "Create New Card" : "New Card (From Scratch)"}
             onClose={onClose}
           />
 
@@ -148,10 +170,14 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                       <button
                         key={t.id}
                         onClick={() => handlePickTemplate(t)}
-                        className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-[#65558F] dark:hover:border-[#65558F] hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left"
+                        disabled={savingTemplateId !== null}
+                        className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-[#65558F] dark:hover:border-[#65558F] hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <div className="font-medium text-gray-800 dark:text-white">
-                          {t.name}
+                        <div className="font-medium text-gray-800 dark:text-white flex items-center justify-between">
+                          <span>{t.name}</span>
+                          {savingTemplateId === t.id && (
+                            <span className="text-xs text-[#65558F] dark:text-purple-300 animate-pulse">Creating...</span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {t.fields.length} field{t.fields.length !== 1 ? "s" : ""}:{" "}
