@@ -21,7 +21,7 @@ const Layout = () => {
         </div>
 
         {/* Content Section */}
-        <div className="text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 w-full overflow-y-auto p-2">
+        <div className="text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 w-full overflow-auto p-2">
           <Outlet />
         </div>
       </div>

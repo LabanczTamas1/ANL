@@ -4,6 +4,7 @@ interface KanbanHeaderProps {
   isDeleteMode: boolean;
   onAddColumn: () => void;
   onToggleDeleteMode: () => void;
+  onOpenTemplateBuilder: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -12,6 +13,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
   isDeleteMode,
   onAddColumn,
   onToggleDeleteMode,
+  onOpenTemplateBuilder,
   searchQuery,
   setSearchQuery,
 }) => (
@@ -22,6 +24,12 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
         className="text-white px-4 py-2 rounded dark:text-white bg-[#65558F] hover:bg-blue-600 flex-grow sm:flex-grow-0"
       >
         Add Column
+      </button>
+      <button
+        onClick={onOpenTemplateBuilder}
+        className="text-white px-4 py-2 rounded bg-[#65558F] hover:bg-blue-600 flex-grow sm:flex-grow-0"
+      >
+        Templates
       </button>
       <button
         onClick={onToggleDeleteMode}
