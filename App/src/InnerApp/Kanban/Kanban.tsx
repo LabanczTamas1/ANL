@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import {
+  getColumns,
+  getCards,
+  createCard,
+  deleteCard,
+  createColumn,
+  deleteColumn,
+  updateColumnPriority,
+  moveCard,
+} from "../../services/api/kanbanApi";
 import Column from "./Column";
 import KanbanHeader from './KanbanHeader';
 import AddColumnModal from './AddColumnModal';
@@ -17,7 +26,6 @@ const Kanban: React.FC = () => {
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteMode, setIsDeleteMode] = useState(false);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [cardData, setCardData] = useState({
     name: "",
     contactName: "",
@@ -33,25 +41,13 @@ const Kanban: React.FC = () => {
   });
 
   useEffect(() => {
-    console.log(`${API_BASE_URL}`);
     const fetchColumns = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/columns`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        });
+        const response = await getColumns();
 
         const updatedColumns = await Promise.all(
           response.data.columns.map(async (column: any) => {
-            const cardResponse = await axios.get(
-              `${API_BASE_URL}/api/cards/${column.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-                },
-              }
-            );
+            const cardResponse = await getCards(column.id);
             console.log("Response Column: ", response.data.columns);
             console.log(`Column Data: ${column.id}`, cardResponse);
 
@@ -121,15 +117,7 @@ const Kanban: React.FC = () => {
     if (!selectedColumnId) return;
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/cards`,
-        { ...cardData, columnId: selectedColumnId },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await createCard({ ...cardData, columnId: selectedColumnId });
 
       const newCard = {
         id: response.data.cardId,
@@ -182,16 +170,7 @@ const Kanban: React.FC = () => {
 
   const handleDeleteCard = async (columnId: string, cardId: string) => {
     try {
-      // Send delete request to the server
-      const response = await axios.delete(
-        `${API_BASE_URL}/api/cards/${cardId}`,
-        {
-          data: { columnId },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      await deleteCard(cardId);
       // Update the state to remove the card from the specified column
       setColumns((prevColumns) =>
         prevColumns.map((col) =>
@@ -214,20 +193,12 @@ const Kanban: React.FC = () => {
     if (!newColumnName.trim()) return;
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/columns`,
-        {
-          columnName: newColumnName,
-          tagColor: tagColor,
-          priority: columns.length,
-          cardNumbers: 0,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          },
-        }
-      );
+      const response = await createColumn({
+        columnName: newColumnName,
+        tagColor: tagColor,
+        priority: columns.length,
+        cardNumbers: 0,
+      });
 
       setColumns([
         ...columns,
@@ -248,11 +219,7 @@ const Kanban: React.FC = () => {
 
   const handleDeleteColumn = async (columnId: string) => {
     try {
-      await axios.delete(`${API_BASE_URL}/api/columns/${columnId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      });
+      await deleteColumn(columnId);
 
       setColumns((prevColumns) =>
         prevColumns.filter((col) => col.id !== columnId)
@@ -314,15 +281,7 @@ const Kanban: React.FC = () => {
       }));
 
       try {
-        await axios.put(
-          `${API_BASE_URL}/api/columns/priority`,
-          { columns: priorityUpdates },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            },
-          }
-        );
+        await updateColumnPriority({ columns: priorityUpdates });
       } catch (error) {
         console.error("Error updating column priority:", error);
       }
@@ -406,14 +365,7 @@ const Kanban: React.FC = () => {
           newIndex: destination.index,
         };
 
-        console.log("Payload for updating card priority:", payload);
-
-        await axios.put(`${API_BASE_URL}/api/cards/change/priority`, payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            "Content-Type": "application/json",
-          },
-        });
+        await moveCard(payload);
       } catch (error) {
         console.error("Error updating card position:", error);
       }

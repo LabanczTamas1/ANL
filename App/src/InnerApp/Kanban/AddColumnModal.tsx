@@ -22,27 +22,27 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-[400px] relative">
-        <h2 className="text-xl sm:text-2xl font-bold text-center mb-4">Add column</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-[400px] relative">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 dark:text-white">Add column</h2>
         <button
           onClick={onClose}
-          className="text-black px-3 py-1 sm:px-4 sm:py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
+          className="text-black dark:text-white px-3 py-1 sm:px-4 sm:py-2 rounded hover:bg-[red] transition absolute top-2 right-2"
         >
           X
         </button>
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Column name</label>
+          <label className="block font-semibold mb-1 dark:text-gray-200">Column name</label>
           <input
             type="text"
             placeholder="Enter board name"
             value={newColumnName}
             onChange={(e) => setNewColumnName(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 dark:text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Tag color</label>
+          <label className="block font-semibold mb-1 dark:text-gray-200">Tag color</label>
           <div className="flex items-center gap-2">
             <div className="relative">
               <input
