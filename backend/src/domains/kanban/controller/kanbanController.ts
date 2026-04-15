@@ -136,6 +136,7 @@ export async function createCard(req: Request, res: Response): Promise<void> {
 
     const hash: Record<string, string> = {
       ColumnId: columnId,
+      Name: name,
       DateOfAdded: String(timestamp),
       IsCommented: String(isCommented ?? false),
     };
