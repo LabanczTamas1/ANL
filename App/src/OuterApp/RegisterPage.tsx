@@ -121,14 +121,14 @@ const RegisterForm: React.FC = () => {
             WebkitBackdropFilter: "blur(16px)",
           }}
         >
-          <h2 className="text-4xl font-bold mb-6 text-center text-white">Register</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-white">Register</h2>
 
           <SocialLoginButtons
             onGoogleLogin={handleGoogleLogin}
             onFacebookLogin={handleFacebookLogin}
           />
 
-          <div className="flex items-center gap-3 my-4">
+          <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-line-glass" />
             <span className="text-sm text-content-muted">or</span>
             <div className="flex-1 h-px bg-line-glass" />
@@ -248,9 +248,9 @@ const RegisterForm: React.FC = () => {
               label={
                 <div>
                   Yes, I accept the{" "}
-                  <a href="/terms" className="text-purple-400 underline" target="_blank" rel="noreferrer">Terms of Use</a>{" "}
+                  <a href="/terms" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">Terms of Use</a>{" "}
                   and{" "}
-                  <a href="/privacy" className="text-purple-400 underline" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                  <a href="/privacy" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">Privacy Policy</a>.
                 </div>
               }
             />

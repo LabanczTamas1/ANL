@@ -16,18 +16,18 @@ const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
       <button 
         type="button"
         onClick={onGoogleLogin}
-        className="w-full flex justify-center mb-4 p-2 rounded border border-white"
+        className="w-full flex items-center justify-center gap-3 mb-3 p-3 rounded-xl border border-line-glass text-white hover:bg-white/5 transition"
       >
-        <img src={googleLogo} alt="Google Logo" className="h-6 mr-3" />
+        <img src={googleLogo} alt="Google" className="h-5 w-5" />
         Continue with Google
       </button>
       
       <button 
         type="button" 
         onClick={onFacebookLogin}
-        className="w-full flex justify-center p-2 rounded border border-white"
+        className="w-full flex items-center justify-center gap-3 p-3 rounded-xl border border-line-glass text-white hover:bg-white/5 transition"
       >
-        <img src={FacebookLogo} alt="Facebook Logo" className="h-6 mr-3" />
+        <img src={FacebookLogo} alt="Facebook" className="h-5 w-5" />
         Continue with Facebook
       </button>
     </>

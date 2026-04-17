@@ -10,7 +10,7 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({ text, disabled = false }) =
     <button
       type="submit"
       disabled={disabled}
-      className="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-purple-300 text-white font-bold py-2 px-4 rounded"
+      className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition shadow-lg shadow-brand/20"
     >
       {text}
     </button>
