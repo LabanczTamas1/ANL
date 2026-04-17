@@ -576,8 +576,7 @@ export async function forgotPassword(
       auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
     });
 
-    transporter
-      .sendMail({
+    await transporter.sendMail({
         from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_FROM_EMAIL}>`,
         to: env.APP_ENV === 'PRODUCTION' ? email : 'deid.unideb@gmail.com',
         subject: 'Reset your password',
@@ -590,10 +589,7 @@ export async function forgotPassword(
             <p style="color:#666;font-size:14px">This code expires in 15 minutes. If you didn't request this, please ignore this email.</p>
           </div>
         `,
-      })
-      .catch((err: unknown) =>
-        logError(err, { context: 'forgotPassword_sendMail', email }),
-      );
+      });
 
     logger.info({ userId, email }, 'Password reset code sent');
     res.status(200).json({
