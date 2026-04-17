@@ -141,12 +141,14 @@ export function facebookCallback(req: Request, res: Response): void {
 export async function register(req: Request, res: Response): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email, password, firstName, lastName, username } = req.body;
+    const { email: rawEmail, password, firstName, lastName, username } = req.body;
 
-    if (!email || !password || !firstName || !lastName || !username) {
+    if (!rawEmail || !password || !firstName || !lastName || !username) {
       res.status(400).json({ error: 'All fields are required' });
       return;
     }
+
+    const email = rawEmail.trim().toLowerCase();
 
     const userExists = await redisClient.exists(`user:email:${email}`);
     if (userExists) {
@@ -240,13 +242,14 @@ export async function register(req: Request, res: Response): Promise<void> {
 export async function verifyEmail(req: Request, res: Response): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email, code } = req.body;
+    const { email: rawEmail, code } = req.body;
 
-    if (!email || !code) {
+    if (!rawEmail || !code) {
       res.status(400).json({ error: 'Email and code are required' });
       return;
     }
 
+    const email = rawEmail.trim().toLowerCase();
     const storedCode = await redisClient.get(`verify:email:${email}`);
     if (!storedCode) {
       res.status(400).json({ error: 'Verification code expired' });
@@ -287,13 +290,14 @@ export async function resendVerification(
 ): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email } = req.body;
+    const { email: rawEmail } = req.body;
 
-    if (!email) {
+    if (!rawEmail) {
       res.status(400).json({ error: 'Email is required' });
       return;
     }
 
+    const email = rawEmail.trim().toLowerCase();
     const userId = await redisClient.get(`user:email:${email}`);
     if (!userId) {
       res.status(404).json({ error: 'User not found' });
@@ -343,13 +347,14 @@ export async function resendVerification(
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       res.status(400).json({ error: 'Email and password are required' });
       return;
     }
 
+    const email = rawEmail.trim().toLowerCase();
     let userId: string | null;
     if (email.includes('@')) {
       userId = await redisClient.get(`user:email:${email}`);
@@ -546,13 +551,14 @@ export async function forgotPassword(
 ): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email } = req.body;
+    const { email: rawEmail } = req.body;
 
-    if (!email) {
+    if (!rawEmail) {
       res.status(400).json({ error: 'Email is required' });
       return;
     }
 
+    const email = rawEmail.trim().toLowerCase();
     const userId = await redisClient.get(`user:email:${email}`);
 
     // Always return success to avoid leaking whether the email exists
@@ -611,14 +617,16 @@ export async function resetPassword(
 ): Promise<void> {
   try {
     const redisClient = getRedisClient();
-    const { email, code, newPassword } = req.body;
+    const { email: rawEmail, code, newPassword } = req.body;
 
-    if (!email || !code || !newPassword) {
+    if (!rawEmail || !code || !newPassword) {
       res
         .status(400)
         .json({ error: 'Email, code, and new password are required' });
       return;
     }
+
+    const email = rawEmail.trim().toLowerCase();
 
     if (newPassword.length < 6) {
       res
