@@ -10,7 +10,7 @@ import HamburgerMenu from "./components/HamburgerMenu";
 import { useLogout } from "./../hooks/useLogout";
 
 const ProgressBar = () => {
-  const username = localStorage.getItem("userName") || localStorage.getItem("role");
+  const username = localStorage.getItem("firstName") || localStorage.getItem("fullName") || localStorage.getItem("username") || localStorage.getItem("role");
   const location = useLocation();
   const roles = ["user", "owner", "admin"];
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
