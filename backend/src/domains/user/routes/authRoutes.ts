@@ -15,6 +15,8 @@ router.post('/register', auth.register);
 router.post('/verify-email', auth.verifyEmail);
 router.post('/resend-verification', auth.resendVerification);
 router.post('/login', auth.login);
+router.post('/forgot-password', auth.forgotPassword);
+router.post('/reset-password', auth.resetPassword);
 
 // Token management
 router.post('/refresh', auth.refresh);

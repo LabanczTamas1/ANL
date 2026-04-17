@@ -535,3 +535,126 @@ export function authCheck(req: Request, res: Response): void {
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Forgot Password — sends a 6-digit reset code to the user's email
+// ---------------------------------------------------------------------------
+
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const redisClient = getRedisClient();
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ error: 'Email is required' });
+      return;
+    }
+
+    const userId = await redisClient.get(`user:email:${email}`);
+
+    // Always return success to avoid leaking whether the email exists
+    if (!userId) {
+      logger.info({ email }, 'Forgot-password request for unknown email');
+      res.status(200).json({
+        message: 'If that email exists, a reset code has been sent.',
+      });
+      return;
+    }
+
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+    await redisClient.set(`reset:password:${email}`, resetCode, {
+      EX: 15 * 60, // 15 minutes
+    });
+
+    const transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      secure: false,
+      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+    });
+
+    transporter
+      .sendMail({
+        from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_FROM_EMAIL}>`,
+        to: env.APP_ENV === 'PRODUCTION' ? email : 'deid.unideb@gmail.com',
+        subject: 'Reset your password',
+        text: `Your password reset code is: ${resetCode}\n\nThis code expires in 15 minutes. If you didn't request this, please ignore this email.`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+            <h2 style="color:#65558F">Password Reset</h2>
+            <p>Your password reset code is:</p>
+            <p style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#65558F;text-align:center;margin:24px 0">${resetCode}</p>
+            <p style="color:#666;font-size:14px">This code expires in 15 minutes. If you didn't request this, please ignore this email.</p>
+          </div>
+        `,
+      })
+      .catch((err: unknown) =>
+        logError(err, { context: 'forgotPassword_sendMail', email }),
+      );
+
+    logger.info({ userId, email }, 'Password reset code sent');
+    res.status(200).json({
+      message: 'If that email exists, a reset code has been sent.',
+    });
+  } catch (error) {
+    logError(error, { context: 'forgotPassword' });
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reset Password — validates reset code and updates password
+// ---------------------------------------------------------------------------
+
+export async function resetPassword(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const redisClient = getRedisClient();
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      res
+        .status(400)
+        .json({ error: 'Email, code, and new password are required' });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res
+        .status(400)
+        .json({ error: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    const storedCode = await redisClient.get(`reset:password:${email}`);
+    if (!storedCode) {
+      res.status(400).json({ error: 'Reset code has expired' });
+      return;
+    }
+    if (storedCode !== code) {
+      res.status(400).json({ error: 'Invalid reset code' });
+      return;
+    }
+
+    const userId = await redisClient.get(`user:email:${email}`);
+    if (!userId) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const hashedPw = await hashPassword(newPassword);
+    await redisClient.hSet(`user:${userId}`, { password: hashedPw });
+    await redisClient.del(`reset:password:${email}`);
+
+    logger.info({ userId, email }, 'Password reset successfully');
+    res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    logError(error, { context: 'resetPassword' });
+    res.status(500).json({ error: 'Password reset failed' });
+  }
+}
