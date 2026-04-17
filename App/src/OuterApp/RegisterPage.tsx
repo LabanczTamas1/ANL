@@ -6,7 +6,6 @@ import FormInput from "./components/FormInput";
 import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
 import Navbar from "./Navbar";
-import InfiniteBackgroundWrapper from "./components/InfiniteBackgroundWrapper";
 
 interface RegisterFormInputs {
   firstName: string;
@@ -86,13 +85,41 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <InfiniteBackgroundWrapper>
+    <div className="relative min-h-screen bg-surface-overlay overflow-hidden">
+      {/* ── Ambient background (matches homepage CTA section) ── */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 opacity-30">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(ellipse at 20% 50%, rgba(101,85,143,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(122,164,159,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(101,85,143,0.3) 0%, transparent 50%)
+              `,
+            }}
+          />
+        </div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand/20 rounded-full blur-[120px] animate-pulse" />
+        <div
+          className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent-teal/20 rounded-full blur-[120px] animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      {/* ── Navbar ── */}
       <Navbar />
 
-      <div className="relative flex justify-center items-start px-4 pt-16 sm:pt-10 pb-10 text-white">
+      {/* ── Content ── */}
+      <div className="relative z-10 flex justify-center items-start px-4 pt-16 sm:pt-6 pb-10">
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="p-6 rounded-lg shadow-lg w-full max-w-md bg-white/5 backdrop-blur"
+          className="w-full max-w-md p-8 rounded-2xl border border-line-glass shadow-2xl"
+          style={{
+            background: "rgba(20, 20, 30, 0.7)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}
         >
           <h2 className="text-4xl font-bold mb-6 text-center text-white">Register</h2>
 
@@ -101,7 +128,11 @@ const RegisterForm: React.FC = () => {
             onFacebookLogin={handleFacebookLogin}
           />
 
-          <div className="text-center my-4 text-sm text-gray-300">or</div>
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-line-glass" />
+            <span className="text-sm text-content-muted">or</span>
+            <div className="flex-1 h-px bg-line-glass" />
+          </div>
 
           {/* Name inputs */}
           <div className="flex lg:flex-row flex-col justify-center">
@@ -188,7 +219,7 @@ const RegisterForm: React.FC = () => {
               showPassword={showPassword}
               onTogglePassword={togglePassword}
             />
-            <div className="text-xs text-gray-300 mt-1">
+            <div className="text-xs text-content-muted mt-1">
               Use at least 12 characters — mix upper/lowercase letters, numbers and symbols.
             </div>
           </div>
@@ -225,20 +256,20 @@ const RegisterForm: React.FC = () => {
             />
           </div>
 
-          {globalError && <p className="text-sm text-red-400 mb-3">{globalError}</p>}
-          {infoMessage && <p className="text-sm text-green-300 mb-3">{infoMessage}</p>}
+          {globalError && <p className="text-sm text-status-error mb-3">{globalError}</p>}
+          {infoMessage && <p className="text-sm text-green-400 mb-3">{infoMessage}</p>}
 
           <SubmitButton text={loading ? "Creating…" : "Register"} disabled={loading} />
 
-          <div className="text-sm text-gray-300 mt-4">
+          <div className="text-sm text-content-muted mt-4">
             Already have an account?{" "}
-            <button type="button" onClick={() => navigate("/login")} className="underline">Sign in</button>
+            <button type="button" onClick={() => navigate("/login")} className="text-brand-hover underline hover:text-white transition">Sign in</button>
             {" — "}
-            <button type="button" onClick={() => navigate("/forgot-password")} className="underline">Forgot password?</button>
+            <button type="button" onClick={() => navigate("/forgot-password")} className="text-brand-hover underline hover:text-white transition">Forgot password?</button>
           </div>
         </form>
       </div>
-    </InfiniteBackgroundWrapper>
+    </div>
   );
 };
 
