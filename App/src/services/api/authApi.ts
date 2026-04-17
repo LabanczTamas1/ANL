@@ -42,6 +42,14 @@ export const resendVerification = (payload: { email: string }) =>
 export const refreshToken = (payload?: { refreshToken?: string }) =>
   apiClient.post('/user/auth/refresh', payload);
 
+/** POST /api/v1/user/auth/forgot-password */
+export const forgotPassword = (payload: { email: string }) =>
+  apiClient.post('/user/auth/forgot-password', payload);
+
+/** POST /api/v1/user/auth/reset-password */
+export const resetPassword = (payload: { email: string; code: string; newPassword: string }) =>
+  apiClient.post('/user/auth/reset-password', payload);
+
 /** POST /api/v1/user/auth/logout */
 export const logout = () => apiClient.post('/user/auth/logout');
 

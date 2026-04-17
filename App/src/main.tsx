@@ -49,6 +49,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
+import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
 import CalendarCallback from "./InnerApp/admin/CalendarCallback.tsx";
 
@@ -112,6 +113,10 @@ const router = createBrowserRouter([
   {
     path: "/check-email",
     element: <EmailVerification />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
   },
   {
     path: "/progress",

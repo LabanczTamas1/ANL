@@ -210,6 +210,17 @@ const LoginPage: React.FC = () => {
             )}
           </div>
 
+          {/* ── Forgot password ── */}
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm text-content-muted hover:text-white underline transition"
+            >
+              Forgot password?
+            </button>
+          </div>
+
           {/* ── Submit ── */}
           <button
             type="submit"
