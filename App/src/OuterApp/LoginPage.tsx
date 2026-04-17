@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Eye, EyeOff } from "lucide-react";
 import Navbar from "./Navbar";
-const stars = "/LoginStars.svg";
-const googleLogo = "/GoogleLogo.svg";
-const FacebookLogo = "/FacebookLogo.svg";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
+
+const googleLogo = "/GoogleLogo.svg";
+const FacebookLogo = "/FacebookLogo.svg";
 
 interface LoginFormInputs {
   email: string;
@@ -15,10 +15,6 @@ interface LoginFormInputs {
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [flashMessage, setFlashMessage] = useState<
-    { message: string; type: FlashMessageType } | null
-  >(null);
-
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { t } = useLanguage();
@@ -40,7 +36,6 @@ const LoginPage: React.FC = () => {
       if (response.ok) {
         const responseData = await response.json();
 
-        // Backend returns accessToken (not token)
         const token = responseData.accessToken || responseData.token;
         localStorage.setItem("authToken", token);
         localStorage.setItem("userId", responseData.userId);
@@ -53,10 +48,11 @@ const LoginPage: React.FC = () => {
           responseData.user?.email || data.email
         );
 
-        // Store verified status so route guards can check it
-        localStorage.setItem("verified", responseData.user?.verified === 'true' ? 'true' : 'false');
+        localStorage.setItem(
+          "verified",
+          responseData.user?.verified === "true" ? "true" : "false"
+        );
 
-        // Handle name data
         const fullName = responseData.user?.name || "";
         const nameParts = fullName.split(" ");
         const firstName = responseData.user?.firstName || nameParts[0] || "";
@@ -66,10 +62,12 @@ const LoginPage: React.FC = () => {
         localStorage.setItem("fullName", fullName);
         localStorage.setItem("firstName", firstName);
         localStorage.setItem("lastName", lastName);
+        localStorage.setItem(
+          "superRole",
+          `${responseData.user?.role || "user"}`
+        );
 
-        localStorage.setItem("superRole", `${responseData.user?.role || "user"}`);
-
-        if (responseData.user?.verified !== 'true') {
+        if (responseData.user?.verified !== "true") {
           alert(t("loginSuccessful"));
           navigate("/check-email");
         } else {
@@ -86,64 +84,87 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  // Google OAuth
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  // Facebook OAuth : TODO
-  const facebook = () => window.open(`${API_BASE_URL}/auth/facebook`, "_self");
+  const facebook = () =>
+    window.open(`${API_BASE_URL}/auth/facebook`, "_self");
 
   return (
-    <>
-      <div className="relative">
+    <div className="relative min-h-screen bg-surface-overlay overflow-hidden">
+      {/* ── Ambient background (matches homepage CTA section) ── */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 opacity-30">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `
+                radial-gradient(ellipse at 20% 50%, rgba(101,85,143,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(122,164,159,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(101,85,143,0.3) 0%, transparent 50%)
+              `,
+            }}
+          />
+        </div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand/20 rounded-full blur-[120px] animate-pulse" />
         <div
-          className="absolute lg:h-screen h-[120vh] inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: `url(${stars})`, opacity: 1 }}
-        ></div>
-      </div>
-      <Navbar />
-      {flashMessage && (
-        <FlashMessage
-          message={flashMessage.message}
-          type={flashMessage.type}
-          duration={3000}
-          onClose={() => setFlashMessage(null)}
+          className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent-teal/20 rounded-full blur-[120px] animate-pulse"
+          style={{ animationDelay: "1s" }}
         />
-      )}
-      <div className="relative h-[75vh] flex justify-center text-white pt-14 sm:pt-0">
+      </div>
+
+      {/* ── Navbar ── */}
+      <Navbar />
+
+      {/* ── Content ── */}
+      <div className="relative z-10 flex justify-center items-center min-h-[calc(100vh-5rem)] px-4 pt-16 sm:pt-4 pb-10">
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="p-6 rounded-lg shadow-lg w-full max-w-md"
+          className="w-full max-w-md p-8 rounded-2xl border border-line-glass shadow-2xl"
+          style={{
+            background: "rgba(20, 20, 30, 0.7)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          }}
         >
-          <h2 className="text-[4rem] font-bold mb-6 text-center">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-white">
             {t("loginTitle")}
           </h2>
+
+          {/* ── Social buttons ── */}
           <button
             type="button"
-            className="w-full flex justify-center mb-4 p-2 rounded border border-white"
+            className="w-full flex items-center justify-center gap-3 mb-3 p-3 rounded-xl border border-line-glass text-white hover:bg-white/5 transition"
             onClick={handleGoogleLogin}
           >
-            <img src={googleLogo} alt="Google Logo" className="h-6 mr-3" />{" "}
+            <img src={googleLogo} alt="Google" className="h-5 w-5" />
             {t("continueWithGoogle")}
           </button>
           <button
             type="button"
-            className="w-full flex justify-center p-2 rounded border border-white"
+            className="w-full flex items-center justify-center gap-3 p-3 rounded-xl border border-line-glass text-white hover:bg-white/5 transition"
             onClick={facebook}
           >
-            <img src={FacebookLogo} alt="Facebook Logo" className="h-6 mr-3" />{" "}
+            <img src={FacebookLogo} alt="Facebook" className="h-5 w-5" />
             {t("continueWithFacebook")}
           </button>
-          <div className="text-center my-5">{t("or")}</div>
 
+          {/* ── Divider ── */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-line-glass" />
+            <span className="text-sm text-content-muted">{t("or")}</span>
+            <div className="flex-1 h-px bg-line-glass" />
+          </div>
+
+          {/* ── Email ── */}
           <div className="mb-4">
             <input
               id="email"
               type="text"
               placeholder={t("emailPlaceholder")}
-              className={`w-full p-2 rounded border bg-[#080A0D] ${
-                errors.email ? "border-red-500" : "border-gray-600"
+              className={`w-full p-3 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition ${
+                errors.email ? "border-status-error" : "border-line-dark"
               }`}
               {...register("email", {
                 required: t("emailRequired"),
@@ -155,19 +176,20 @@ const LoginPage: React.FC = () => {
               })}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-status-error text-sm mt-1">
                 {errors.email.message}
               </p>
             )}
           </div>
 
-          <div className="mb-4 relative">
+          {/* ── Password ── */}
+          <div className="mb-6 relative">
             <input
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder={t("passwordPlaceholder")}
-              className={`w-full p-2 pr-10 rounded border bg-[#080A0D] text-white ${
-                errors.password ? "border-red-500" : "border-gray-600"
+              className={`w-full p-3 pr-12 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition ${
+                errors.password ? "border-status-error" : "border-line-dark"
               }`}
               {...register("password", {
                 required: t("passwordRequired"),
@@ -176,27 +198,40 @@ const LoginPage: React.FC = () => {
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-200"
+              className="absolute inset-y-0 right-3 flex items-center text-content-muted hover:text-white transition"
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
+              <p className="text-status-error text-sm mt-1">
                 {errors.password.message}
               </p>
             )}
           </div>
 
+          {/* ── Submit ── */}
           <button
             type="submit"
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
+            className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition shadow-lg shadow-brand/20"
           >
             {t("loginButton")}
           </button>
+
+          {/* ── Footer links ── */}
+          <div className="text-sm text-content-muted mt-6 text-center space-x-1">
+            <span>Don't have an account?</span>
+            <button
+              type="button"
+              onClick={() => navigate("/register")}
+              className="text-brand-hover underline hover:text-white transition"
+            >
+              Sign up
+            </button>
+          </div>
         </form>
       </div>
-    </>
+    </div>
   );
 };
 
