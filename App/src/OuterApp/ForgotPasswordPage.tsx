@@ -163,12 +163,12 @@ const ForgotPasswordPage: React.FC = () => {
           {step === "reset" && (
             <form onSubmit={resetForm.handleSubmit(handleResetSubmit)}>
               {/* Code */}
-              <div className="mb-4">
+              <div className="mb-4 flex flex-col items-center">
                 <input
                   type="text"
-                  placeholder="6-digit code"
+                  placeholder="123456"
                   maxLength={6}
-                  className={`w-full p-3 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition text-center text-2xl tracking-[0.5em] ${
+                  className={`w-36 p-2 rounded-lg border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition text-center text-lg ${
                     resetForm.formState.errors.code
                       ? "border-status-error"
                       : "border-line-dark"
