@@ -14,16 +14,16 @@ const CheckboxInput: React.FC<CheckboxInputProps> = ({
 }) => {
   return (
     <>
-      <label className="flex items-center">
+      <label className="flex items-start gap-2 text-sm text-content-subtle-inverse">
         <input
           type="checkbox"
-          className="mr-2"
+          className="mt-0.5 accent-brand"
           {...register}
         />
-        {label}
+        <span>{label}</span>
       </label>
       {error && (
-        <p className="text-red-500 text-sm mt-1">{error.message}</p>
+        <p className="text-status-error text-sm mt-1">{error.message}</p>
       )}
     </>
   );
