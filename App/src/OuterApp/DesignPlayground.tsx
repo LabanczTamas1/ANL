@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   Eye,
@@ -20,6 +20,8 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
+  Copy,
+  CheckCheck,
 } from "lucide-react";
 import GradientButton from "../InnerApp/components/GradientButton";
 import GlowCard from "./components/GlowCard";
@@ -28,6 +30,46 @@ import GradientDivider from "./components/GradientDivider";
 import NotificationBadge from "../InnerApp/components/NotificationBadge";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
+
+const CodeBlock: React.FC<{ code: string; label?: string }> = ({
+  code,
+  label,
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [code]);
+
+  return (
+    <div className="mt-4">
+      {label && (
+        <p className="text-content-muted text-xs mb-1 font-semibold uppercase tracking-wider">
+          {label}
+        </p>
+      )}
+      <div className="relative group">
+        <pre className="bg-[#0d1117] border border-line-glass rounded-xl p-4 overflow-x-auto text-sm leading-relaxed">
+          <code className="text-[#c9d1d9] whitespace-pre">{code}</code>
+        </pre>
+        <button
+          onClick={handleCopy}
+          className="absolute top-2 right-2 p-1.5 rounded-lg bg-surface-elevated/70 border border-line-glass text-content-muted hover:text-white hover:bg-surface-elevated transition opacity-0 group-hover:opacity-100"
+          title="Copy to clipboard"
+        >
+          {copied ? (
+            <CheckCheck size={14} className="text-status-success" />
+          ) : (
+            <Copy size={14} />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Section: React.FC<{
   title: string;
@@ -430,6 +472,15 @@ const DesignPlayground: React.FC = () => {
             </GradientButton>
           </div>
 
+          <CodeBlock
+            label="Copy this code"
+            code={`import GradientButton from "@/InnerApp/components/GradientButton";
+
+<GradientButton${btnVariant !== "primary" ? `\n  variant="${btnVariant}"` : ""}${btnLoading ? "\n  loading" : ""}${btnDisabled ? "\n  disabled" : ""}${btnFullWidth ? "\n  fullWidth" : ""}${btnVariant !== "primary" || btnLoading || btnDisabled || btnFullWidth ? "\n" : ""}>
+  Button Label
+</GradientButton>`}
+          />
+
           {/* static examples */}
           <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             All variants at a glance
@@ -450,6 +501,12 @@ const DesignPlayground: React.FC = () => {
               Submit
             </button>
           </div>
+          <CodeBlock
+            label="Submit button (Tailwind)"
+            code={`<button className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold transition shadow-lg shadow-brand/20">
+  Submit
+</button>`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -573,6 +630,67 @@ const DesignPlayground: React.FC = () => {
               </div>
             </div>
           </div>
+
+          <CodeBlock
+            label="Input code"
+            code={`<input
+  type="text"
+  placeholder="Enter your email"${inputDisabled ? "\n  disabled" : ""}
+  className={\`w-full p-3 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition${inputDisabled ? " disabled:opacity-50 disabled:cursor-not-allowed" : ""} ${inputError ? "border-status-error" : "border-line-dark"}\`}
+/>${inputError ? "\n<p className=\"text-status-error text-sm mt-1\">This field is required</p>" : ""}`}
+          />
+
+          <CodeBlock
+            label="Password input code"
+            code={`import { Eye, EyeOff } from "lucide-react";
+
+<div className="relative">
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Enter your password"${inputDisabled ? "\n    disabled" : ""}
+    className="w-full p-3 pr-12 rounded-xl border${inputError ? " border-status-error" : " border-line-dark"} bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition"
+  />
+  <button
+    type="button"
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted hover:text-white transition"
+    onClick={() => setShowPassword(p => !p)}
+  >
+    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+  </button>
+</div>`}
+          />
+
+          <CodeBlock
+            label="Checkbox code"
+            code={`<label className="flex items-start gap-2 text-sm text-content-subtle-inverse">
+  <input type="checkbox" className="mt-0.5 accent-brand" />
+  <span>I agree to the terms and conditions</span>
+</label>`}
+          />
+
+          <CodeBlock
+            label="Textarea code"
+            code={`<textarea
+  placeholder="Write a message..."
+  rows={3}${inputDisabled ? "\n  disabled" : ""}
+  className="w-full p-3 rounded-xl border${inputError ? " border-status-error" : " border-line-dark"} bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition resize-none"
+/>`}
+          />
+
+          <CodeBlock
+            label="Select code"
+            code={`import { ChevronDown } from "lucide-react";
+
+<div className="relative">
+  <select
+    className="w-full p-3 rounded-xl border${inputError ? " border-status-error" : " border-line-dark"} bg-surface-overlay text-white appearance-none focus:outline-none focus:ring-2 focus:ring-brand-focus transition"
+  >
+    <option value="">Select an option</option>
+    <option value="1">Option 1</option>
+  </select>
+  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" size={18} />
+</div>`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -602,6 +720,23 @@ const DesignPlayground: React.FC = () => {
             ))}
           </div>
 
+          <CodeBlock
+            label="GlowCard code"
+            code={`import GlowCard from "@/OuterApp/components/GlowCard";
+
+<GlowCard>
+  <div className="p-6">
+    <h3 className="text-white font-semibold text-lg mb-2">Title</h3>
+    <p className="text-content-muted text-sm">Description text.</p>
+  </div>
+</GlowCard>
+
+{/* With custom glow color */}
+<GlowCard glowColor="rgba(122, 164, 159, 0.6)">
+  ...
+</GlowCard>`}
+          />
+
           <h3 className="text-sm font-semibold text-content-muted mb-3">
             GlassInfoCard
           </h3>
@@ -616,6 +751,24 @@ const DesignPlayground: React.FC = () => {
               John Doe
             </GlassInfoCard>
           </div>
+
+          <CodeBlock
+            label="GlassInfoCard code"
+            code={`import GlassInfoCard from "@/InnerApp/components/GlassInfoCard";
+import { Calendar } from "lucide-react";
+
+<GlassInfoCard icon={<Calendar className="w-4 h-4 text-white" />}>
+  April 22, 2026
+</GlassInfoCard>
+
+{/* Custom gradient */}
+<GlassInfoCard
+  icon={<Clock className="w-4 h-4 text-white" />}
+  gradient="from-accent-teal to-brand"
+>
+  10:00 — 11:00
+</GlassInfoCard>`}
+          />
 
           <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             Simple glass card
@@ -634,6 +787,19 @@ const DesignPlayground: React.FC = () => {
               Standard glassmorphism card used on auth pages.
             </p>
           </div>
+          <CodeBlock
+            label="Glass card (Tailwind)"
+            code={`<div
+  className="max-w-sm p-6 rounded-2xl border border-line-glass"
+  style={{
+    background: "rgba(20, 20, 30, 0.7)",
+    backdropFilter: "blur(16px)",
+  }}
+>
+  <h3 className="text-white font-semibold text-lg mb-2">Title</h3>
+  <p className="text-content-muted text-sm">Description.</p>
+</div>`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -660,7 +826,7 @@ const DesignPlayground: React.FC = () => {
             </PropControl>
           </div>
 
-          <div className="flex items-center gap-6 mb-8">
+          <div className="flex items-center gap-6 mb-4">
             <div className="flex items-center gap-1">
               <Bell className="text-white" size={20} />
               <NotificationBadge count={badgeCount} />
@@ -671,7 +837,18 @@ const DesignPlayground: React.FC = () => {
             </div>
           </div>
 
-          <h3 className="text-sm font-semibold text-content-muted mb-3">
+          <CodeBlock
+            label="NotificationBadge code"
+            code={`import NotificationBadge from "@/InnerApp/components/NotificationBadge";
+import { Bell } from "lucide-react";
+
+<div className="flex items-center gap-1">
+  <Bell className="text-white" size={20} />
+  <NotificationBadge count={${badgeCount}} />
+</div>`}
+          />
+
+          <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             Status pills
           </h3>
           <div className="flex flex-wrap gap-2 mb-8">
@@ -690,6 +867,29 @@ const DesignPlayground: React.FC = () => {
               </span>
             ))}
           </div>
+
+          <CodeBlock
+            label="Status pill code"
+            code={`{/* Success */}
+<span className="px-3 py-1 text-xs font-semibold rounded-full bg-status-success/20 text-status-success">
+  Active
+</span>
+
+{/* Warning */}
+<span className="px-3 py-1 text-xs font-semibold rounded-full bg-status-warning/20 text-status-warning">
+  Pending
+</span>
+
+{/* Error */}
+<span className="px-3 py-1 text-xs font-semibold rounded-full bg-status-error/20 text-status-error">
+  Error
+</span>
+
+{/* Info */}
+<span className="px-3 py-1 text-xs font-semibold rounded-full bg-status-info/20 text-status-info">
+  Info
+</span>`}
+          />
 
           {/* toast alerts */}
           <h3 className="text-sm font-semibold text-content-muted mb-3">
@@ -729,6 +929,23 @@ const DesignPlayground: React.FC = () => {
               );
             })()}
           </div>
+
+          <CodeBlock
+            label="Toast / Alert code"
+            code={(() => {
+              const iconMap = { success: "CheckCircle", error: "XCircle", warning: "AlertTriangle", info: "Info" };
+              const bgMap = { success: "bg-status-success/10 border-status-success/30", error: "bg-status-error/10 border-status-error/30", warning: "bg-status-warning/10 border-status-warning/30", info: "bg-status-info/10 border-status-info/30" };
+              const textMap = { success: "text-status-success", error: "text-status-error", warning: "text-status-warning", info: "text-status-info" };
+              return `import { ${iconMap[toastType]} } from "lucide-react";
+
+<div className="flex items-center gap-3 p-3 rounded-xl border ${bgMap[toastType]}">
+  <span className="${textMap[toastType]}">
+    <${iconMap[toastType]} size={18} />
+  </span>
+  <span className="text-sm ${textMap[toastType]}">Your message here</span>
+</div>`;
+            })()}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -771,6 +988,44 @@ const DesignPlayground: React.FC = () => {
               </div>
             </div>
           )}
+
+          <CodeBlock
+            label="Confirm modal code"
+            code={`import GradientButton from "@/InnerApp/components/GradientButton";
+
+const [showConfirm, setShowConfirm] = useState(false);
+
+{/* Trigger */}
+<GradientButton onClick={() => setShowConfirm(true)}>
+  Open Confirm Modal
+</GradientButton>
+
+{/* Modal */}
+{showConfirm && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div
+      className="w-full max-w-md p-6 rounded-2xl border border-line-glass shadow-elevated"
+      style={{
+        background: "rgba(20,20,30,0.9)",
+        backdropFilter: "blur(16px)",
+      }}
+    >
+      <h3 className="text-lg font-semibold text-white mb-2">Confirm Action</h3>
+      <p className="text-content-muted text-sm mb-6">
+        Are you sure you want to proceed?
+      </p>
+      <div className="flex justify-end gap-3">
+        <GradientButton variant="secondary" onClick={() => setShowConfirm(false)}>
+          Cancel
+        </GradientButton>
+        <GradientButton variant="danger" onClick={() => setShowConfirm(false)}>
+          Confirm
+        </GradientButton>
+      </div>
+    </div>
+  </div>
+)}`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -809,6 +1064,13 @@ const DesignPlayground: React.FC = () => {
           <div className="rounded-xl overflow-hidden border border-line-glass bg-surface-overlay">
             <GradientDivider style={dividerStyle} flip={dividerFlipped} />
           </div>
+
+          <CodeBlock
+            label="Copy this code"
+            code={`import GradientDivider from "@/OuterApp/components/GradientDivider";
+
+<GradientDivider${dividerStyle !== "wave" ? ` style="${dividerStyle}"` : ""}${dividerFlipped ? " flip" : ""} />`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -830,7 +1092,16 @@ const DesignPlayground: React.FC = () => {
             ))}
           </div>
 
-          <h3 className="text-sm font-semibold text-content-muted mb-3">
+          <CodeBlock
+            label="Icon usage"
+            code={`import { Star, Bell, Mail } from "lucide-react";
+
+<Star className="text-brand" size={20} />
+<Bell className="text-content-inverse" size={22} />
+<Mail className="text-white" size={24} />`}
+          />
+
+          <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             Common icons
           </h3>
           <div className="flex flex-wrap gap-4">
@@ -910,6 +1181,27 @@ const DesignPlayground: React.FC = () => {
             </div>
           </div>
 
+          <CodeBlock
+            label="Spinner code"
+            code={`<svg className="animate-spin w-8 h-8 text-brand" viewBox="0 0 24 24" fill="none">
+  <circle className="opacity-25" cx="12" cy="12" r="10"
+    stroke="currentColor" strokeWidth="4" />
+  <path className="opacity-75" fill="currentColor"
+    d="M4 12a8 8 0 018-8v8z" />
+</svg>`}
+          />
+
+          <CodeBlock
+            label="Bouncing dots code"
+            code={`<div className="flex gap-1.5">
+  <div className="w-2.5 h-2.5 rounded-full bg-brand animate-bounce" />
+  <div className="w-2.5 h-2.5 rounded-full bg-brand animate-bounce"
+    style={{ animationDelay: "0.1s" }} />
+  <div className="w-2.5 h-2.5 rounded-full bg-brand animate-bounce"
+    style={{ animationDelay: "0.2s" }} />
+</div>`}
+          />
+
           <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             Skeleton loading
           </h3>
@@ -926,6 +1218,22 @@ const DesignPlayground: React.FC = () => {
             </div>
           </div>
 
+          <CodeBlock
+            label="Skeleton loading code"
+            code={`<div className="space-y-3">
+  <div className="h-4 w-3/4 bg-surface-elevated rounded animate-pulse" />
+  <div className="h-4 w-full bg-surface-elevated rounded animate-pulse" />
+  <div className="h-4 w-5/6 bg-surface-elevated rounded animate-pulse" />
+  <div className="flex gap-3 mt-4">
+    <div className="w-12 h-12 bg-surface-elevated rounded-full animate-pulse" />
+    <div className="flex-1 space-y-2 py-1">
+      <div className="h-3 w-2/3 bg-surface-elevated rounded animate-pulse" />
+      <div className="h-3 w-1/2 bg-surface-elevated rounded animate-pulse" />
+    </div>
+  </div>
+</div>`}
+          />
+
           <h3 className="text-sm font-semibold text-content-muted mt-6 mb-3">
             Progress bar
           </h3>
@@ -938,6 +1246,16 @@ const DesignPlayground: React.FC = () => {
             </div>
             <p className="text-content-muted text-xs mt-1">65% complete</p>
           </div>
+
+          <CodeBlock
+            label="Progress bar code"
+            code={`<div className="w-full h-2 bg-surface-elevated rounded-full overflow-hidden">
+  <div
+    className="h-full bg-gradient-to-r from-brand to-accent-teal rounded-full transition-all duration-1000"
+    style={{ width: "65%" }}
+  />
+</div>`}
+          />
         </Section>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
