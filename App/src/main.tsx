@@ -50,6 +50,7 @@ import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
+import DesignPlayground from "./OuterApp/DesignPlayground.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
 import CalendarCallback from "./InnerApp/admin/CalendarCallback.tsx";
 
@@ -117,6 +118,10 @@ const router = createBrowserRouter([
   {
     path: "/forgot-password",
     element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/design-playground",
+    element: <DesignPlayground />,
   },
   {
     path: "/progress",
