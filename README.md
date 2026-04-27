@@ -1,2 +1,3 @@
-# ANL
-Thesis project for an ads and leads company.
+ANL Web Application
+© 2026 AnladsAndLeads SRL. All rights reserved.
+Developed by Tamás Labancz
