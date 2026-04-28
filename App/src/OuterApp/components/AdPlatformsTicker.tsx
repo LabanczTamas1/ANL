@@ -43,7 +43,6 @@ const AdPlatformsTicker: React.FC = () => {
 
   return (
     <div className="mt-16 pt-8 border-t border-line-glass">
-      {/* Edge fades */}
       <div
         className="relative overflow-hidden"
         style={{
@@ -51,33 +50,27 @@ const AdPlatformsTicker: React.FC = () => {
           WebkitMaskImage: 'linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%)',
         }}
       >
+        {/* CSS-only center spotlight — glows the border/background of pills as they pass through */}
+        <div
+          className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-40 pointer-events-none z-10"
+          style={{
+            background: 'radial-gradient(ellipse 55% 120% at 50% 50%, rgba(180,150,255,0.55) 0%, rgba(100,200,190,0.25) 50%, transparent 75%)',
+            mixBlendMode: 'screen',
+          }}
+        />
+
         <div ref={trackRef} className="flex gap-6 w-max will-change-transform">
           {[...items, ...items].map(({ icon, label }, i) => (
             <div
               key={i}
-              className="relative flex items-center gap-2 px-4 py-2 bg-white/5 border border-line-glass rounded-xl text-white/50 text-sm whitespace-nowrap overflow-hidden"
-              style={{ animationDelay: `${(i % items.length) * 0.4}s` }}
+              className="relative flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/50 text-sm whitespace-nowrap"
             >
-              {/* Shimmer sweep that travels across the pill */}
-              <span
-                className="pointer-events-none absolute inset-0 rounded-xl"
-                style={{ animation: `pillShimmer 3s ease-in-out ${(i % items.length) * 0.35}s infinite` }}
-              />
               {icon}
               <span>{label}</span>
             </div>
           ))}
         </div>
       </div>
-
-      <style>{`
-        @keyframes pillShimmer {
-          0%   { background: linear-gradient(105deg, transparent 0%, transparent 40%, rgba(255,255,255,0) 50%, transparent 60%, transparent 100%); }
-          40%  { background: linear-gradient(105deg, transparent 0%, rgba(101,85,143,0.0) 30%, rgba(200,180,255,0.45) 50%, rgba(122,164,159,0.15) 60%, transparent 80%); }
-          55%  { background: linear-gradient(105deg, transparent 20%, rgba(122,164,159,0.0) 45%, rgba(200,180,255,0.55) 55%, transparent 70%, transparent 100%); }
-          100% { background: linear-gradient(105deg, transparent 60%, transparent 80%, rgba(255,255,255,0) 90%, transparent 100%); }
-        }
-      `}</style>
     </div>
   );
 };
