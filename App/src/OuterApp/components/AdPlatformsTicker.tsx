@@ -50,15 +50,6 @@ const AdPlatformsTicker: React.FC = () => {
           WebkitMaskImage: 'linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%)',
         }}
       >
-        {/* CSS-only center spotlight — glows the border/background of pills as they pass through */}
-        <div
-          className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-40 pointer-events-none z-10"
-          style={{
-            background: 'radial-gradient(ellipse 55% 120% at 50% 50%, rgba(180,150,255,0.55) 0%, rgba(100,200,190,0.25) 50%, transparent 75%)',
-            mixBlendMode: 'screen',
-          }}
-        />
-
         <div ref={trackRef} className="flex gap-6 w-max will-change-transform">
           {[...items, ...items].map(({ icon, label }, i) => (
             <div
