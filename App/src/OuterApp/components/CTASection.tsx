@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowRight, FaCalendarAlt, FaFacebook, FaInstagram, FaGoogle, FaBullhorn, FaChartLine, FaMousePointer, FaUsers, FaSearch } from 'react-icons/fa';
+import { FaArrowRight, FaCalendarAlt } from 'react-icons/fa';
+import AdPlatformsTicker from './AdPlatformsTicker';
 
 interface CTASectionProps {
   title?: string;
@@ -47,15 +48,6 @@ const CTASection: React.FC<CTASectionProps> = ({
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-        {/* Badge */}
-        <span className="inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-6">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-hover opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-hover" />
-          </span>
-          Available for new projects
-        </span>
-
         {/* Title */}
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
           {title}
@@ -88,47 +80,7 @@ const CTASection: React.FC<CTASectionProps> = ({
           </Link>
         </div>
 
-        {/* Ad platforms ticker */}
-        <div className="mt-16 pt-8 border-t border-line-glass overflow-hidden">
-          <div
-            className="flex gap-6 w-max"
-            style={{ animation: 'ctaTicker 22s linear infinite' }}
-          >
-            {[
-              { icon: <FaFacebook className="w-4 h-4" />, label: 'Meta Ads' },
-              { icon: <FaInstagram className="w-4 h-4" />, label: 'Instagram Ads' },
-              { icon: <FaGoogle className="w-4 h-4" />, label: 'Google Ads' },
-              { icon: <FaBullhorn className="w-4 h-4" />, label: 'Retargeting' },
-              { icon: <FaChartLine className="w-4 h-4" />, label: 'ROAS Optimisation' },
-              { icon: <FaMousePointer className="w-4 h-4" />, label: 'CTR Boost' },
-              { icon: <FaUsers className="w-4 h-4" />, label: 'Lookalike Audiences' },
-              { icon: <FaSearch className="w-4 h-4" />, label: 'A/B Testing' },
-              /* duplicate for seamless loop */
-              { icon: <FaFacebook className="w-4 h-4" />, label: 'Meta Ads' },
-              { icon: <FaInstagram className="w-4 h-4" />, label: 'Instagram Ads' },
-              { icon: <FaGoogle className="w-4 h-4" />, label: 'Google Ads' },
-              { icon: <FaBullhorn className="w-4 h-4" />, label: 'Retargeting' },
-              { icon: <FaChartLine className="w-4 h-4" />, label: 'ROAS Optimisation' },
-              { icon: <FaMousePointer className="w-4 h-4" />, label: 'CTR Boost' },
-              { icon: <FaUsers className="w-4 h-4" />, label: 'Lookalike Audiences' },
-              { icon: <FaSearch className="w-4 h-4" />, label: 'A/B Testing' },
-            ].map(({ icon, label }, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-line-glass rounded-xl text-white/50 text-sm whitespace-nowrap"
-              >
-                {icon}
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <style>{`
-          @keyframes ctaTicker {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
-          }
-        `}</style>
+        <AdPlatformsTicker />
       </div>
     </section>
   );

@@ -23,13 +23,13 @@ import FloatingParticles from "./components/FloatingParticles";
 const founders = [
   {
     imageUrl: "/Picture1.png",
-    name: "Koszta Zsolt",
-    position: "Co-Founder",
-    description: "Visionary leader driving digital transformation with over 10 years of experience in building scalable solutions for modern businesses.",
+    name: "Péterfi Szabolcs",
+    position: "Founder",
+    description: "Insipiring leader with a passion for innovation and a track record of driving growth through strategic vision and execution.",
     socials: {
       linkedin: "https://linkedin.com",
       twitter: "https://twitter.com",
-      email: "zsolt@anl.com",
+      email: "peterfi@anl.com",
     },
   },
   {
