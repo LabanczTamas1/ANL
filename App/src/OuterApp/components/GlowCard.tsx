@@ -33,7 +33,7 @@ const GlowCard: React.FC<GlowCardProps> = ({
   return (
     <div
       ref={cardRef}
-      className={`relative group ${className}`}
+      className={`relative group h-full ${className}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -52,7 +52,7 @@ const GlowCard: React.FC<GlowCardProps> = ({
       />
       
       {/* Card content */}
-      <div className="relative bg-surface-elevated/90 backdrop-blur-xl rounded-2xl border border-line-glass overflow-hidden">
+      <div className="relative h-full bg-surface-elevated/90 backdrop-blur-xl rounded-2xl border border-line-glass overflow-hidden">
         {children}
       </div>
     </div>
