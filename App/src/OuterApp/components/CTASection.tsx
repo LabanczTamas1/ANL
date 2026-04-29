@@ -47,7 +47,7 @@ const CTASection: React.FC<CTASectionProps> = ({
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent-teal/30 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 text-center">
         {/* Title */}
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
           {title}

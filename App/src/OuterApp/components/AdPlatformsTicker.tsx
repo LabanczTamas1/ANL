@@ -42,9 +42,9 @@ const AdPlatformsTicker: React.FC = () => {
   }, []);
 
   return (
-    <div className="mt-16 pt-8 border-t border-line-glass">
+    <div className="mt-16 pt-8 border-t border-line-glass w-full">
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden w-full"
         style={{
           maskImage: 'linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, transparent 0%, white 15%, white 85%, transparent 100%)',
