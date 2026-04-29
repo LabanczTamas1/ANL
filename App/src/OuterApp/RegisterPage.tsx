@@ -111,7 +111,7 @@ const RegisterForm: React.FC = () => {
       <Navbar />
 
       {/* ── Content ── */}
-      <div className="relative z-10 flex justify-center items-start px-4 pt-16 sm:pt-6 pb-10">
+      <div className="relative z-10 flex justify-center items-center min-h-[calc(100vh-5rem)] px-4 pt-20 pb-10">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="w-full max-w-md p-8 rounded-2xl border border-line-glass shadow-2xl"
