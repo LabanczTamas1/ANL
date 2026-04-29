@@ -7,11 +7,9 @@ import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
 import ANLShape from "./components/MovingAnimation";
-import { FaUsers, FaRocket, FaGlobe, FaAward } from "react-icons/fa";
-
 // Modern Components
 import ModernFoundersSection from "./components/ModernFoundersSection";
-import AnimatedStats from "./components/AnimatedStats";
+import YouTubeSection from "./components/YouTubeSection";
 import FeatureGrid from "./components/FeatureGrid";
 import ModernTimeline from "./components/ModernTimeline";
 import TestimonialSection from "./components/TestimonialSection";
@@ -43,14 +41,6 @@ const founders = [
       email: "contact@anl.com",
     },
   },
-];
-
-// Stats data
-const stats = [
-  { value: 150, suffix: "+", label: "Clients Worldwide", icon: <FaUsers className="w-6 h-6" /> },
-  { value: 500, suffix: "+", label: "Projects Delivered", icon: <FaRocket className="w-6 h-6" /> },
-  { value: 25, suffix: "+", label: "Countries Reached", icon: <FaGlobe className="w-6 h-6" /> },
-  { value: 98, suffix: "%", label: "Client Satisfaction", icon: <FaAward className="w-6 h-6" /> },
 ];
 
 const LandingPage = () => {
@@ -100,10 +90,10 @@ const LandingPage = () => {
         subtitle="The visionaries behind your digital transformation journey"
       />
 
-      {/* Animated Stats Section */}
+      {/* YouTube Videos Section */}
       <section className="relative bg-surface-black">
         <FloatingParticles particleCount={40} />
-        <AnimatedStats stats={stats} />
+        <YouTubeSection />
       </section>
 
       {/* Gradient Divider */}
