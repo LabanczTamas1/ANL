@@ -95,7 +95,7 @@ const services: Service[] = [
     icon: <FaGlobe className="w-7 h-7" />,
     title: 'Brand Awareness',
     description:
-      'Expand your brand's presence across channels with cohesive, memorable multi-platform campaigns.',
+      "Expand your brand's presence across channels with cohesive, memorable multi-platform campaigns.",
     features: ['Brand voice development', 'Display advertising', 'Programmatic media', 'Influencer seeding'],
     category: ['advertising', 'social'],
     accentColor: 'rgba(154, 70, 71, 0.8)',
