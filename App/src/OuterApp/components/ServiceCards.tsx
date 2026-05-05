@@ -141,10 +141,10 @@ const ServiceCard: React.FC<{ service: Service; index: number; visible: boolean 
 
   return (
     <div
-      className={`transition-all duration-500 ${
+      className={`transition-all duration-300 ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
       }`}
-      style={{ transitionDelay: `${(index % 3) * 100}ms` }}
+      style={{ transitionDelay: `${index * 40}ms` }}
     >
       <GlowCard glowColor={service.accentColor} className="h-full">
         <div
@@ -284,9 +284,6 @@ const ServiceCards: React.FC = () => {
               }`}
             >
               {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent-teal rounded-full animate-ping" />
-              )}
             </button>
           ))}
         </div>
