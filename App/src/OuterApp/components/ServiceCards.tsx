@@ -144,7 +144,7 @@ const ServiceCard: React.FC<{ service: Service; index: number; visible: boolean 
       className={`transition-all duration-300 ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
       }`}
-      style={{ transitionDelay: `${index * 40}ms` }}
+      style={{ transitionDelay: visible ? `${index * 40}ms` : '0ms' }}
     >
       <GlowCard glowColor={service.accentColor} className="h-full">
         <div
@@ -219,34 +219,20 @@ const ServiceCard: React.FC<{ service: Service; index: number; visible: boolean 
 
 const ServiceCards: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Category>('all');
-  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const [hasEnteredView, setHasEnteredView] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const prevTab = useRef<Category>('all');
 
   const filtered = services.filter(
     (s) => activeTab === 'all' || s.category.includes(activeTab)
   );
 
-  useEffect(() => {
-    // Reset visible cards when tab changes to retrigger animation
-    if (prevTab.current !== activeTab) {
-      setVisibleCards(new Set());
-      prevTab.current = activeTab;
-      const t = setTimeout(() => {
-        setVisibleCards(new Set(filtered.map((_, i) => i)));
-      }, 50);
-      return () => clearTimeout(t);
-    }
-  }, [activeTab, filtered]);
-
+  // Only animate on the initial scroll-into-view
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          const t = setTimeout(() => {
-            setVisibleCards(new Set(filtered.map((_, i) => i)));
-          }, 100);
-          return () => clearTimeout(t);
+          setHasEnteredView(true);
+          observer.disconnect();
         }
       },
       { threshold: 0.1 }
@@ -295,7 +281,7 @@ const ServiceCards: React.FC = () => {
               key={service.title}
               service={service}
               index={index}
-              visible={visibleCards.has(index)}
+              visible={hasEnteredView}
             />
           ))}
         </div>
