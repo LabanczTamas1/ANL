@@ -46,133 +46,157 @@ const chapters: Chapter[] = [
   },
 ];
 
-const StoryChapter: React.FC<{ chapter: Chapter; index: number }> = ({ chapter, index }) => {
-  const [visible, setVisible] = useState(false);
-  const [lineDrawn, setLineDrawn] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setLineDrawn(true), 100);
-          setTimeout(() => setVisible(true), 300);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.25 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
+const StoryChapter: React.FC<{ chapter: Chapter; index: number; active: boolean }> = ({
+  chapter,
+  active,
+}) => {
   const isRight = chapter.align === 'right';
 
   return (
-    <div ref={ref} className="relative py-20 md:py-28">
-      {/* Chapter vertical line — drawn on scroll */}
+    /* Tall scroll-range wrapper — content stays sticky while scrolling through this height */
+    <div className="relative" style={{ height: '220vh' }}>
+      {/* Sticky content panel — centered vertically in the viewport */}
       <div
-        className={`absolute ${isRight ? 'right-8 md:right-24' : 'left-8 md:left-24'} top-0 w-px bg-gradient-to-b from-transparent to-transparent transition-all duration-[1400ms] ease-out`}
-        style={{
-          height: lineDrawn ? '100%' : '0%',
-          background: `linear-gradient(to bottom, transparent, ${chapter.accent}, transparent)`,
-        }}
-      />
+        className="sticky top-0 h-screen flex items-center overflow-hidden"
+      >
+        {/* Background accent glow per chapter */}
+        <div
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{
+            background: `radial-gradient(ellipse at ${isRight ? '75%' : '25%'} 50%, ${chapter.accent}22 0%, transparent 65%)`,
+            opacity: active ? 1 : 0,
+          }}
+        />
 
-      <div className="max-w-7xl mx-auto px-8 md:px-24">
-        <div className={`flex flex-col ${isRight ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 items-center`}>
-          {/* Icon panel — cinematic side element */}
+        {/* Side vertical accent line */}
+        <div
+          className={`absolute ${isRight ? 'right-6 md:right-16' : 'left-6 md:left-16'} top-1/4 w-px transition-all duration-[1000ms]`}
+          style={{
+            height: active ? '50%' : '0%',
+            background: `linear-gradient(to bottom, transparent, ${chapter.accent}, transparent)`,
+          }}
+        />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-24">
           <div
-            className={`flex-shrink-0 transition-all duration-700 delay-200 ${
-              visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-            }`}
+            className={`flex flex-col ${isRight ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 md:gap-20 items-center`}
           >
-            <div className="relative">
-              <div
-                className="absolute inset-0 rounded-[40%] blur-[40px] opacity-50"
-                style={{ backgroundColor: chapter.accent }}
-              />
-              <div
-                className="relative w-28 h-28 md:w-40 md:h-40 rounded-[35%] flex items-center justify-center border"
-                style={{
-                  borderColor: `${chapter.accent}60`,
-                  backgroundColor: `${chapter.accent}15`,
-                  color: chapter.accent,
-                }}
-              >
-                {chapter.icon}
+            {/* Icon */}
+            <div
+              className={`flex-shrink-0 transition-all duration-700 delay-150 ${
+                active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-8'
+              }`}
+            >
+              <div className="relative">
+                <div
+                  className="absolute inset-0 rounded-[40%] blur-[50px] opacity-60"
+                  style={{ backgroundColor: chapter.accent }}
+                />
+                <div
+                  className="relative w-28 h-28 md:w-44 md:h-44 rounded-[35%] flex items-center justify-center border"
+                  style={{
+                    borderColor: `${chapter.accent}55`,
+                    backgroundColor: `${chapter.accent}12`,
+                    color: chapter.accent,
+                  }}
+                >
+                  {chapter.icon}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Text content */}
-          <div className="flex-1">
-            {/* Chapter label */}
-            <div
-              className={`flex items-center gap-3 mb-5 transition-all duration-500 ${
-                visible ? 'opacity-100 translate-x-0' : isRight ? 'opacity-0 translate-x-8' : 'opacity-0 -translate-x-8'
-              }`}
-            >
-              <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
-              <span className="text-xs font-bold tracking-[0.25em] uppercase" style={{ color: chapter.accent }}>
-                {chapter.chapterLabel}
-              </span>
+            {/* Text */}
+            <div className="flex-1">
+              <div
+                className={`flex items-center gap-3 mb-5 transition-all duration-500 ${
+                  active ? 'opacity-100 translate-x-0' : isRight ? 'opacity-0 translate-x-10' : 'opacity-0 -translate-x-10'
+                }`}
+              >
+                <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
+                <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: chapter.accent }}>
+                  {chapter.chapterLabel}
+                </span>
+              </div>
+
+              <p
+                className={`text-content-muted text-sm uppercase tracking-widest mb-3 transition-all duration-500 delay-75 ${
+                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
+                }`}
+              >
+                {chapter.eyebrow}
+              </p>
+
+              <h2
+                className={`text-4xl md:text-6xl font-extrabold text-white leading-[1.08] mb-6 transition-all duration-600 delay-100 ${
+                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+              >
+                {chapter.headline.split('\n').map((line, i) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i < chapter.headline.split('\n').length - 1 && <br />}
+                  </React.Fragment>
+                ))}
+              </h2>
+
+              <p
+                className={`text-content-muted text-base md:text-lg leading-relaxed max-w-lg transition-all duration-600 delay-150 ${
+                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+              >
+                {chapter.body}
+              </p>
             </div>
-
-            {/* Eyebrow */}
-            <p
-              className={`text-content-muted text-sm uppercase tracking-widest mb-3 transition-all duration-500 delay-100 ${
-                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-            >
-              {chapter.eyebrow}
-            </p>
-
-            {/* Headline with line breaks */}
-            <h2
-              className={`text-4xl md:text-5xl font-extrabold text-white leading-tight mb-6 transition-all duration-600 delay-150 ${
-                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              }`}
-            >
-              {chapter.headline.split('\n').map((line, i) => (
-                <React.Fragment key={i}>
-                  {line}
-                  {i < chapter.headline.split('\n').length - 1 && <br />}
-                </React.Fragment>
-              ))}
-            </h2>
-
-            {/* Body */}
-            <p
-              className={`text-content-muted text-base md:text-lg leading-relaxed max-w-xl transition-all duration-600 delay-200 ${
-                visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              }`}
-            >
-              {chapter.body}
-            </p>
           </div>
         </div>
       </div>
-
-      {/* Section-bottom ambient glow */}
-      <div
-        className="absolute bottom-0 inset-x-0 h-px opacity-30"
-        style={{ background: `linear-gradient(to right, transparent, ${chapter.accent}, transparent)` }}
-      />
     </div>
   );
 };
 
 const AboutStoryChapters: React.FC = () => {
+  const [activeChapter, setActiveChapter] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!sectionRef.current) return;
+      const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
+      const scrolled = window.scrollY - sectionTop;
+      // Each chapter occupies 220vh
+      const chapterHeight = window.innerHeight * 2.2;
+      const idx = Math.min(
+        Math.max(Math.floor(scrolled / chapterHeight), 0),
+        chapters.length - 1
+      );
+      setActiveChapter(idx);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <section className="relative overflow-hidden bg-surface-black">
-      {/* Global dim background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-surface-black via-surface-overlay to-surface-black" />
-      <div className="relative z-10">
-        {chapters.map((chapter, i) => (
-          <StoryChapter key={i} chapter={chapter} index={i} />
+    <section ref={sectionRef} className="relative bg-surface-black">
+      {/* Progress dots — right side */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
+        {chapters.map((ch, i) => (
+          <div
+            key={i}
+            className="w-2 h-2 rounded-full transition-all duration-500"
+            style={{
+              backgroundColor: i === activeChapter ? ch.accent : 'rgba(255,255,255,0.2)',
+              transform: i === activeChapter ? 'scale(1.5)' : 'scale(1)',
+              boxShadow: i === activeChapter ? `0 0 8px ${ch.accent}` : 'none',
+            }}
+          />
         ))}
       </div>
+
+      {chapters.map((chapter, i) => (
+        <StoryChapter key={i} chapter={chapter} index={i} active={i === activeChapter} />
+      ))}
     </section>
   );
 };
