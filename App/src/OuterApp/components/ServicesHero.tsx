@@ -188,11 +188,6 @@ const ServicesHero: React.FC = () => {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce opacity-50">
-        <span className="text-xs text-content-muted tracking-widest uppercase">Scroll</span>
-        <FaChevronDown className="text-content-muted w-4 h-4" />
-      </div>
     </section>
   );
 };
