@@ -1,83 +1,114 @@
 import React from "react";
+import { Helmet } from "react-helmet-async";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers, faLightbulb, faBullseye, faHandshake, faCogs, faChartLine } from "@fortawesome/free-solid-svg-icons";
+import AboutCinematicHero from "./components/AboutCinematicHero";
+import AboutStoryChapters, { AboutValues } from "./components/AboutStoryChapters";
+import ModernFoundersSection from "./components/ModernFoundersSection";
+import AnimatedStats from "./components/AnimatedStats";
+import TestimonialSection from "./components/TestimonialSection";
+import GradientDivider from "./components/GradientDivider";
+import CTASection from "./components/CTASection";
+import FloatingParticles from "./components/FloatingParticles";
+import { FaUsers, FaChartLine, FaStar, FaGlobe } from "react-icons/fa";
+
+const founders = [
+  {
+    imageUrl: "/Picture1.png",
+    name: "Péterfi Szabolcs",
+    position: "Founder",
+    description:
+      "Inspiring leader with a passion for innovation and a track record of driving growth through strategic vision and execution.",
+    socials: {
+      linkedin: "https://linkedin.com",
+      twitter: "https://twitter.com",
+      email: "peterfi@anl.com",
+    },
+  },
+  {
+    imageUrl: "/Picture1.png",
+    name: "Koszta Zsolt",
+    position: "Co-Founder",
+    description:
+      "Strategic thinker specializing in growth marketing and data-driven decision making to help businesses reach their full potential.",
+    socials: {
+      linkedin: "https://linkedin.com",
+      twitter: "https://twitter.com",
+      email: "contact@anl.com",
+    },
+  },
+];
+
+const stats = [
+  { value: 300, suffix: "+", label: "Campaigns Launched", icon: <FaChartLine className="w-5 h-5" /> },
+  { value: 50, suffix: "+", label: "Clients Served", icon: <FaUsers className="w-5 h-5" /> },
+  { value: 12, suffix: "", label: "Countries Reached", icon: <FaGlobe className="w-5 h-5" /> },
+  { value: 97, suffix: "%", label: "Client Satisfaction", icon: <FaStar className="w-5 h-5" /> },
+];
 
 const About = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-black via-[#65558F] to-black">
+    <div className="bg-surface-black min-h-screen overflow-x-hidden">
+      <Helmet>
+        <title>ANL | About Us — Our Story</title>
+        <meta
+          name="description"
+          content="Learn about ANL — who we are, why we started, and the values that drive everything we do."
+        />
+      </Helmet>
+
       <Navbar />
-      <div className="flex lg:flex-row flex-col justify-evenly items-center flex-grow">
-        <div className="m-8 text-white w-full px-8 lg:w-[40vw]">
-          <div className="flex flex-col items-left lg:m-6 my-6 lg:ml-0 lg:w-full">
-            <h2 className="text-[2em] mb-3 border-b-2">About Us</h2>
-            Welcome to our company! We are dedicated to providing top-notch solutions 
-            and services to our customers. Our mission is to innovate, inspire, and 
-            drive success through technology and creativity. With a team of experienced 
-            professionals, we strive to make a positive impact in the industry and 
-            ensure customer satisfaction.
-            <br /><br />
-            Over the years, we have built a strong reputation for delivering high-quality 
-            products and services. Our expertise spans various industries, allowing us to 
-            adapt to different challenges and create customized solutions that meet our 
-            clients' needs. We believe in continuous learning and improvement, ensuring that 
-            we stay ahead of industry trends and advancements.
-            <br /><br />
-            Collaboration and innovation are at the heart of everything we do. We foster 
-            a culture of teamwork and encourage our employees to think outside the box, 
-            pushing boundaries to achieve excellence. Our commitment to integrity, 
-            transparency, and customer-centric approaches drives us to exceed expectations.
-          </div>
-          <div className="flex flex-row items-center p-4 mr-0 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faUsers}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <div className="font-extrabold text-lg">
-              Our Team
-              <div className="font-bold text-sm">
-                Passionate professionals dedicated to excellence.
-              </div>
-            </div>
-          </div>
-          <div className="p-4 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faLightbulb}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <strong>Our Vision:</strong> Innovate and inspire through technology.
-          </div>
-          <div className="p-4 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faBullseye}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <strong>Our Mission:</strong> Delivering quality solutions to empower businesses.
-          </div>
-          <div className="p-4 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faHandshake}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <strong>Our Values:</strong> Integrity, transparency, and customer satisfaction.
-          </div>
-          <div className="p-4 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faCogs}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <strong>Our Process:</strong> We follow a structured approach to ensure efficiency and quality in every project.
-          </div>
-          <div className="p-4 lg:w-[40vw] bg-white/5">
-            <FontAwesomeIcon
-              icon={faChartLine}
-              className="w-8 h-8 text-white mr-4"
-            />
-            <strong>Our Growth:</strong> Expanding our services globally to reach new heights.
-          </div>
-        </div>
-      </div>
+
+      {/* Cinematic hero — word-by-word reveal */}
+      <AboutCinematicHero />
+
+      <GradientDivider style="glow" />
+
+      {/* Scrolling story chapters — Genshin-style alternating panels */}
+      <AboutStoryChapters />
+
+      <GradientDivider style="wave" />
+
+      {/* Values grid */}
+      <AboutValues />
+
+      <GradientDivider style="mesh" />
+
+      {/* Founders */}
+      <ModernFoundersSection
+        founders={founders}
+        title="The Founders"
+        subtitle="Two people who decided to do marketing the right way"
+      />
+
+      <GradientDivider style="glow" />
+
+      {/* Animated stats */}
+      <AnimatedStats stats={stats} />
+
+      <GradientDivider style="wave" flip />
+
+      {/* Testimonials */}
+      <TestimonialSection
+        title="Clients That Believed Early"
+        subtitle="They took the leap. Here's what happened."
+      />
+
+      <GradientDivider style="mesh" />
+
+      {/* Final CTA */}
+      <section className="relative bg-surface-black">
+        <FloatingParticles particleCount={30} />
+        <CTASection
+          title="Ready to Write Your Own Chapter?"
+          subtitle="Book a free strategy call. No pitch deck, no fluff — just a real conversation about your growth."
+          primaryButtonText="Start the Story"
+          primaryButtonLink="/booking"
+          secondaryButtonText="See Our Services"
+          secondaryButtonLink="/services"
+        />
+      </section>
+
       <Footer darkMode={true} />
     </div>
   );
