@@ -148,13 +148,7 @@ const GradientDivider: React.FC<GradientDividerProps> = ({
                 opacity: 0.25,
               }}
             />
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] rounded-full blur-sm"
-              style={{
-                background: 'linear-gradient(90deg, transparent, #65558F 20%, #7AA49F 50%, #9B7ADB 80%, transparent)',
-                backgroundSize: '300% 100%',
-                animation: 'aurora-shift 8s ease-in-out infinite',
-              }}
-            />
+
           </div>
         );
 
@@ -208,16 +202,7 @@ const GradientDivider: React.FC<GradientDividerProps> = ({
                 opacity: 0.4,
               }}
             />
-            {/* Thin shimmer line on top */}
-            <div
-              className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] rounded-full"
-              style={{
-                background: 'linear-gradient(90deg, transparent, #65558F 20%, #7AA49F 50%, #9B7ADB 80%, transparent)',
-                backgroundSize: '300% 100%',
-                animation: 'aurora-shift 7s ease-in-out infinite',
-                filter: 'blur(1px)',
-              }}
-            />
+
           </div>
         );
 
