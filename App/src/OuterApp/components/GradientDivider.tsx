@@ -229,7 +229,15 @@ const GradientDivider: React.FC<GradientDividerProps> = ({
   return (
     <>
       <style>{auroraKeyframes}</style>
-      <div className={`relative ${className}`}>{renderDivider()}</div>
+      <div
+        className={`relative ${className}`}
+        style={{
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+        }}
+      >
+        {renderDivider()}
+      </div>
     </>
   );
 };
