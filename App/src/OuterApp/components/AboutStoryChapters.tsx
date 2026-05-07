@@ -138,7 +138,7 @@ const AboutStoryChapters: React.FC = () => {
       <Swiper
         modules={[Mousewheel, Keyboard]}
         direction="vertical"
-        mousewheel={{ sensitivity: 1, thresholdDelta: 30 }}
+        mousewheel={{ sensitivity: 1, thresholdDelta: 50, thresholdTime: 300, releaseOnEdges: true }}
         keyboard={{ enabled: true }}
         speed={700}
         style={{ height: '100%', width: '100%' }}
