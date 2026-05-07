@@ -41,6 +41,10 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const activityRef = useRef<ActivityLogHandle>(null);
   const [editingFieldIdx, setEditingFieldIdx] = useState<number | null>(null);
   const [fieldEditValue, setFieldEditValue] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedFields, setEditedFields] = useState<Array<{ name: string; type: string; value: string }>>([]);
+  const [newEditFieldName, setNewEditFieldName] = useState('');
+  const [newEditFieldType, setNewEditFieldType] = useState<'text' | 'link'>('text');
 
   // Parse dynamic fields for template-based cards
   let parsedFields: Array<{ name: string; type: string; value: string }> = [];
@@ -143,6 +147,38 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
     }
   };
 
+  const handleEnterEditMode = () => {
+    setEditedFields(parsedFields.map((f) => ({ ...f })));
+    setNewEditFieldName('');
+    setNewEditFieldType('text');
+    setIsEditMode(true);
+  };
+
+  const handleCancelEditMode = () => {
+    setIsEditMode(false);
+    setNewEditFieldName('');
+  };
+
+  const handleAddEditField = () => {
+    const trimmed = newEditFieldName.trim();
+    if (!trimmed) return;
+    if (editedFields.some((f) => f.name.toLowerCase() === trimmed.toLowerCase())) return;
+    setEditedFields([...editedFields, { name: trimmed, type: newEditFieldType, value: '' }]);
+    setNewEditFieldName('');
+    setNewEditFieldType('text');
+  };
+
+  const handleSaveEditMode = async () => {
+    try {
+      await updateCard(card.id, { name: 'Fields', updatedValue: editedFields });
+      setCardData((prev: any) => ({ ...prev, Fields: JSON.stringify(editedFields) }));
+      setIsEditMode(false);
+      activityRef.current?.addLocal('updated', 'Edited card fields');
+    } catch (error) {
+      console.error('Error saving card edits:', error);
+    }
+  };
+
   const extractBaseUrl = (url: string): string => {
     try {
       const urlMatch = url.match(/https?:\/\/[^\s\]]+/);
@@ -230,42 +266,95 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         <div className="p-4 md:p-6 overflow-y-auto flex-1">
         <div className="space-y-4 md:space-y-6">
           {parsedFields.length > 0 ? (
-            parsedFields.map((field, idx) => (
-              <div key={idx} className="mb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-0 sm:mr-2 sm:w-1/4">
-                    {field.name}
-                    {field.type === "link" && (
-                      <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"> link</span>
-                    )}
-                  </label>
-                  <div className="relative flex-1">
+            isEditMode ? (
+              /* ── Bulk edit mode ──────────────────────────────────────── */
+              <div className="space-y-4">
+                {editedFields.map((field, idx) => (
+                  <div key={idx} className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      {field.name}
+                      {field.type === "link" && (
+                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">link</span>
+                      )}
+                    </label>
                     <input
                       type={field.type === "link" ? "url" : "text"}
-                      value={editingFieldIdx === idx ? fieldEditValue : field.value}
-                      onChange={(e) => setFieldEditValue(e.target.value)}
-                      onClick={() => { setEditingFieldIdx(idx); setFieldEditValue(field.value); }}
+                      placeholder={field.type === "link" ? "https://..." : `Enter ${field.name.toLowerCase()}`}
+                      value={field.value}
+                      onChange={(e) => setEditedFields(editedFields.map((f, i) => i === idx ? { ...f, value: e.target.value } : f))}
                       className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
                     />
-                    {field.type === "link" && editingFieldIdx !== idx && field.value && (
-                      <a href={field.value} target="_blank" rel="noopener noreferrer"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 hover:text-blue-700"
-                        onClick={(e) => e.stopPropagation()}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </a>
-                    )}
+                  </div>
+                ))}
+                {/* Add new field */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a field</p>
+                  <div className="flex gap-2 items-end">
+                    <input
+                      type="text"
+                      placeholder="Field name"
+                      value={newEditFieldName}
+                      onChange={(e) => setNewEditFieldName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddEditField()}
+                      className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:outline-none"
+                    />
+                    <select
+                      value={newEditFieldType}
+                      onChange={(e) => setNewEditFieldType(e.target.value as "text" | "link")}
+                      className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#65558F] focus:outline-none"
+                    >
+                      <option value="text">Text</option>
+                      <option value="link">Link</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleAddEditField}
+                      className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition whitespace-nowrap"
+                    >
+                      + Add
+                    </button>
                   </div>
                 </div>
-                {editingFieldIdx === idx && (
-                  <div className="mt-2 flex flex-row space-x-2">
-                    <button onClick={() => handleSaveField(idx)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Save</button>
-                    <button onClick={() => setEditingFieldIdx(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700">Cancel</button>
-                  </div>
-                )}
               </div>
-            ))
+            ) : (
+              /* ── View / inline-edit mode ─────────────────────────────── */
+              parsedFields.map((field, idx) => (
+                <div key={idx} className="mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-0 sm:mr-2 sm:w-1/4">
+                      {field.name}
+                      {field.type === "link" && (
+                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"> link</span>
+                      )}
+                    </label>
+                    <div className="relative flex-1">
+                      <input
+                        type={field.type === "link" ? "url" : "text"}
+                        value={editingFieldIdx === idx ? fieldEditValue : field.value}
+                        onChange={(e) => setFieldEditValue(e.target.value)}
+                        onClick={() => { setEditingFieldIdx(idx); setFieldEditValue(field.value); }}
+                        className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
+                      />
+                      {field.type === "link" && editingFieldIdx !== idx && field.value && (
+                        <a href={field.value} target="_blank" rel="noopener noreferrer"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 dark:text-blue-400 hover:text-blue-700"
+                          onClick={(e) => e.stopPropagation()}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {editingFieldIdx === idx && (
+                    <div className="mt-2 flex flex-row space-x-2">
+                      <button onClick={() => handleSaveField(idx)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Save</button>
+                      <button onClick={() => setEditingFieldIdx(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700">Cancel</button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )
           ) : (
             Object.keys(reorderedObject)
             .slice(0, 10)
@@ -429,6 +518,31 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
           >
             Delete
           </button>
+          {parsedFields.length > 0 && (
+            isEditMode ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveEditMode}
+                  className="bg-[#65558F] text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-[#544a7a] transition"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={handleCancelEditMode}
+                  className="bg-gray-500 text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-gray-600 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleEnterEditMode}
+                className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+              >
+                Edit Card
+              </button>
+            )
+          )}
         </div>
         <CardMessageSection cardId={card.id} onCommentAction={(action, details) => activityRef.current?.addLocal(action, details)} />
         <ActivityLog ref={activityRef} cardId={card.id} />

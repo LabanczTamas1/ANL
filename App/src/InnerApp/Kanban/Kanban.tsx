@@ -112,9 +112,9 @@ const Kanban: React.FC = () => {
       IsCommented: 'false',
     };
 
-    // Map dynamic fields to PascalCase keys (legacy compat)
-    for (const f of fields) {
-      newCard[f.name] = f.value;
+    if (fields.length > 0) {
+      // Store as Fields JSON so Card.tsx renders immediately (same as backend storage)
+      newCard.Fields = JSON.stringify(fields);
     }
 
     setColumns((prev) =>
