@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import GlowCard from './GlowCard';
 import { FaLightbulb, FaHandshake, FaBullseye, FaShieldAlt, FaRocket, FaUsers } from 'react-icons/fa';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Mousewheel, Keyboard } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+import 'swiper/css';
 
 interface Chapter {
   chapterLabel: string;
@@ -46,107 +50,63 @@ const chapters: Chapter[] = [
   },
 ];
 
-const StoryChapter: React.FC<{ chapter: Chapter; index: number; active: boolean }> = ({
-  chapter,
-  active,
-}) => {
+const SlideContent: React.FC<{ chapter: Chapter; active: boolean }> = ({ chapter, active }) => {
   const isRight = chapter.align === 'right';
-
   return (
-    /* Tall scroll-range wrapper — content stays sticky while scrolling through this height */
-    <div className="relative" style={{ height: `${CHAPTER_HEIGHT_VH}vh` }}>
-      {/* Sticky content panel — centered vertically in the viewport */}
+    <div className="relative h-full w-full flex items-center overflow-hidden bg-surface-black">
+      {/* Accent glow */}
       <div
-        className="sticky top-0 h-screen flex items-center overflow-hidden"
-      >
-        {/* Background accent glow per chapter */}
-        <div
-          className="absolute inset-0 transition-opacity duration-700"
-          style={{
-            background: `radial-gradient(ellipse at ${isRight ? '75%' : '25%'} 50%, ${chapter.accent}22 0%, transparent 65%)`,
-            opacity: active ? 1 : 0,
-          }}
-        />
+        className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at ${isRight ? '75%' : '25%'} 50%, ${chapter.accent}25 0%, transparent 65%)`,
+          opacity: active ? 1 : 0,
+        }}
+      />
+      {/* Side accent line */}
+      <div
+        className={`absolute ${isRight ? 'right-6 md:right-16' : 'left-6 md:left-16'} top-1/4 w-px transition-all duration-[900ms]`}
+        style={{
+          height: active ? '50%' : '0%',
+          background: `linear-gradient(to bottom, transparent, ${chapter.accent}, transparent)`,
+        }}
+      />
 
-        {/* Side vertical accent line */}
-        <div
-          className={`absolute ${isRight ? 'right-6 md:right-16' : 'left-6 md:left-16'} top-1/4 w-px transition-all duration-[1000ms]`}
-          style={{
-            height: active ? '50%' : '0%',
-            background: `linear-gradient(to bottom, transparent, ${chapter.accent}, transparent)`,
-          }}
-        />
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-24">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-24">
+        <div className={`flex flex-col ${isRight ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 md:gap-20 items-center`}>
+          {/* Icon */}
           <div
-            className={`flex flex-col ${isRight ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 md:gap-20 items-center`}
+            className={`flex-shrink-0 transition-all duration-700 delay-100 ${
+              active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-8'
+            }`}
           >
-            {/* Icon */}
-            <div
-              className={`flex-shrink-0 transition-all duration-700 delay-150 ${
-                active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-8'
-              }`}
-            >
-              <div className="relative">
-                <div
-                  className="absolute inset-0 rounded-[40%] blur-[50px] opacity-60"
-                  style={{ backgroundColor: chapter.accent }}
-                />
-                <div
-                  className="relative w-28 h-28 md:w-44 md:h-44 rounded-[35%] flex items-center justify-center border"
-                  style={{
-                    borderColor: `${chapter.accent}55`,
-                    backgroundColor: `${chapter.accent}12`,
-                    color: chapter.accent,
-                  }}
-                >
-                  {chapter.icon}
-                </div>
-              </div>
-            </div>
-
-            {/* Text */}
-            <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-[40%] blur-[50px] opacity-60" style={{ backgroundColor: chapter.accent }} />
               <div
-                className={`flex items-center gap-3 mb-5 transition-all duration-500 ${
-                  active ? 'opacity-100 translate-x-0' : isRight ? 'opacity-0 translate-x-10' : 'opacity-0 -translate-x-10'
-                }`}
+                className="relative w-28 h-28 md:w-44 md:h-44 rounded-[35%] flex items-center justify-center border"
+                style={{ borderColor: `${chapter.accent}55`, backgroundColor: `${chapter.accent}12`, color: chapter.accent }}
               >
-                <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
-                <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: chapter.accent }}>
-                  {chapter.chapterLabel}
-                </span>
+                {chapter.icon}
               </div>
-
-              <p
-                className={`text-content-muted text-sm uppercase tracking-widest mb-3 transition-all duration-500 delay-75 ${
-                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-                }`}
-              >
-                {chapter.eyebrow}
-              </p>
-
-              <h2
-                className={`text-4xl md:text-6xl font-extrabold text-white leading-[1.08] mb-6 transition-all duration-600 delay-100 ${
-                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-              >
-                {chapter.headline.split('\n').map((line, i) => (
-                  <React.Fragment key={i}>
-                    {line}
-                    {i < chapter.headline.split('\n').length - 1 && <br />}
-                  </React.Fragment>
-                ))}
-              </h2>
-
-              <p
-                className={`text-content-muted text-base md:text-lg leading-relaxed max-w-lg transition-all duration-600 delay-150 ${
-                  active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                }`}
-              >
-                {chapter.body}
-              </p>
             </div>
+          </div>
+
+          {/* Text */}
+          <div className="flex-1">
+            <div className={`flex items-center gap-3 mb-5 transition-all duration-500 ${active ? 'opacity-100 translate-x-0' : isRight ? 'opacity-0 translate-x-10' : 'opacity-0 -translate-x-10'}`}>
+              <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
+              <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: chapter.accent }}>{chapter.chapterLabel}</span>
+            </div>
+            <p className={`text-content-muted text-sm uppercase tracking-widest mb-3 transition-all duration-500 delay-75 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+              {chapter.eyebrow}
+            </p>
+            <h2 className={`text-4xl md:text-6xl font-extrabold text-white leading-[1.08] mb-6 transition-all duration-600 delay-100 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              {chapter.headline.split('\n').map((line, i, arr) => (
+                <React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>
+              ))}
+            </h2>
+            <p className={`text-content-muted text-base md:text-lg leading-relaxed max-w-lg transition-all duration-600 delay-150 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              {chapter.body}
+            </p>
           </div>
         </div>
       </div>
@@ -154,121 +114,44 @@ const StoryChapter: React.FC<{ chapter: Chapter; index: number; active: boolean 
   );
 };
 
-const CHAPTER_HEIGHT_VH = 220;
-
 const AboutStoryChapters: React.FC = () => {
-  const [activeChapter, setActiveChapter] = useState(0);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const isSnappingRef = useRef(false);
-  const activeChapterRef = useRef(0);
-
-  // Keep ref in sync so wheel handler always sees current value
-  useEffect(() => { activeChapterRef.current = activeChapter; }, [activeChapter]);
-
-  /** Scroll exactly to the center-viewport position of chapter `idx` */
-  const snapToChapter = (idx: number) => {
-    if (!sectionRef.current) return;
-    const clamped = Math.min(Math.max(idx, 0), chapters.length - 1);
-    const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
-    const chapterHeight = window.innerHeight * (CHAPTER_HEIGHT_VH / 100);
-    // Target: top of chapter's sticky zone (the content is sticky top:0 h-screen,
-    // so landing at the chapter's own top puts the panel centered on screen)
-    const target = sectionTop + clamped * chapterHeight;
-    setActiveChapter(clamped);
-    isSnappingRef.current = true;
-    window.scrollTo({ top: target, behavior: 'smooth' });
-    // Release snap-lock after animation finishes (~700 ms)
-    setTimeout(() => { isSnappingRef.current = false; }, 750);
-  };
-
-  // Update active chapter on passive scroll (for when user scrolls past the section normally)
-  useEffect(() => {
-    const handleScroll = () => {
-      if (isSnappingRef.current || !sectionRef.current) return;
-      const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
-      const scrolled = window.scrollY - sectionTop;
-      const chapterHeight = window.innerHeight * (CHAPTER_HEIGHT_VH / 100);
-      const idx = Math.min(Math.max(Math.floor(scrolled / chapterHeight), 0), chapters.length - 1);
-      setActiveChapter(idx);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Wheel / touch intercept — snap to next/prev chapter
-  useEffect(() => {
-    let touchStartY = 0;
-
-    const isInsideSection = () => {
-      if (!sectionRef.current) return false;
-      const rect = sectionRef.current.getBoundingClientRect();
-      return rect.top < window.innerHeight && rect.bottom > 0;
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-      if (!isInsideSection() || isSnappingRef.current) return;
-      e.preventDefault();
-      const dir = e.deltaY > 0 ? 1 : -1;
-      const next = activeChapterRef.current + dir;
-      if (next < 0) {
-        // Let browser scroll out of section naturally — snap to section entry point
-        snapToChapter(0);
-      } else if (next >= chapters.length) {
-        // Let browser scroll out of section — just release
-        isSnappingRef.current = false;
-      } else {
-        snapToChapter(next);
-      }
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!isInsideSection() || isSnappingRef.current) return;
-      const dy = touchStartY - e.changedTouches[0].clientY;
-      if (Math.abs(dy) < 30) return; // ignore tiny swipes
-      const dir = dy > 0 ? 1 : -1;
-      const next = activeChapterRef.current + dir;
-      if (next >= 0 && next < chapters.length) {
-        e.preventDefault();
-        snapToChapter(next);
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, []);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const swiperRef = useRef<SwiperType | null>(null);
 
   return (
-    <section ref={sectionRef} className="relative bg-surface-black">
-      {/* Progress dots — right side */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
+    <div className="relative" style={{ height: '100vh' }}>
+      {/* Progress dots */}
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
         {chapters.map((ch, i) => (
           <div
             key={i}
             className="w-2 h-2 rounded-full transition-all duration-500"
             style={{
-              backgroundColor: i === activeChapter ? ch.accent : 'rgba(255,255,255,0.2)',
-              transform: i === activeChapter ? 'scale(1.5)' : 'scale(1)',
-              boxShadow: i === activeChapter ? `0 0 8px ${ch.accent}` : 'none',
+              backgroundColor: i === activeIndex ? ch.accent : 'rgba(255,255,255,0.2)',
+              transform: i === activeIndex ? 'scale(1.5)' : 'scale(1)',
+              boxShadow: i === activeIndex ? `0 0 8px ${ch.accent}` : 'none',
             }}
           />
         ))}
       </div>
 
-      {chapters.map((chapter, i) => (
-        <StoryChapter key={i} chapter={chapter} index={i} active={i === activeChapter} />
-      ))}
-    </section>
+      <Swiper
+        modules={[Mousewheel, Keyboard]}
+        direction="vertical"
+        mousewheel={{ sensitivity: 1, thresholdDelta: 30 }}
+        keyboard={{ enabled: true }}
+        speed={700}
+        style={{ height: '100%', width: '100%' }}
+        onSwiper={(swiper) => { swiperRef.current = swiper; }}
+        onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+      >
+        {chapters.map((chapter, i) => (
+          <SwiperSlide key={i} style={{ height: '100vh' }}>
+            <SlideContent chapter={chapter} active={i === activeIndex} />
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    </div>
   );
 };
 

@@ -42,7 +42,8 @@
     "recharts": "^2.15.3",
     "rehype-raw": "^7.0.0",
     "rehype-sanitize": "^6.0.0",
-    "svg.js": "^2.7.1"
+    "svg.js": "^2.7.1",
+    "swiper": "^12.1.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
