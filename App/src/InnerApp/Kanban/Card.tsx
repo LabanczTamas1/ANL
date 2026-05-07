@@ -42,6 +42,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [editingFieldIdx, setEditingFieldIdx] = useState<number | null>(null);
   const [fieldEditValue, setFieldEditValue] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editedCardName, setEditedCardName] = useState('');
   const [editedFields, setEditedFields] = useState<Array<{ name: string; type: string; value: string }>>([]);
   const [newEditFieldName, setNewEditFieldName] = useState('');
   const [newEditFieldType, setNewEditFieldType] = useState<'text' | 'link'>('text');
@@ -148,6 +149,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   };
 
   const handleEnterEditMode = () => {
+    setEditedCardName((cardData as any).Name || cardData.name || '');
     setEditedFields(parsedFields.map((f) => ({ ...f })));
     setNewEditFieldName('');
     setNewEditFieldType('text');
@@ -170,8 +172,16 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
 
   const handleSaveEditMode = async () => {
     try {
-      await updateCard(card.id, { name: 'Fields', updatedValue: editedFields });
-      setCardData((prev: any) => ({ ...prev, Fields: JSON.stringify(editedFields) }));
+      const trimmedName = editedCardName.trim();
+      await Promise.all([
+        updateCard(card.id, { name: 'Fields', updatedValue: editedFields }),
+        ...(trimmedName ? [updateCard(card.id, { name: 'Name', updatedValue: trimmedName })] : []),
+      ]);
+      setCardData((prev: any) => ({
+        ...prev,
+        Fields: JSON.stringify(editedFields),
+        ...(trimmedName ? { Name: trimmedName } : {}),
+      }));
       setIsEditMode(false);
       activityRef.current?.addLocal('updated', 'Edited card fields');
     } catch (error) {
@@ -269,6 +279,18 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             isEditMode ? (
               /* ── Bulk edit mode ──────────────────────────────────────── */
               <div className="space-y-4">
+                {/* Card name */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Card Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editedCardName}
+                    onChange={(e) => setEditedCardName(e.target.value)}
+                    className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
                 {editedFields.map((field, idx) => (
                   <div key={idx} className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
