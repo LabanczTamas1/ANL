@@ -8,7 +8,6 @@ interface Chapter {
   headline: string;
   body: string;
   accent: string;
-  accentColor: string;
   icon: React.ReactNode;
   align: 'left' | 'right';
 }
@@ -20,7 +19,6 @@ const chapters: Chapter[] = [
     headline: 'The industry was broken.\nWe fixed it.',
     body: 'Most agencies charged premium retainers for smoke-and-mirrors reporting. Clients got dashboards full of vanity metrics — impressions, reach, "brand awareness" — but no real revenue. We built ANL to be the agency we always wished existed: radically transparent, obsessively ROI-focused, and built on partnerships rather than invoices.',
     accent: '#65558F',
-    accentColor: 'rgba(101,85,143,0.7)',
     icon: <FaBullseye className="w-8 h-8" />,
     align: 'left',
   },
@@ -28,9 +26,8 @@ const chapters: Chapter[] = [
     chapterLabel: 'Chapter III — The Mission',
     eyebrow: 'What Drives Us',
     headline: 'Every number\nhas a face behind it.',
-    body: 'A conversion isn\'t a pixel event. It\'s a business owner who can finally hire their first employee. A lead isn\'t a row in a CRM. It\'s a family that found the service they were searching for. We run campaigns that way — with human stakes on the line, not just KPIs on a slide deck.',
+    body: "A conversion isn't a pixel event. It's a business owner who can finally hire their first employee. A lead isn't a row in a CRM. It's a family that found the service they were searching for. We run campaigns that way — with human stakes on the line, not just KPIs on a slide deck.",
     accent: '#7AA49F',
-    accentColor: 'rgba(122,164,159,0.7)',
     icon: <FaHandshake className="w-8 h-8" />,
     align: 'right',
   },
@@ -38,150 +35,126 @@ const chapters: Chapter[] = [
     chapterLabel: 'Chapter IV — The Craft',
     eyebrow: 'How We Work',
     headline: 'Strategy first.\nExecution always.',
-    body: 'We don\'t run ads. We build growth systems. Every campaign starts with a deep market analysis, moves into a precision-targeted strategy, and is executed with continuous A/B testing and real-time optimization. We kill what doesn\'t work fast, and scale what does without mercy.',
+    body: "We don't run ads. We build growth systems. Every campaign starts with a deep market analysis, moves into a precision-targeted strategy, and is executed with continuous A/B testing and real-time optimization. We kill what doesn't work fast, and scale what does without mercy.",
     accent: '#9B7ADB',
-    accentColor: 'rgba(155,122,219,0.7)',
     icon: <FaRocket className="w-8 h-8" />,
     align: 'left',
   },
 ];
 
-const SlideContent: React.FC<{ chapter: Chapter; active: boolean }> = ({ chapter, active }) => {
+/* ── Single chapter row ──────────────────────────────────────── */
+const ChapterRow: React.FC<{ chapter: Chapter; index: number }> = ({ chapter, index }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
   const isRight = chapter.align === 'right';
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.25 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="relative h-full w-full flex items-center overflow-hidden bg-surface-black">
-      {/* Accent glow */}
-      <div
-        className="absolute inset-0 transition-opacity duration-700 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse at ${isRight ? '75%' : '25%'} 50%, ${chapter.accent}25 0%, transparent 65%)`,
-          opacity: active ? 1 : 0,
-        }}
-      />
-      {/* Side accent line */}
-      <div
-        className={`absolute ${isRight ? 'right-6 md:right-16' : 'left-6 md:left-16'} top-1/4 w-px transition-all duration-[900ms]`}
-        style={{
-          height: active ? '50%' : '0%',
-          background: `linear-gradient(to bottom, transparent, ${chapter.accent}, transparent)`,
-        }}
-      />
+    <div
+      ref={ref}
+      className="relative flex flex-col md:flex-row items-center gap-10 md:gap-20 py-24 px-6 md:px-0"
+      style={{ flexDirection: isRight ? undefined : undefined }}
+    >
+      {/* Connecting line to next chapter (not on last) */}
+      {index < chapters.length - 1 && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-0 w-px"
+          style={{
+            height: '100%',
+            background: `linear-gradient(to bottom, ${chapter.accent}40, transparent)`,
+            top: '50%',
+          }}
+        />
+      )}
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-24">
-        <div className={`flex flex-col ${isRight ? 'md:flex-row-reverse' : 'md:flex-row'} gap-12 md:gap-20 items-center`}>
-          {/* Icon */}
+      {/* Icon side */}
+      <div
+        className={`flex-shrink-0 order-1 ${isRight ? 'md:order-2' : 'md:order-1'} transition-all duration-700`}
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible
+            ? 'translateX(0) scale(1)'
+            : isRight
+              ? 'translateX(60px) scale(0.85)'
+              : 'translateX(-60px) scale(0.85)',
+          transitionDelay: '100ms',
+        }}
+      >
+        <div className="relative">
           <div
-            className={`flex-shrink-0 transition-all duration-700 delay-100 ${
-              active ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-8'
-            }`}
+            className="absolute inset-0 rounded-[40%] blur-[60px] opacity-50"
+            style={{ backgroundColor: chapter.accent }}
+          />
+          <div
+            className="relative w-32 h-32 md:w-48 md:h-48 rounded-[35%] flex items-center justify-center border-2"
+            style={{
+              borderColor: `${chapter.accent}55`,
+              backgroundColor: `${chapter.accent}10`,
+              color: chapter.accent,
+            }}
           >
-            <div className="relative">
-              <div className="absolute inset-0 rounded-[40%] blur-[50px] opacity-60" style={{ backgroundColor: chapter.accent }} />
-              <div
-                className="relative w-28 h-28 md:w-44 md:h-44 rounded-[35%] flex items-center justify-center border"
-                style={{ borderColor: `${chapter.accent}55`, backgroundColor: `${chapter.accent}12`, color: chapter.accent }}
-              >
-                {chapter.icon}
-              </div>
-            </div>
-          </div>
-
-          {/* Text */}
-          <div className="flex-1">
-            <div className={`flex items-center gap-3 mb-5 transition-all duration-500 ${active ? 'opacity-100 translate-x-0' : isRight ? 'opacity-0 translate-x-10' : 'opacity-0 -translate-x-10'}`}>
-              <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
-              <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: chapter.accent }}>{chapter.chapterLabel}</span>
-            </div>
-            <p className={`text-content-muted text-sm uppercase tracking-widest mb-3 transition-all duration-500 delay-75 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-              {chapter.eyebrow}
-            </p>
-            <h2 className={`text-4xl md:text-6xl font-extrabold text-white leading-[1.08] mb-6 transition-all duration-600 delay-100 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {chapter.headline.split('\n').map((line, i, arr) => (
-                <React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>
-              ))}
-            </h2>
-            <p className={`text-content-muted text-base md:text-lg leading-relaxed max-w-lg transition-all duration-600 delay-150 ${active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {chapter.body}
-            </p>
+            <span className="text-5xl md:text-6xl">{chapter.icon}</span>
           </div>
         </div>
+      </div>
+
+      {/* Text side */}
+      <div
+        className={`flex-1 order-2 ${isRight ? 'md:order-1 md:text-right' : 'md:order-2'} transition-all duration-700`}
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible
+            ? 'translateY(0)'
+            : 'translateY(40px)',
+          transitionDelay: '200ms',
+        }}
+      >
+        <div className={`flex items-center gap-3 mb-4 ${isRight ? 'md:flex-row-reverse' : ''}`}>
+          <div className="w-6 h-px" style={{ backgroundColor: chapter.accent }} />
+          <span className="text-xs font-bold tracking-[0.28em] uppercase" style={{ color: chapter.accent }}>
+            {chapter.chapterLabel}
+          </span>
+        </div>
+        <p className="text-content-muted text-sm uppercase tracking-widest mb-3">{chapter.eyebrow}</p>
+        <h2 className="text-4xl md:text-6xl font-extrabold text-white leading-[1.08] mb-6">
+          {chapter.headline.split('\n').map((line, i, arr) => (
+            <React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>
+          ))}
+        </h2>
+        <p className="text-content-muted text-base md:text-lg leading-relaxed max-w-lg" style={{ marginLeft: isRight ? 'auto' : undefined }}>
+          {chapter.body}
+        </p>
       </div>
     </div>
   );
 };
 
 const AboutStoryChapters: React.FC = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let rafId: number;
-
-    const update = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      // How many pixels we've scrolled into the container from its top
-      const scrolledInto = -rect.top;
-      const vh = window.innerHeight;
-
-      // Each chapter occupies exactly 100vh of scroll space.
-      // Transition fires at the 50% mark of each zone (Math.round).
-      const raw = scrolledInto / vh;
-      const idx = Math.min(Math.max(Math.round(raw), 0), chapters.length - 1);
-      setActiveIndex(idx);
-    };
-
-    const onScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(update);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    update();
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(rafId);
-    };
-  }, []);
-
   return (
-    // Outer container creates the scroll space: N chapters × 100vh each
-    <div ref={containerRef} style={{ height: `${chapters.length * 100}vh` }}>
-      {/* Sticky viewport — stays fixed in screen while user scrolls through the container */}
-      <div className="sticky top-0 overflow-hidden" style={{ height: '100vh' }}>
-
-        {/* Progress dots */}
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
-          {chapters.map((ch, i) => (
-            <div
-              key={i}
-              className="w-2 h-2 rounded-full transition-all duration-500"
-              style={{
-                backgroundColor: i === activeIndex ? ch.accent : 'rgba(255,255,255,0.2)',
-                transform: i === activeIndex ? 'scale(1.5)' : 'scale(1)',
-                boxShadow: i === activeIndex ? `0 0 8px ${ch.accent}` : 'none',
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Slides rail — snaps to activeIndex with smooth CSS transition */}
-        <div
-          style={{
-            height: `${chapters.length * 100}vh`,
-            transform: `translateY(${-activeIndex * 100}vh)`,
-            transition: 'transform 0.75s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        >
-          {chapters.map((chapter, i) => (
-            <div key={i} style={{ height: '100vh' }}>
-              <SlideContent chapter={chapter} active={i === activeIndex} />
-            </div>
-          ))}
-        </div>
-
+    <section className="relative bg-surface-black overflow-hidden py-12">
+      {/* Background ambient glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/10 rounded-full blur-[140px]" />
+        <div className="absolute top-3/4 left-1/2 w-96 h-96 bg-accent-purple/10 rounded-full blur-[140px]" />
       </div>
-    </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto">
+        {chapters.map((chapter, i) => (
+          <ChapterRow key={i} chapter={chapter} index={i} />
+        ))}
+      </div>
+    </section>
   );
 };
 
