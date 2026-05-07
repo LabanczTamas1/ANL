@@ -54,7 +54,7 @@ const StoryChapter: React.FC<{ chapter: Chapter; index: number; active: boolean 
 
   return (
     /* Tall scroll-range wrapper — content stays sticky while scrolling through this height */
-    <div className="relative" style={{ height: '220vh' }}>
+    <div className="relative" style={{ height: `${CHAPTER_HEIGHT_VH}vh` }}>
       {/* Sticky content panel — centered vertically in the viewport */}
       <div
         className="sticky top-0 h-screen flex items-center overflow-hidden"
@@ -154,27 +154,98 @@ const StoryChapter: React.FC<{ chapter: Chapter; index: number; active: boolean 
   );
 };
 
+const CHAPTER_HEIGHT_VH = 220;
+
 const AboutStoryChapters: React.FC = () => {
   const [activeChapter, setActiveChapter] = useState(0);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const isSnappingRef = useRef(false);
+  const activeChapterRef = useRef(0);
 
+  // Keep ref in sync so wheel handler always sees current value
+  useEffect(() => { activeChapterRef.current = activeChapter; }, [activeChapter]);
+
+  /** Scroll exactly to the center-viewport position of chapter `idx` */
+  const snapToChapter = (idx: number) => {
+    if (!sectionRef.current) return;
+    const clamped = Math.min(Math.max(idx, 0), chapters.length - 1);
+    const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
+    const chapterHeight = window.innerHeight * (CHAPTER_HEIGHT_VH / 100);
+    // Target: top of chapter's sticky zone (the content is sticky top:0 h-screen,
+    // so landing at the chapter's own top puts the panel centered on screen)
+    const target = sectionTop + clamped * chapterHeight;
+    setActiveChapter(clamped);
+    isSnappingRef.current = true;
+    window.scrollTo({ top: target, behavior: 'smooth' });
+    // Release snap-lock after animation finishes (~700 ms)
+    setTimeout(() => { isSnappingRef.current = false; }, 750);
+  };
+
+  // Update active chapter on passive scroll (for when user scrolls past the section normally)
   useEffect(() => {
     const handleScroll = () => {
-      if (!sectionRef.current) return;
+      if (isSnappingRef.current || !sectionRef.current) return;
       const sectionTop = sectionRef.current.getBoundingClientRect().top + window.scrollY;
       const scrolled = window.scrollY - sectionTop;
-      // Each chapter occupies 220vh
-      const chapterHeight = window.innerHeight * 2.2;
-      const idx = Math.min(
-        Math.max(Math.floor(scrolled / chapterHeight), 0),
-        chapters.length - 1
-      );
+      const chapterHeight = window.innerHeight * (CHAPTER_HEIGHT_VH / 100);
+      const idx = Math.min(Math.max(Math.floor(scrolled / chapterHeight), 0), chapters.length - 1);
       setActiveChapter(idx);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Wheel / touch intercept — snap to next/prev chapter
+  useEffect(() => {
+    let touchStartY = 0;
+
+    const isInsideSection = () => {
+      if (!sectionRef.current) return false;
+      const rect = sectionRef.current.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!isInsideSection() || isSnappingRef.current) return;
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const next = activeChapterRef.current + dir;
+      if (next < 0) {
+        // Let browser scroll out of section naturally — snap to section entry point
+        snapToChapter(0);
+      } else if (next >= chapters.length) {
+        // Let browser scroll out of section — just release
+        isSnappingRef.current = false;
+      } else {
+        snapToChapter(next);
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isInsideSection() || isSnappingRef.current) return;
+      const dy = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 30) return; // ignore tiny swipes
+      const dir = dy > 0 ? 1 : -1;
+      const next = activeChapterRef.current + dir;
+      if (next >= 0 && next < chapters.length) {
+        e.preventDefault();
+        snapToChapter(next);
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
   }, []);
 
   return (
