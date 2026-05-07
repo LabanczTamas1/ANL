@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import GlowCard from './GlowCard';
 import { FaLightbulb, FaHandshake, FaBullseye, FaShieldAlt, FaRocket, FaUsers } from 'react-icons/fa';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Mousewheel, Keyboard } from 'swiper/modules';
-import type { Swiper as SwiperType } from 'swiper';
-import 'swiper/css';
 
 interface Chapter {
   chapterLabel: string;
@@ -116,41 +112,75 @@ const SlideContent: React.FC<{ chapter: Chapter; active: boolean }> = ({ chapter
 
 const AboutStoryChapters: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const swiperRef = useRef<SwiperType | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let rafId: number;
+
+    const update = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      // How many pixels we've scrolled into the container from its top
+      const scrolledInto = -rect.top;
+      const vh = window.innerHeight;
+
+      // Each chapter occupies exactly 100vh of scroll space.
+      // Transition fires at the 50% mark of each zone (Math.round).
+      const raw = scrolledInto / vh;
+      const idx = Math.min(Math.max(Math.round(raw), 0), chapters.length - 1);
+      setActiveIndex(idx);
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   return (
-    <div className="relative" style={{ height: '100vh' }}>
-      {/* Progress dots */}
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
-        {chapters.map((ch, i) => (
-          <div
-            key={i}
-            className="w-2 h-2 rounded-full transition-all duration-500"
-            style={{
-              backgroundColor: i === activeIndex ? ch.accent : 'rgba(255,255,255,0.2)',
-              transform: i === activeIndex ? 'scale(1.5)' : 'scale(1)',
-              boxShadow: i === activeIndex ? `0 0 8px ${ch.accent}` : 'none',
-            }}
-          />
-        ))}
-      </div>
+    // Outer container creates the scroll space: N chapters × 100vh each
+    <div ref={containerRef} style={{ height: `${chapters.length * 100}vh` }}>
+      {/* Sticky viewport — stays fixed in screen while user scrolls through the container */}
+      <div className="sticky top-0 overflow-hidden" style={{ height: '100vh' }}>
 
-      <Swiper
-        modules={[Mousewheel, Keyboard]}
-        direction="vertical"
-        mousewheel={{ sensitivity: 1, thresholdDelta: 50, thresholdTime: 300, releaseOnEdges: true }}
-        keyboard={{ enabled: true }}
-        speed={700}
-        style={{ height: '100%', width: '100%' }}
-        onSwiper={(swiper) => { swiperRef.current = swiper; }}
-        onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-      >
-        {chapters.map((chapter, i) => (
-          <SwiperSlide key={i} style={{ height: '100vh' }}>
-            <SlideContent chapter={chapter} active={i === activeIndex} />
-          </SwiperSlide>
-        ))}
-      </Swiper>
+        {/* Progress dots */}
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 pointer-events-none">
+          {chapters.map((ch, i) => (
+            <div
+              key={i}
+              className="w-2 h-2 rounded-full transition-all duration-500"
+              style={{
+                backgroundColor: i === activeIndex ? ch.accent : 'rgba(255,255,255,0.2)',
+                transform: i === activeIndex ? 'scale(1.5)' : 'scale(1)',
+                boxShadow: i === activeIndex ? `0 0 8px ${ch.accent}` : 'none',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Slides rail — snaps to activeIndex with smooth CSS transition */}
+        <div
+          style={{
+            height: `${chapters.length * 100}vh`,
+            transform: `translateY(${-activeIndex * 100}vh)`,
+            transition: 'transform 0.75s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          {chapters.map((chapter, i) => (
+            <div key={i} style={{ height: '100vh' }}>
+              <SlideContent chapter={chapter} active={i === activeIndex} />
+            </div>
+          ))}
+        </div>
+
+      </div>
     </div>
   );
 };
