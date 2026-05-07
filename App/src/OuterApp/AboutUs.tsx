@@ -8,6 +8,7 @@ import ModernFoundersSection from "./components/ModernFoundersSection";
 import AnimatedStats from "./components/AnimatedStats";
 import TestimonialSection from "./components/TestimonialSection";
 import GradientDivider from "./components/GradientDivider";
+import MountainParallax from "./components/MountainParallax";
 import CTASection from "./components/CTASection";
 import FloatingParticles from "./components/FloatingParticles";
 import { FaUsers, FaChartLine, FaStar, FaGlobe } from "react-icons/fa";
@@ -68,6 +69,9 @@ const About = () => {
       <AboutStoryChapters />
 
       <GradientDivider style="wave" />
+
+      {/* Mountain parallax — visual breather before values */}
+      <MountainParallax />
 
       {/* Values grid */}
       <AboutValues />
