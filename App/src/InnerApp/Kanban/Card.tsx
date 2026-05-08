@@ -398,7 +398,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                         type={field.type === "link" ? "url" : "text"}
                         value={editingFieldIdx === idx ? fieldEditValue : field.value}
                         onChange={(e) => setFieldEditValue(e.target.value)}
-                        onClick={() => { setEditingFieldIdx(idx); setFieldEditValue(field.value); }}
+                        onClick={() => { if (editingFieldIdx !== idx) { setEditingFieldIdx(idx); setFieldEditValue(field.value); } }}
                         className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
                       />
                       {field.type === "link" && editingFieldIdx !== idx && field.value && (
