@@ -47,6 +47,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [newEditFieldName, setNewEditFieldName] = useState('');
   const [newEditFieldType, setNewEditFieldType] = useState<'text' | 'link'>('text');
   const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
+  const editModeOriginalRef = useRef<{ name: string; fields: string } | null>(null);
 
   // Parse dynamic fields for template-based cards
   let parsedFields: Array<{ name: string; type: string; value: string }> = [];
@@ -80,7 +81,16 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => {
     if (isEditMode) {
-      setIsDiscardConfirmOpen(true);
+      const orig = editModeOriginalRef.current;
+      const isDirty = orig
+        ? orig.name !== editedCardName || orig.fields !== JSON.stringify(editedFields)
+        : true;
+      if (isDirty) {
+        setIsDiscardConfirmOpen(true);
+        return;
+      }
+      setIsEditMode(false);
+      setIsModalOpen(false);
     } else {
       setIsModalOpen(false);
     }
@@ -161,8 +171,11 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   };
 
   const handleEnterEditMode = () => {
-    setEditedCardName((cardData as any).Name || cardData.name || '');
-    setEditedFields(parsedFields.map((f) => ({ ...f })));
+    const name = (cardData as any).Name || cardData.name || '';
+    const fields = parsedFields.map((f) => ({ ...f }));
+    editModeOriginalRef.current = { name, fields: JSON.stringify(fields) };
+    setEditedCardName(name);
+    setEditedFields(fields);
     setNewEditFieldName('');
     setNewEditFieldType('text');
     setIsEditMode(true);
