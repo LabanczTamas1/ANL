@@ -268,7 +268,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       onClick={() => setIsDiscardConfirmOpen(false)}
     >
       <div
-        className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[30vw] max-w-md"
+        className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[min(90vw,480px)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold mb-4 text-center dark:text-white">Discard Changes?</h2>
