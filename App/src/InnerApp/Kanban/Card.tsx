@@ -46,6 +46,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   const [editedFields, setEditedFields] = useState<Array<{ name: string; type: string; value: string }>>([]);
   const [newEditFieldName, setNewEditFieldName] = useState('');
   const [newEditFieldType, setNewEditFieldType] = useState<'text' | 'link'>('text');
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   // Parse dynamic fields for template-based cards
   let parsedFields: Array<{ name: string; type: string; value: string }> = [];
@@ -77,7 +78,18 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   }, {} as Record<string, unknown>);
 
   const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseModal = () => {
+    if (isEditMode) {
+      setIsDiscardConfirmOpen(true);
+    } else {
+      setIsModalOpen(false);
+    }
+  };
+  const handleConfirmDiscard = () => {
+    setIsDiscardConfirmOpen(false);
+    setIsEditMode(false);
+    setIsModalOpen(false);
+  };
 
   const handleOpenDeleteModal = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -250,6 +262,35 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
     </div>
   );
 
+  const discardConfirmContent = (
+    <div
+      className="fixed inset-0 bg-gray-800 bg-opacity-70 flex items-center justify-center z-[70] overflow-auto"
+      onClick={() => setIsDiscardConfirmOpen(false)}
+    >
+      <div
+        className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[30vw] max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">Discard Changes?</h2>
+        <p className="text-center mb-6 dark:text-gray-300">You have unsaved edits. Are you sure you want to discard them?</p>
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={handleConfirmDiscard}
+            className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 transition"
+          >
+            Discard
+          </button>
+          <button
+            onClick={() => setIsDiscardConfirmOpen(false)}
+            className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition"
+          >
+            Keep Editing
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const modalContent = (
     <div
       className="fixed inset-0 bg-gray-800 bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 overflow-auto p-4"
@@ -281,18 +322,19 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             isEditMode ? (
               /* ── Bulk edit mode ──────────────────────────────────────── */
               <div className="space-y-4">
-                {/* Card name */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {/* Card name — visually separated */}
+                <div className="mb-2 p-3 rounded-lg bg-[#65558F]/10 dark:bg-[#65558F]/20 border border-[#65558F]/30">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[#65558F] dark:text-[#a594d4] mb-1.5">
                     Card Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={editedCardName}
                     onChange={(e) => setEditedCardName(e.target.value)}
-                    className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
+                    className="p-2 block w-full border border-[#65558F]/40 dark:border-[#65558F]/50 rounded-md hover:border-[#65558F]/70 focus:ring focus:ring-[#65558F]/30 dark:bg-gray-700 dark:text-white"
                   />
                 </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-3" />
                 {editedFields.map((field, idx) => (
                   <div key={idx} className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -618,6 +660,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
 
       {isModalOpen && ReactDOM.createPortal(modalContent, document.body)}
       {isDeleteModalOpen && ReactDOM.createPortal(deleteModalContent, document.body)}
+      {isDiscardConfirmOpen && ReactDOM.createPortal(discardConfirmContent, document.body)}
     </>
   );
 };
