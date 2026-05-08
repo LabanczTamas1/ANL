@@ -1,9 +1,12 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import ProgressBar from "./ProgressBar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 const Layout = () => {
+  const location = useLocation();
+  const isBookingPage = location.pathname.startsWith('/home/booking');
+
   return (
     <div className="flex flex-row h-screen bg-white dark:bg-[#121212] overflow-hidden overflow-hidden">
       {/* Sidebar */}
@@ -21,7 +24,7 @@ const Layout = () => {
         </div>
 
         {/* Content Section */}
-        <div className="text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 min-w-0 w-full overflow-y-auto p-2">
+        <div className={`text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 min-w-0 w-full overflow-y-auto${isBookingPage ? '' : ' p-2'}`}>
           <Outlet />
         </div>
       </div>
