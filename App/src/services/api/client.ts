@@ -31,10 +31,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ error?: string; message?: string }>) => {
-    // If the server returned 401 the token is likely expired / invalid
+    // If the server returned 401 the token is expired / invalid — signal the app
     if (error.response?.status === 401) {
-      // You can hook into a global event or redirect to login here
-      console.warn('[api] Received 401 — token may be expired');
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
 
     return Promise.reject(error);
