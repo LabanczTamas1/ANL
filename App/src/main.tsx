@@ -3,11 +3,28 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import posthog from "posthog-js";
 import { PostHogErrorBoundary, PostHogProvider } from "@posthog/react";
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from "web-vitals";
 
 posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
   defaults: "2026-01-30",
 });
+
+function reportWebVital({ name, delta, value, id, rating }: { name: string; delta: number; value: number; id: string; rating: string }) {
+  posthog.capture("web_vitals", {
+    metric_name: name,
+    metric_value: value,
+    metric_delta: delta,
+    metric_id: id,
+    metric_rating: rating,
+  });
+}
+
+onCLS(reportWebVital);
+onFCP(reportWebVital);
+onLCP(reportWebVital);
+onTTFB(reportWebVital);
+onINP(reportWebVital);
 import {
   createBrowserRouter,
   RouterProvider,
