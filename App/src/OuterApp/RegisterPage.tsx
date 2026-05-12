@@ -6,6 +6,7 @@ import FormInput from "./components/FormInput";
 import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
 import Navbar from "./Navbar";
+import { usePostHog } from "@posthog/react";
 
 interface RegisterFormInputs {
   firstName: string;
@@ -20,6 +21,7 @@ interface RegisterFormInputs {
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+  const posthog = usePostHog();
 
   const {
     register,
@@ -59,6 +61,16 @@ const RegisterForm: React.FC = () => {
 
       if (res.status === 201) {
         localStorage.setItem("email", payload.email);
+        posthog.identify(payload.email, {
+          email: payload.email,
+          username: payload.username,
+          first_name: payload.firstName,
+          last_name: payload.lastName,
+        });
+        posthog.capture("user_signed_up", {
+          method: "email",
+          username: payload.username,
+        });
         setInfoMessage(
           "Registration successful — please check your inbox to verify your email."
         );
@@ -71,6 +83,7 @@ const RegisterForm: React.FC = () => {
       }
     } catch (err) {
       console.error("Registration error:", err);
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setGlobalError("Network or server error. Please try again later.");
     } finally {
       setLoading(false);
@@ -78,9 +91,11 @@ const RegisterForm: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
+    posthog.capture("user_signed_up_with_google");
     window.location.href = `${API_BASE_URL}/auth/oauth/google`;
   };
   const handleFacebookLogin = () => {
+    posthog.capture("user_signed_up_with_facebook");
     window.location.href = `${API_BASE_URL}/auth/oauth/facebook`;
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { usePostHog } from "@posthog/react";
 
 export interface EmailData {
   subject: string;
@@ -23,6 +24,7 @@ export const useSendMail = (
   API_BASE_URL: string,
   token: string | null
 ) => {
+  const posthog = usePostHog();
   const [emailData, setEmailData] = useState<EmailData>({
     subject: "",
     recipient: "",
@@ -163,12 +165,17 @@ export const useSendMail = (
         const data = await res.json();
         setError(data.error || "Failed to save email");
       } else {
+        posthog.capture("email_sent", {
+          recipient: submissionData.recipient,
+          subject: submissionData.subject,
+        });
         alert("Email saved successfully!");
         setEmailData({ subject: "", recipient: "", body: "", name: "" });
         setRecipientInput("");
       }
     } catch (err) {
       console.error(err);
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setError("An error occurred while saving the email");
     } finally {
       setIsSubmitting(false);

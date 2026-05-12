@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { usePostHog } from "@posthog/react";
 import {
   Calendar,
   Clock,
@@ -71,6 +72,7 @@ const BookingConfirmation: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const posthog = usePostHog();
 
   const [confetti] = useState<Particle[]>(() => generateConfetti());
   const [showBadge, setShowBadge] = useState(false);
@@ -168,6 +170,11 @@ const BookingConfirmation: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // ── Track confirmation page view ──────────────────────────────────────
+  useEffect(() => {
+    posthog.capture("booking_confirmation_viewed", { booking_token: token });
+  }, []);
 
   // ── Staggered reveal ──────────────────────────────────────────────────
   useEffect(() => {
