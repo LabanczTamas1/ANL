@@ -1,0 +1,72 @@
+[
+  {
+    "event": "user_signed_in",
+    "description": "User successfully logged in with email and password",
+    "file": "src/OuterApp/LoginPage.tsx"
+  },
+  {
+    "event": "user_signed_in_with_google",
+    "description": "User clicked the Continue with Google button on the login page",
+    "file": "src/OuterApp/LoginPage.tsx"
+  },
+  {
+    "event": "user_signed_in_with_facebook",
+    "description": "User clicked the Continue with Facebook button on the login page",
+    "file": "src/OuterApp/LoginPage.tsx"
+  },
+  {
+    "event": "user_signed_up",
+    "description": "User successfully registered a new account with email",
+    "file": "src/OuterApp/RegisterPage.tsx"
+  },
+  {
+    "event": "user_signed_up_with_google",
+    "description": "User clicked the Continue with Google button on the register page",
+    "file": "src/OuterApp/RegisterPage.tsx"
+  },
+  {
+    "event": "user_signed_up_with_facebook",
+    "description": "User clicked the Continue with Facebook button on the register page",
+    "file": "src/OuterApp/RegisterPage.tsx"
+  },
+  {
+    "event": "user_logged_out",
+    "description": "User logged out and was redirected to login",
+    "file": "src/hooks/useLogout.tsx"
+  },
+  {
+    "event": "contact_form_submitted",
+    "description": "Visitor successfully submitted the public contact form",
+    "file": "src/OuterApp/ContactForm.tsx"
+  },
+  {
+    "event": "email_sent",
+    "description": "User successfully sent an internal email via the mailing system",
+    "file": "src/hooks/useSendMail.tsx"
+  },
+  {
+    "event": "booking_confirmation_viewed",
+    "description": "User landed on the booking confirmation page after booking a meeting",
+    "file": "src/OuterApp/BookingConfirmation.tsx"
+  },
+  {
+    "event": "forgot_password_requested",
+    "description": "User submitted their email to receive a password reset code",
+    "file": "src/OuterApp/ForgotPasswordPage.tsx"
+  },
+  {
+    "event": "password_reset_completed",
+    "description": "User successfully reset their password using a reset code",
+    "file": "src/OuterApp/ForgotPasswordPage.tsx"
+  },
+  {
+    "event": "kanban_card_added",
+    "description": "User clicked Add Card to add a new card to a kanban column",
+    "file": "src/InnerApp/Kanban/Column.tsx"
+  },
+  {
+    "event": "kanban_column_deleted",
+    "description": "User confirmed deletion of a kanban column",
+    "file": "src/InnerApp/Kanban/Column.tsx"
+  }
+]

@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword, resetPassword } from "../services/api/authApi";
+import { usePostHog } from "@posthog/react";
 
 type Step = "email" | "reset";
 
@@ -26,6 +27,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
+  const posthog = usePostHog();
 
   const emailForm = useForm<EmailFormInputs>();
   const resetForm = useForm<ResetFormInputs>();
@@ -36,10 +38,12 @@ const ForgotPasswordPage: React.FC = () => {
     setMessage(null);
     try {
       await forgotPassword({ email: data.email.trim().toLowerCase() });
+      posthog.capture("forgot_password_requested");
       setEmail(data.email.trim().toLowerCase());
       setMessage("If that email exists, a reset code has been sent. Check your inbox.");
       setStep("reset");
     } catch (err: any) {
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setError(err?.response?.data?.error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -60,9 +64,11 @@ const ForgotPasswordPage: React.FC = () => {
         code: data.code.trim(),
         newPassword: data.newPassword,
       });
+      posthog.capture("password_reset_completed");
       setMessage("Password reset successfully! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setError(err?.response?.data?.error || "Reset failed. Please try again.");
     } finally {
       setLoading(false);

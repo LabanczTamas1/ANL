@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { FaPaperPlane } from "react-icons/fa";
+import { usePostHog } from "@posthog/react";
 
 const ContactForm: React.FC = () => {
+  const posthog = usePostHog();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -36,9 +38,11 @@ const ContactForm: React.FC = () => {
         throw new Error("Failed to send the message. Please try again later.");
       }
 
+      posthog.capture("contact_form_submitted");
       setSuccess(true);
       setFormData({ fullName: "", email: "", message: "" });
     } catch (err) {
+      posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setError(
         err instanceof Error ? err.message : "An unknown error occurred."
       );

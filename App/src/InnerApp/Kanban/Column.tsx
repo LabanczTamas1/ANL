@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import Card from "./Card";
+import { usePostHog } from "@posthog/react";
 
 interface ColumnProps {
   column: {
@@ -73,6 +74,7 @@ const Column: React.FC<ColumnProps> = ({
   onDeleteCard,
   index,
 }) => {
+  const posthog = usePostHog();
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPage, setInputPage] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -107,6 +109,7 @@ const Column: React.FC<ColumnProps> = ({
   };
 
   const handleConfirmDelete = () => {
+    posthog.capture("kanban_column_deleted", { column_name: column.name });
     onDeleteColumn(column.id);
     setIsDeleteModalOpen(false);
   };
@@ -200,7 +203,10 @@ const Column: React.FC<ColumnProps> = ({
 
             {/* Add Card Button */}
             <button
-              onClick={() => onAddCard(column.id)}
+              onClick={() => {
+                posthog.capture("kanban_card_added", { column_name: column.name });
+                onAddCard(column.id);
+              }}
               className="bg-[#65558F] text-white px-4 py-2 rounded mt-4 w-full hover:bg-blue-600"
             >
               Add Card

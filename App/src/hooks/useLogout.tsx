@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { usePostHog } from "@posthog/react";
 
 /**
  * A custom hook that provides a reusable logout function
@@ -7,8 +8,12 @@ import { useNavigate } from "react-router-dom";
  */
 export const useLogout = () => {
   const navigate = useNavigate();
+  const posthog = usePostHog();
 
   const logout = () => {
+    posthog.capture("user_logged_out");
+    posthog.reset();
+
     // Preserve darkMode
     const darkMode = localStorage.getItem("darkMode");
 

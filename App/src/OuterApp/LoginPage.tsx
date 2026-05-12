@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
+import { usePostHog } from "@posthog/react";
 
 const googleLogo = "/GoogleLogo.svg";
 const FacebookLogo = "/FacebookLogo.svg";
@@ -18,6 +19,7 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { t } = useLanguage();
+  const posthog = usePostHog();
 
   const {
     register,
@@ -67,6 +69,17 @@ const LoginPage: React.FC = () => {
           `${responseData.user?.role || "user"}`
         );
 
+        const userId = responseData.userId || responseData.user?.id;
+        const username = responseData.user?.username || data.email.split("@")[0];
+        posthog.identify(userId || username, {
+          email: responseData.user?.email || data.email,
+          username,
+        });
+        posthog.capture("user_signed_in", {
+          method: "email",
+          user_id: userId,
+        });
+
         if (responseData.user?.verified !== "true") {
           alert(t("loginSuccessful"));
           navigate("/check-email");
@@ -76,20 +89,25 @@ const LoginPage: React.FC = () => {
         }
       } else {
         const errorData = await response.json();
+        posthog.capture("$exception", { message: `Login failed: ${errorData.error}` });
         alert(`${t("loginFailed")} ${errorData.error}`);
       }
     } catch (error) {
       console.error("Error during login:", error);
+      posthog.captureException(error instanceof Error ? error : new Error(String(error)));
       alert(`An error occurred. Please try again later.\n${error}`);
     }
   };
 
   const handleGoogleLogin = () => {
+    posthog.capture("user_signed_in_with_google");
     window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  const facebook = () =>
+  const facebook = () => {
+    posthog.capture("user_signed_in_with_facebook");
     window.open(`${API_BASE_URL}/auth/facebook`, "_self");
+  };
 
   return (
     <div className="relative min-h-screen bg-surface-overlay overflow-hidden">
