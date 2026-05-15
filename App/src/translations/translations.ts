@@ -133,6 +133,7 @@ export const translations: TranslationsType = {
     'notFound.title': '404 Not Found',
     'notFound.subtitle': 'Found an unexplored side of this page!',
     'notFound.goBack': 'Go back',
+    'notFound.goHome': 'Go to Home',
 
     meetWithTitle: "Meet with ANL",
     bookingDescription: "With booking here you can get a meeting with the team of ANL. Schedule your kickoff meeting time.",
@@ -311,6 +312,7 @@ export const translations: TranslationsType = {
     'notFound.title': '404 Nem Található',
     'notFound.subtitle': 'Az oldal felfedezetlen részére tévedtél!',
     'notFound.goBack': 'Vissza',
+    'notFound.goHome': 'Kezdőlap',
 
     meetWithTitle: "Találkozz az ANL-lel",
     bookingDescription: "A foglalással itt találkozót kaphatsz az ANL csapatával. Ütemezd be az indító megbeszélés időpontját.",
@@ -491,6 +493,7 @@ export const translations: TranslationsType = {
     'notFound.title': '404 Pagină Negăsită',
     'notFound.subtitle': 'Ai descoperit o parte neexplorată a acestei pagini!',
     'notFound.goBack': 'Înapoi',
+    'notFound.goHome': 'Pagina principală',
 
     meetWithTitle: "Întâlnire cu ANL",
     bookingDescription: "Cu rezervarea aici puteți obține o întâlnire cu echipa ANL. Programați-vă timpul pentru întâlnirea de kickoff.",
