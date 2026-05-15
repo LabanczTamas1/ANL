@@ -92,7 +92,7 @@ const RegisterForm: React.FC = () => {
 
   const handleGoogleLogin = () => {
     posthog.capture("user_signed_up_with_google");
-    window.location.href = `${API_BASE_URL}/auth/oauth/google`;
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
   const handleFacebookLogin = () => {
     posthog.capture("user_signed_up_with_facebook");
