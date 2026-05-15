@@ -1,12 +1,10 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import Sidebar from "./Sidebar";
 import ProgressBar from "./ProgressBar";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 const Layout = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const isBookingPage = location.pathname.startsWith('/home/booking');
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -37,7 +35,7 @@ const Layout = () => {
         </div>
 
         {/* Content Section */}
-        <div className={`text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 min-w-0 w-full overflow-y-auto${isBookingPage ? '' : ' p-2'}`}>
+        <div className="text-black dark:text-white dark:bg-[#121212] flex-1 min-h-0 min-w-0 w-full overflow-y-auto">
           <Outlet />
         </div>
       </div>
