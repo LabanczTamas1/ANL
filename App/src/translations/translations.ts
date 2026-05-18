@@ -513,7 +513,7 @@ export const translations: TranslationsType = {
   'legal.pp.s11.title': '11. Biztonság',
   'legal.pp.s11.info': 'Megfelelő technikai és szervezési intézkedéseket alkalmazunk, beleértve a HTTPS/TLS titkosítást (Caddy-n keresztül), hash-elt jelszavakat, JWT-alapú hitelesítést és hozzáférés-szabályozást.',
   'legal.pp.s12.title': '12. Az irányelvek módosítása',
-  'legal.pp.s12.info': "Rendszeresen frissíthetjük az Adatvédelmi irányelveket. A lényeges változásokról a "Hatályos" dátum frissítésével értesítjük Önt. A módosítások utáni folyamatos használat az elfogadásnak minősül.",
+  'legal.pp.s12.info': "Rendszeresen frissíthetjük az Adatvédelmi irányelveket. A lényeges változásokról a \"Hatályos\" dátum frissítésével értesítjük Önt. A módosítások utáni folyamatos használat az elfogadásnak minősül.",
   'legal.pp.s13.title': '13. Kapcsolat',
   'legal.pp.s13.info': 'E-mail: info@anladsandleads.com\nWeboldal: https://anladsandleads.com/contact',
 
@@ -541,7 +541,7 @@ export const translations: TranslationsType = {
   'legal.cp.s9.title': '9. Adatmegőrzés',
   'legal.cp.s9.info': 'Munkamenet-sütik: A böngésző bezárásakor törlődnek.\nÁllandó sütik (app-language, cookieConsent): Legfeljebb 1 évig.\nPostHog: Legfeljebb 12 hónap (események) / 3 hónap (felvételek).\nRészletekért lásd az Adatvédelmi irányelveket.',
   'legal.cp.s10.title': '10. A szabályzat frissítései',
-  'legal.cp.s10.info': "Frissíthetjük ezt a Süti szabályzatot. A lap tetején lévő "Hatályos" dátum a legutóbbi változatot tükrözi.",
+  'legal.cp.s10.info': "Frissíthetjük ezt a Süti szabályzatot. A lap tetején lévő \"Hatályos\" dátum a legutóbbi változatot tükrözi.",
   'legal.cp.s11.title': '11. Kapcsolat',
   'legal.cp.s11.info': 'E-mail: info@anladsandleads.com\nWeboldal: https://anladsandleads.com/contact',
 
@@ -572,7 +572,7 @@ export const translations: TranslationsType = {
   'legal.tc.s10.title': '10. A hozzáférés megszüntetése',
   'legal.tc.s10.info': 'Bármikor felfüggeszthetjük fiókját a Feltételek megsértése esetén. Fiókját az info@anladsandleads.com-ra küldött e-maillel törölheti.',
   'legal.tc.s11.title': '11. A Feltételek módosítása',
-  'legal.tc.s11.info': "Időről időre frissíthetjük ezeket a Feltételeket. A "Hatályos" dátum frissítésével értesítjük Önt. A folyamatos használat elfogadásnak minősül.",
+  'legal.tc.s11.info': "Időről időre frissíthetjük ezeket a Feltételeket. A \"Hatályos\" dátum frissítésével értesítjük Önt. A folyamatos használat elfogadásnak minősül.",
   'legal.tc.s12.title': '12. Alkalmazandó jog és viták',
   'legal.tc.s12.info': 'Ezeket a Feltételeket Magyarország jogszabályai szerint kell értelmezni. A vitákat a hatáskörrel rendelkező magyar bíróságok rendezik. Az EGT-fogyasztók megőrzik a lakóhelyük szerinti kötelező védelmet.',
   'legal.tc.s13.title': '13. Kapcsolattartási adatok',
