@@ -372,6 +372,8 @@ router.post("/login", async (req, res) => {
         name: userData.name,
         role: userData.role,
         verified: userData.verified,
+        cookie_consent: userData.cookie_consent || null,
+        analytics_consent: userData.analytics_consent || null,
       },
     });
   } catch (error) {
@@ -387,8 +389,34 @@ router.get("/token-login", authenticateJWT, (req, res) => {
       email: req.user.email,
       name: req.user.name,
       role: req.user.role,
+      cookie_consent: req.user.cookie_consent || null,
+      analytics_consent: req.user.analytics_consent || null,
     },
   });
+});
+
+// PATCH /consent — save the user's cookie/analytics consent choice to their profile
+router.patch("/consent", authenticateJWT, async (req, res) => {
+  try {
+    const redisClient = getRedisClient();
+    const { analytics } = req.body;
+
+    if (typeof analytics !== "boolean") {
+      return res.status(400).json({ error: "analytics field must be a boolean" });
+    }
+
+    await redisClient.hSet(`user:${req.user.id}`, {
+      cookie_consent: "true",
+      analytics_consent: analytics ? "true" : "false",
+      consent_updated_at: new Date().toISOString(),
+    });
+
+    console.log(`[AUTH] Consent saved for user ${req.user.id}: analytics=${analytics}`);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("[AUTH] Consent update error:", error);
+    res.status(500).json({ error: "Failed to save consent" });
+  }
 });
 
 module.exports = router;

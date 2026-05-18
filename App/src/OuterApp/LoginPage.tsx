@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { usePostHog } from "@posthog/react";
+import posthog from "posthog-js";
 
 const googleLogo = "/GoogleLogo.svg";
 const FacebookLogo = "/FacebookLogo.svg";
@@ -41,6 +42,23 @@ const LoginPage: React.FC = () => {
         const token = responseData.accessToken || responseData.token;
         localStorage.setItem("authToken", token);
         localStorage.setItem("userId", responseData.userId);
+
+        // Sync consent from backend — so the user doesn't see the banner again
+        // if they already made a decision from another device or a previous session.
+        const serverConsent = responseData.user?.cookie_consent;
+        if (serverConsent === "true") {
+          const analyticsAllowed = responseData.user?.analytics_consent === "true";
+          localStorage.setItem("cookieConsent", "true");
+          localStorage.setItem(
+            "cookiePreferences",
+            JSON.stringify({ essential: true, analytics: analyticsAllowed })
+          );
+          if (analyticsAllowed) {
+            posthog.opt_in_capturing();
+          } else {
+            posthog.opt_out_capturing();
+          }
+        }
         localStorage.setItem(
           "username",
           responseData.user?.username || data.email.split("@")[0]
