@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import posthog from 'posthog-js';
 import { useLanguage } from '../../hooks/useLanguage';
+import { updateConsent } from '../../services/api/authApi';
 
 interface CookiePreferences {
   essential: boolean;
@@ -29,6 +30,12 @@ const CookieConsentBanner = () => {
       posthog.opt_in_capturing();
     } else {
       posthog.opt_out_capturing();
+    }
+    // If the user is logged in, persist the choice to their profile on the backend
+    if (localStorage.getItem('authToken')) {
+      updateConsent(analyticsAllowed).catch(() => {
+        // Non-critical — localStorage is the source of truth for this session
+      });
     }
     setVisible(false);
   };

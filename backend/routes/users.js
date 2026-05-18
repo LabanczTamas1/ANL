@@ -21,6 +21,8 @@ router.get("/me", authenticateJWT, (req, res) => {
         firstName: userData.firstName || "",
         lastName: userData.lastName || "",
         role: userData.role || req.user.role || "user",
+        cookie_consent: userData.cookie_consent || null,
+        analytics_consent: userData.analytics_consent || null,
       });
     })
     .catch((err) => {

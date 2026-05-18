@@ -56,6 +56,10 @@ export const logout = () => apiClient.post('/user/auth/logout');
 /** GET /api/v1/user/auth/check */
 export const authCheck = () => apiClient.get('/user/auth/check');
 
+/** PATCH /api/v1/user/auth/consent — persist consent choice to the user's profile */
+export const updateConsent = (analytics: boolean) =>
+  apiClient.patch('/user/auth/consent', { analytics });
+
 /**
  * OAuth redirect URLs (not Axios calls — browser redirect).
  * Use `window.location.href = authApi.googleOAuthUrl()` to initiate.

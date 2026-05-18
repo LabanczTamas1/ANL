@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import posthog from 'posthog-js';
 
 const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -88,6 +89,21 @@ const OAuthCallback: React.FC = () => {
       }
       if(userData.role === 'owner'){
         localStorage.setItem('superRole', 'owner');
+      }
+
+      // Sync consent from backend profile
+      if (userData.cookie_consent === 'true') {
+        const analyticsAllowed = userData.analytics_consent === 'true';
+        localStorage.setItem('cookieConsent', 'true');
+        localStorage.setItem(
+          'cookiePreferences',
+          JSON.stringify({ essential: true, analytics: analyticsAllowed })
+        );
+        if (analyticsAllowed) {
+          posthog.opt_in_capturing();
+        } else {
+          posthog.opt_out_capturing();
+        }
       }
 
       setLoading(false);
