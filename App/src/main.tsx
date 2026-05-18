@@ -8,7 +8,19 @@ import { onCLS, onFCP, onLCP, onTTFB, onINP } from "web-vitals";
 posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
   defaults: "2026-01-30",
+  opt_out_capturing_by_default: true,
 });
+
+// Re-enable capturing if the user already consented in a previous visit
+const existingConsent = localStorage.getItem('cookieConsent');
+const existingPrefs = localStorage.getItem('cookiePreferences');
+if (existingConsent === 'true') {
+  const prefs = existingPrefs ? JSON.parse(existingPrefs) : null;
+  // Opt in only if analytics was explicitly allowed (or old banner that stored 'true' with no prefs)
+  if (!prefs || prefs.analytics === true) {
+    posthog.opt_in_capturing();
+  }
+}
 
 function reportWebVital({ name, delta, value, id, rating }: { name: string; delta: number; value: number; id: string; rating: string }) {
   posthog.capture("web_vitals", {
