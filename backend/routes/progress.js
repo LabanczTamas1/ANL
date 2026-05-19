@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { getRedisClient } = require("../config/database");
 const authenticateJWT = require("../middleware/authenticateJWT");
+const { notifyProgressUpdated } = require("../utils/systemNotifications");
 
 router.patch("/changeUserProgress/:userId", authenticateJWT, async (req, res) => {
   try {
@@ -28,6 +29,13 @@ router.patch("/changeUserProgress/:userId", authenticateJWT, async (req, res) =>
     await redisClient.hSet(userKey, updateData);
 
     const updated = await redisClient.hGetAll(userKey);
+
+    await notifyProgressUpdated(
+      userId,
+      updated.firstName || updated.username || "there",
+      progressionStatus,
+      progressionCategory
+    );
 
     res.status(200).json({
       message: "User progress updated successfully",

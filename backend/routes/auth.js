@@ -8,6 +8,7 @@ const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
 const { getRedisClient } = require("../config/database");
 const authenticateJWT = require("../middleware/authenticateJWT");
+const { notifyWelcome } = require("../utils/systemNotifications");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-fallback-secret-key";
 
@@ -236,6 +237,9 @@ router.post("/verify-email", async (req, res) => {
     });
 
     await redisClient.del(`verify:email:${email}`);
+
+    const userData = await redisClient.hGetAll(`user:${userId}`);
+    await notifyWelcome(userId, userData.firstName || userData.username || "there");
 
     console.log(
       `[AUTH] Email verified for user: ${userId}, email: ${email}`
