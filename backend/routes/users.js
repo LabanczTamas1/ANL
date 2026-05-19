@@ -3,6 +3,7 @@ const router = express.Router();
 const { getRedisClient } = require("../config/database");
 const authenticateJWT = require("../middleware/authenticateJWT");
 const { authorizeRoles } = require("../helpers/authorizationHelpers");
+const { notifyProfileUpdated, notifyRoleChanged } = require("../utils/systemNotifications");
 
 router.get("/me", authenticateJWT, (req, res) => {
   const redisClient = getRedisClient();
@@ -72,6 +73,8 @@ router.patch("/updateUserRole/:userId", async (req, res) => {
 
     await redisClient.hSet(userKey, "role", role);
     console.log(`User role updated to ${role} for user ID: ${userId}`);
+
+    await notifyRoleChanged(userId, userData.firstName || userData.username || "there", role);
 
     res.status(200).json({
       message: `User role updated successfully to ${role}`,
@@ -200,6 +203,26 @@ router.put("/profile", authenticateJWT, async (req, res) => {
     await redisClient.hSet(userKey, updatedData);
 
     const updated = await redisClient.hGetAll(userKey);
+
+    // Build a human-readable list of what actually changed
+    const fieldLabels = {
+      firstName: "First name",
+      lastName: "Last name",
+      phoneNumber: "Phone number",
+      company: "Company",
+      profileImg: "Profile image",
+    };
+    const changedFields = Object.keys(updatedData)
+      .filter((k) => updatedData[k] !== userData[k])
+      .map((k) => fieldLabels[k] || k);
+
+    if (changedFields.length > 0) {
+      await notifyProfileUpdated(
+        req.user.id,
+        updated.firstName || updated.username || "there",
+        changedFields
+      );
+    }
 
     res.status(200).json({
       message: "Profile updated successfully",
