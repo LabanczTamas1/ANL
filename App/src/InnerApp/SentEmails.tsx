@@ -18,7 +18,7 @@ const SentEmails = () => {
         return;
       }
       try {
-        const response = await fetch(`${API_BASE_URL}/sentmails/${username}`, {
+        const response = await fetch(`${API_BASE_URL}/api/email/sentmails/${username}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

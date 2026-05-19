@@ -99,7 +99,7 @@ const Inbox = () => {
     const currentUsername = localStorage.getItem("name") || "testuser";
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/delete-emails`, {
+      const response = await fetch(`${API_BASE_URL}/api/email/delete-emails`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -128,7 +128,7 @@ const Inbox = () => {
   const handleDeleteSingle = async (emailId: string) => {
     const currentUsername = localStorage.getItem("name") || "testuser";
     try {
-      const response = await fetch(`${API_BASE_URL}/api/delete-emails`, {
+      const response = await fetch(`${API_BASE_URL}/api/email/delete-emails`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -167,7 +167,7 @@ const Inbox = () => {
       if (selectedEmails.includes(messageId)) return;
       const currentUsername = localStorage.getItem("name") || "testuser";
 
-      await fetch(`${API_BASE_URL}/api/mark-as-read`, {
+      await fetch(`${API_BASE_URL}/api/email/mark-as-read`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
