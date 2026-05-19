@@ -7,9 +7,34 @@ import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
 import { getRedisClient } from '../../../config/database.js';
 import { env } from '../../../config/env.js';
+import { JwtService } from '../../../utils/jwt.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 
 const logger = createLogger('email', 'controller');
+
+// ---------------------------------------------------------------------------
+// SSE — push unread-count updates to connected clients
+// ---------------------------------------------------------------------------
+
+const sseClients = new Map<string, Response[]>(); // userId → open SSE responses
+
+async function emitUnreadCount(userId: string): Promise<void> {
+  const clients = sseClients.get(userId);
+  if (!clients || clients.length === 0) return;
+
+  const r = getRedisClient();
+  const mails = await r.zRange(`inbox:${userId}`, 0, -1);
+  let count = 0;
+  for (const mailId of mails) {
+    const isRead = await r.hGet(`MailDetails:${mailId}`, 'isRead');
+    if (isRead === 'false' || !isRead) count++;
+  }
+
+  const payload = `data: ${JSON.stringify({ count })}\n\n`;
+  for (const res of [...clients]) {
+    try { res.write(payload); } catch (_) { /* ignore closed */ }
+  }
+}
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -62,6 +87,8 @@ export async function saveEmail(req: Request, res: Response): Promise<void> {
     await r.zAdd(`inbox:${userId}`, { score: timestamp, value: mailId });
     await r.zAdd(`SentMail:${userId}`, { score: timestamp, value: mailId });
     await r.expire(`MailDetails:${mailId}`, 30 * 24 * 60 * 60);
+
+    try { await emitUnreadCount(userId); } catch (_) {}
 
     await transporter.sendMail({
       from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_FROM_EMAIL}>`,
@@ -124,7 +151,9 @@ export async function markAsRead(req: Request, res: Response): Promise<void> {
   try {
     const r = getRedisClient();
     const name = username || req.body.name;
-    const userId = await r.get(`username:${name}`);
+    const userId =
+      (await r.get(`user:username:${name}`)) ||
+      (await r.get(`username:${name}`));
 
     if (!userId) {
       res.status(404).json({ error: 'User not found' });
@@ -134,6 +163,7 @@ export async function markAsRead(req: Request, res: Response): Promise<void> {
     for (const emailId of emailIds) {
       await r.hSet(`MailDetails:${emailId}`, { isRead: 'true' });
     }
+    try { await emitUnreadCount(userId); } catch (_) {}
 
     res.status(200).json({ message: 'Emails marked as read successfully' });
   } catch (error) {
@@ -196,6 +226,7 @@ export async function deleteEmails(req: Request, res: Response): Promise<void> {
       await r.del(`MailDetails:${emailId}`);
       await r.zRem(`inbox:${userId}`, emailId);
     }
+    try { await emitUnreadCount(userId); } catch (_) {}
 
     res.status(200).json({
       message: `Successfully deleted ${emailIds.length} email(s)`,
@@ -205,4 +236,40 @@ export async function deleteEmails(req: Request, res: Response): Promise<void> {
     logError(error, { context: 'deleteEmails' });
     res.status(500).json({ error: 'Failed to delete emails' });
   }
+}
+
+export async function streamUpdates(req: Request, res: Response): Promise<void> {
+  const token = req.query.token as string | undefined;
+  if (!token) {
+    res.status(401).json({ error: 'Token required' });
+    return;
+  }
+
+  let userId: string;
+  try {
+    const decoded = JwtService.verifyAccessToken(token);
+    userId = decoded.sub as string;
+  } catch (_) {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  if (!sseClients.has(userId)) sseClients.set(userId, []);
+  sseClients.get(userId)!.push(res);
+
+  try { await emitUnreadCount(userId); } catch (_) {}
+
+  req.on('close', () => {
+    const clients = sseClients.get(userId);
+    if (clients) {
+      const idx = clients.indexOf(res);
+      if (idx !== -1) clients.splice(idx, 1);
+      if (clients.length === 0) sseClients.delete(userId);
+    }
+  });
 }
