@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import InboxRowItem from "./components/InboxRowItem";
 import ConfirmModal from "./components/ConfirmModal";
+import { ChoiceModal } from "./components/ChoiceModal";
 import { useNotification } from "../contexts/NotificationContext";
 
 export interface InboxItem {
