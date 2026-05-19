@@ -25,7 +25,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
   };
 
   return (
-    <div className="mb-4 border-b pb-3">
+    <div className="border-b py-3">
       {/* ── Top bar: always visible ── */}
       <div className="flex items-center gap-2">
         {/* Search — takes remaining space */}
@@ -38,7 +38,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             placeholder="Search cards..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#65558F] dark:bg-[#1e1e1e] dark:text-white text-sm"
+            className="w-full pl-9 pr-8 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#65558F] dark:bg-[#1e1e1e] dark:text-white text-sm"
           />
           {searchQuery && (
             <button
@@ -82,21 +82,13 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
           onClick={() => setMenuOpen((o) => !o)}
           aria-label="Toggle actions menu"
           aria-expanded={menuOpen}
-          className={`sm:hidden shrink-0 w-10 h-10 flex flex-col justify-center items-center gap-[5px] rounded-lg transition-colors ${
+          className={`sm:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded transition-colors text-lg ${
             menuOpen
               ? "bg-[#65558F] text-white"
               : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white"
           }`}
         >
-          <span
-            className={`block w-5 h-0.5 bg-current transition-transform duration-200 ${menuOpen ? "rotate-45 translate-y-[6.5px]" : ""}`}
-          />
-          <span
-            className={`block w-5 h-0.5 bg-current transition-opacity duration-200 ${menuOpen ? "opacity-0" : ""}`}
-          />
-          <span
-            className={`block w-5 h-0.5 bg-current transition-transform duration-200 ${menuOpen ? "-rotate-45 -translate-y-[6.5px]" : ""}`}
-          />
+          {menuOpen ? "✕" : "⋮"}
         </button>
       </div>
 
@@ -109,21 +101,21 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => handleAction(onAddColumn)}
-            className="flex flex-col items-center gap-1 px-2 py-3 rounded-xl bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
+            className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
             <span className="text-xl leading-none">＋</span>
             Add Column
           </button>
           <button
             onClick={() => handleAction(onOpenTemplateBuilder)}
-            className="flex flex-col items-center gap-1 px-2 py-3 rounded-xl bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
+            className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
             <span className="text-xl leading-none">📋</span>
             Templates
           </button>
           <button
             onClick={() => handleAction(onToggleDeleteMode)}
-            className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl text-xs font-medium active:scale-95 transition-transform ${
+            className={`flex flex-col items-center gap-1 px-2 py-3 rounded text-xs font-medium active:scale-95 transition-transform ${
               isDeleteMode
                 ? "bg-red-500 text-white"
                 : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
