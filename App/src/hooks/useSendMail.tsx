@@ -155,7 +155,7 @@ export const useSendMail = (
     const submissionData = { ...emailData, recipient: isOwner ? recipientInput : emailData.recipient };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/save-email`, {
+      const res = await fetch(`${API_BASE_URL}/api/email/save-email`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(submissionData),

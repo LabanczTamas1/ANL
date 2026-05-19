@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import mockApi, { InboxItem } from "../mockApi";
+import { InboxItem } from "../Inbox";
 
 interface MessageDetailProps {
   messageId?: string;
