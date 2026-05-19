@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import InboxRowItem from "./components/InboxRowItem";
 import ConfirmModal from "./components/ConfirmModal";
-import { ChoiceModal } from "./components/ChoiceModal";
 import { useNotification } from "../contexts/NotificationContext";
 
 export interface InboxItem {
@@ -195,16 +194,6 @@ const Inbox = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#121212]">
-      <ChoiceModal
-        title="Delete?"
-        message="Are you really want to delete this mail?"
-        keepText="Keep it"
-        deleteText="Delete"
-        onKeep={() => console.log("Keep clicked")}
-        onDelete={() => console.log("Delete clicked")}
-        size="md"
-      />
-
       <div className="bg-white dark:bg-[#1e1e1e] w-full rounded-tl-lg">
         <div className="p-4 text-black dark:text-white">
           {/* Header */}
