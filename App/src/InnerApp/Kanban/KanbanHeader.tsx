@@ -25,7 +25,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
   };
 
   return (
-    <div className="border-b py-3">
+    <div className="border-b p-3">
       {/* ── Top bar: always visible ── */}
       <div className="flex items-center gap-2">
         {/* Search — takes remaining space */}
