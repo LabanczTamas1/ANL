@@ -15,14 +15,14 @@ const CalendarCallback = () => {
     const error = searchParams.get('error');
 
     if (error) {
-      navigate('/home/adminpage?calendar_error=' + encodeURIComponent(error), { replace: true });
+      navigate('/home/adminpage#calendar', { replace: true });
       return;
     }
 
     if (code) {
       // Pass the code to the admin page via sessionStorage so it persists through the navigation
       sessionStorage.setItem('calendar_oauth_code', code);
-      navigate('/home/adminpage?tab=calendar', { replace: true });
+      navigate('/home/adminpage#calendar', { replace: true });
     } else {
       navigate('/home/adminpage', { replace: true });
     }

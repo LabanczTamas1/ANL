@@ -88,7 +88,7 @@ import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
 import DesignPlayground from "./OuterApp/DesignPlayground.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
-import CalendarCallback from "./InnerApp/admin/CalendarCallback.tsx";
+import CalendarCallback from "./InnerApp/AdminPage/CalendarCallback.tsx";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
