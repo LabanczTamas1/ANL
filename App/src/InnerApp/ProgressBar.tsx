@@ -117,16 +117,17 @@ const ProgressBar = () => {
       {isMenuOpen && <MobileNavbar setIsMenuOpen={setIsMenuOpen} />}
 
       {/* ===== Right Side: User Info & Actions ===== */}
-      <div className="flex flex-row flex-wrap md:flex-nowrap items-center space-x-4 ml-auto">
-        {/* File Upload & Export */}
+      <div className="flex flex-row flex-nowrap items-center space-x-2 md:space-x-4 ml-auto min-w-0">
+        {/* File Upload & Export — icon-only on mobile, text+icon on desktop */}
         {showUploadFile && (
           <div className="flex items-center space-x-2 flex-shrink-0">
             <label
               htmlFor="uploadInput"
-              className="inline-flex items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
+              className="inline-flex items-center border border-gray-300 rounded-lg px-2 md:px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
+              title="Import JSON"
             >
-              <span className="text-sm dark:text-white font-medium">Choose File</span>
-              <FiUpload className="text-sm dark:text-white" />
+              <span className="hidden md:inline text-sm dark:text-white font-medium">Choose File</span>
+              <FiUpload className="text-base dark:text-white" />
             </label>
             <input
               id="uploadInput"
@@ -137,10 +138,11 @@ const ProgressBar = () => {
             />
             <button
               onClick={handleExport}
-              className="inline-flex items-center border border-gray-300 rounded-lg px-3 py-1 space-x-2 hover:bg-gray-100 flex-shrink-0"
+              className="inline-flex items-center border border-gray-300 rounded-lg px-2 md:px-3 py-1 space-x-2 hover:bg-gray-100 flex-shrink-0"
+              title="Export JSON"
             >
-              <span className="text-sm dark:text-white font-medium">Export</span>
-              <FiDownload className="text-sm dark:text-white" />
+              <span className="hidden md:inline text-sm dark:text-white font-medium">Export</span>
+              <FiDownload className="text-base dark:text-white" />
             </button>
           </div>
         )}
