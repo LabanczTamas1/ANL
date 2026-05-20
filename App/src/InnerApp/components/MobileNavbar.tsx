@@ -30,7 +30,9 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
 
         {/* Logo */}
         <div className="text-xl font-bold mb-6">
-          <span className="flex text-white items-center"><img src={lightLogo} alt="logo" className="w-16"/> Ads and Leads </span>
+          <Link to="/home" onClick={closeMenu}>
+            <span className="flex text-white items-center"><img src={lightLogo} alt="logo" className="w-16"/> Ads and Leads </span>
+          </Link>
         </div>
 
         {/* Menu Section */}
