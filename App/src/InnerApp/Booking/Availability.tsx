@@ -245,10 +245,10 @@ const Availability = () => {
   }, [showMobileModal]);
 
   return (
-    <div className="h-full bg-surface-overlay flex flex-col relative overflow-y-auto scrollbar-hide">
+    <div className="h-full bg-surface-overlay flex flex-col relative overflow-x-hidden overflow-y-auto scrollbar-hide">
       {/* Background gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 max-w-full h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 max-w-full h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 flex-1 flex flex-col items-center w-full p-4 md:p-6 lg:p-8">
         {/* Header */}
@@ -370,7 +370,7 @@ const Availability = () => {
 
                 {/* Slider — only visible when working */}
                 <div
-                  className={`flex-1 px-2 transition-all duration-300 ${
+                  className={`flex-1 min-w-0 px-2 transition-all duration-300 ${
                     dayAvailability.isDayOff
                       ? "opacity-30 pointer-events-none"
                       : "opacity-100"
