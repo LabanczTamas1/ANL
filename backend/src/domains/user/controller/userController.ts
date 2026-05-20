@@ -7,6 +7,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { getRedisClient } from '../../../config/database.js';
 import { listAllUsers } from '../../../utils/listAllUsers.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import {
+  notifyRoleChanged,
+  notifyProfileUpdated,
+} from '../../../utils/systemNotifications.js';
 
 const logger = createLogger('user', 'controller');
 
@@ -80,6 +84,12 @@ export async function updateUserRole(
     }
 
     await redisClient.hSet(userKey, 'role', role);
+
+    await notifyRoleChanged(
+      userId,
+      userData.firstName || userData.username || 'there',
+      role,
+    );
 
     logger.info({ userId, role }, 'User role updated');
 
@@ -205,6 +215,26 @@ export async function updateProfile(
 
     await redisClient.hSet(userKey, updatedData);
     const updated = await redisClient.hGetAll(userKey);
+
+    // Notify only for fields that actually changed
+    const fieldLabels: Record<string, string> = {
+      firstName: 'First name',
+      lastName: 'Last name',
+      phoneNumber: 'Phone number',
+      company: 'Company',
+      profileImg: 'Profile image',
+    };
+    const changedFields = Object.keys(updatedData)
+      .filter((k) => updatedData[k] !== userData[k])
+      .map((k) => fieldLabels[k] ?? k);
+
+    if (changedFields.length > 0) {
+      await notifyProfileUpdated(
+        req.user!.id,
+        updated.firstName || updated.username || 'there',
+        changedFields,
+      );
+    }
 
     res.status(200).json({
       message: 'Profile updated successfully',

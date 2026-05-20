@@ -18,6 +18,7 @@ import {
   revokeFamily,
 } from '../../../utils/tokenStore.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { notifyWelcome } from '../../../utils/systemNotifications.js';
 
 const logger = createLogger('user', 'controller');
 
@@ -271,6 +272,9 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
       verifiedAt: new Date().toISOString(),
     });
     await redisClient.del(`verify:email:${email}`);
+
+    const userData = await redisClient.hGetAll(`user:${userId}`);
+    await notifyWelcome(userId, userData.firstName || userData.username || 'there');
 
     logger.info({ userId, email }, 'Email verified');
     res.status(200).json({ message: 'Email successfully verified', userId });

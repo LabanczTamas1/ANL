@@ -5,6 +5,7 @@
 import { Request, Response } from 'express';
 import { getRedisClient } from '../../../config/database.js';
 import { logError } from '../../../utils/logger.js';
+import { notifyProgressUpdated } from '../../../utils/systemNotifications.js';
 
 export async function changeUserProgress(
   req: Request,
@@ -34,6 +35,13 @@ export async function changeUserProgress(
 
     await r.hSet(userKey, updateData);
     const updated = await r.hGetAll(userKey);
+
+    await notifyProgressUpdated(
+      userId,
+      updated.firstName || updated.username || 'there',
+      progressionStatus,
+      progressionCategory,
+    );
 
     res.status(200).json({
       message: 'User progress updated successfully',

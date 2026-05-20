@@ -6,27 +6,43 @@ const logger = createLogger('admin', 'service');
 export async function listAllUsers(): Promise<Record<string, unknown>[]> {
   try {
     const redisClient = getRedisClient();
-    const userKeys = await redisClient.keys('user:*');
-
-    const actualUserKeys = userKeys.filter(
-      (key) =>
-        !key.startsWith('user:email:') && !key.startsWith('user:username:'),
-    );
-
     const users: Record<string, unknown>[] = [];
+    let cursor = 0;
 
-    for (const userKey of actualUserKeys) {
-      const type = await redisClient.type(userKey);
+    do {
+      const result = await redisClient.scan(cursor, {
+        MATCH: 'user:*',
+        COUNT: 100,
+      });
+      cursor = result.cursor;
 
-      if (type === 'hash') {
-        const userData = await redisClient.hGetAll(userKey);
+      for (const key of result.keys) {
+        // Skip index keys — only process hash user records
+        if (
+          key.startsWith('user:email:') ||
+          key.startsWith('user:username:')
+        )
+          continue;
 
-        if (userData && Object.keys(userData).length > 0) {
-          const { password, hashedPassword, ...safeUserData } = userData;
-          users.push(safeUserData);
-        }
+        const type = await redisClient.type(key);
+        if (type !== 'hash') continue;
+
+        const userData = await redisClient.hGetAll(key);
+        if (!userData || !userData.email) continue;
+
+        const { password, hashedPassword, ...safeUserData } = userData;
+        users.push({
+          id: safeUserData.id || key.replace('user:', ''),
+          firstName: safeUserData.firstName || '',
+          lastName: safeUserData.lastName || '',
+          username: safeUserData.username || '',
+          email: safeUserData.email,
+          role: safeUserData.role || 'user',
+          createdAt: safeUserData.createdAt || '',
+          company: safeUserData.company || '',
+        });
       }
-    }
+    } while (cursor !== 0);
 
     logger.info(`Listed ${users.length} users`);
     return users;
