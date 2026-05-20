@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { FiSearch, FiUsers, FiShield, FiWifi, FiCalendar, FiBarChart2 } from 'react-icons/fi';
@@ -36,13 +36,18 @@ const TABS = [
 ];
 
 const AdminPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'users');
   const [currentUserRole, setCurrentUserRole] = useState<string>('user');
+
+  const hashTab = location.hash.replace('#', '');
+  const activeTab = TABS.some(t => t.id === hashTab) ? hashTab : 'users';
+
+  const setActiveTab = (id: string) => navigate({ hash: id }, { replace: true });
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
@@ -131,6 +136,7 @@ const AdminPage: React.FC = () => {
             <button
               key={id}
               onClick={() => setActiveTab(id)}
+              aria-current={activeTab === id ? 'page' : undefined}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === id
                   ? 'border-[#65558F] text-[#65558F] dark:text-purple-400 dark:border-purple-400'
