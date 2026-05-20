@@ -107,7 +107,21 @@ export const useBooking = (): UseBookingReturn => {
     setSuccess(null);
     setSelectedValues([]);
 
-    // JWT auth checks removed: backend no longer requires client-side token.
+    // Reject past dates immediately before any network call
+    const dateValue = Array.isArray(value) ? value[0] : value;
+    if (dateValue) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selected = new Date(dateValue);
+      selected.setHours(0, 0, 0, 0);
+      if (selected < today) {
+        toast.error("This date has already passed. Please choose a future date.", {
+          icon: "📅",
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
 
     try {
       const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
@@ -185,9 +199,16 @@ export const useBooking = (): UseBookingReturn => {
       }
 
       setAddableTimes(normalizedTimes);
-      setSuccess(data.message || "Availability fetched successfully!");
-      if (data.message !== undefined) {
-        toast.warning(data.message || "Availability fetched successfully!");
+
+      if (normalizedTimes.length === 0) {
+        toast.info("No available time slots for this date. Please try another day.", {
+          icon: "🗓️",
+        });
+      } else {
+        setSuccess(data.message || "Availability fetched successfully!");
+        if (data.message !== undefined) {
+          toast.warning(data.message || "Availability fetched successfully!");
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
