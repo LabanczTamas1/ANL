@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getRedisClient } from '../config/database.js';
 import { createLogger } from './logger.js';
 
-const logger = createLogger('system', 'notifications');
+const logger = createLogger('system', 'infra');
 
 const SYSTEM_SENDER = {
   fromId: 'system',
