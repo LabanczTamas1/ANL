@@ -117,7 +117,7 @@ const ProgressBar = () => {
       {isMenuOpen && <MobileNavbar setIsMenuOpen={setIsMenuOpen} />}
 
       {/* ===== Right Side: User Info & Actions ===== */}
-      <div className="flex flex-row flex-nowrap items-center space-x-2 md:space-x-4 ml-auto min-w-0">
+      <div className={`flex flex-row flex-nowrap items-center space-x-2 md:space-x-4 ml-auto min-w-0 ${isMenuOpen ? "hidden md:flex" : "flex"}`}>
         {/* File Upload & Export — icon-only on mobile, text+icon on desktop */}
         {showUploadFile && (
           <div className="flex items-center space-x-2 flex-shrink-0">
