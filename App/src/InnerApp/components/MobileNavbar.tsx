@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 const lightLogo = "/light-logo.png";
 import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 interface MobileNavbarProps{
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -11,6 +12,16 @@ interface MobileNavbarProps{
 const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
   const navigate = useNavigate();
   const role = localStorage.getItem("superRole");
+
+  // Lock scroll on html+body while open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -23,9 +34,9 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
     setIsMenuOpen(false);
   };
 
-  return (
-    <div className="fixed top-14 left-0 right-0 z-50 h-screen bg-[#1D2431] text-white w-full overflow-y-auto">
-      <div className="flex flex-col p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-[#1D2431] text-white overflow-y-auto overscroll-contain">
+      <div className="flex flex-col p-4 pb-20">
       
 
         {/* Logo */}
@@ -166,7 +177,8 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
           <Link to="/home/terms-and-policy" onClick={closeMenu}><div className="text-blue-500 hover:text-blue-400 cursor-pointer">Terms and policy</div></Link>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
