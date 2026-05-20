@@ -93,8 +93,38 @@ router.patch("/updateUserRole/:userId", async (req, res) => {
 
 router.get("/listAllUsers", authenticateJWT, async (req, res) => {
   try {
-    const listAllUsersAdmin = require("../utils/listAllUsersAdmin");
-    const users = await listAllUsersAdmin();
+    const redisClient = getRedisClient();
+    const users = [];
+    let cursor = 0;
+
+    do {
+      const result = await redisClient.scan(cursor, { MATCH: "user:*", COUNT: 100 });
+      cursor = result.cursor;
+
+      for (const key of result.keys) {
+        // Skip index keys — only process hash records
+        if (key.startsWith("user:email:") || key.startsWith("user:username:")) continue;
+
+        const type = await redisClient.type(key);
+        if (type !== "hash") continue;
+
+        const userData = await redisClient.hGetAll(key);
+        if (!userData || !userData.email) continue;
+
+        const { password, ...safeData } = userData;
+        users.push({
+          id: safeData.id || key.replace("user:", ""),
+          firstName: safeData.firstName || "",
+          lastName: safeData.lastName || "",
+          username: safeData.username || "",
+          email: safeData.email,
+          role: safeData.role || "user",
+          createdAt: safeData.createdAt || "",
+          company: safeData.company || "",
+        });
+      }
+    } while (cursor !== 0);
+
     res.status(200).json(users);
   } catch (error) {
     console.error("Error listing all users:", error);

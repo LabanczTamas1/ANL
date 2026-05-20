@@ -6,14 +6,15 @@ import AdminIPBan from './admin/AdminIPBan';
 import MeetingHosts from './admin/MeetingHosts';
 import CalendarConnection from './admin/CalendarConnection';
 
-// Updated interface to match the backend model
 interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  username: string;
   email: string;
   role: string;
   createdAt: string;
-  username?: string;
+  company?: string;
 }
 
 const AdminPage: React.FC = () => {
@@ -33,7 +34,7 @@ const AdminPage: React.FC = () => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`${API_BASE_URL}/listAllUsers`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/listAllUsers`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -152,7 +153,9 @@ const AdminPage: React.FC = () => {
       (user) =>
         user.id.toLowerCase().includes(lowerCaseQuery) ||
         user.email.toLowerCase().includes(lowerCaseQuery) ||
-        user.name.toLowerCase().includes(lowerCaseQuery)
+        user.username.toLowerCase().includes(lowerCaseQuery) ||
+        user.firstName.toLowerCase().includes(lowerCaseQuery) ||
+        user.lastName.toLowerCase().includes(lowerCaseQuery)
     );
 
     setFilteredUsers(filtered);
@@ -222,7 +225,7 @@ const AdminPage: React.FC = () => {
               placeholder="Search by ID, email, or name"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded shadow-sm"
+              className="w-full p-2 border border-gray-300 rounded shadow-sm dark:bg-[#1e1e1e] dark:text-white dark:border-gray-600 dark:placeholder-gray-400"
             />
           </div>
 
@@ -248,7 +251,7 @@ const AdminPage: React.FC = () => {
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="border-b">
                       <td className="px-4 py-2">{user.id}</td>
-                      <td className="px-4 py-2">{user.name || user.username}</td>
+                      <td className="px-4 py-2">{user.firstName ? `${user.firstName} ${user.lastName}`.trim() : user.username}</td>
                       <td className="px-4 py-2">{user.email}</td>
                       <td className="px-4 py-2">
                         <select
