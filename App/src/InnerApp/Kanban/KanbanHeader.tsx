@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { FaTrash, FaRegClipboard } from "react-icons/fa";
+import { FiSearch, FiPlus } from "react-icons/fi";
 
 interface KanbanHeaderProps {
   isDeleteMode: boolean;
@@ -30,9 +32,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
       <div className="flex items-center gap-2">
         {/* Search — takes remaining space */}
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            🔍
-          </span>
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search cards..."
@@ -103,14 +103,14 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             onClick={() => handleAction(onAddColumn)}
             className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
-            <span className="text-xl leading-none">＋</span>
+            <FiPlus className="text-xl" />
             Add Column
           </button>
           <button
             onClick={() => handleAction(onOpenTemplateBuilder)}
             className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
-            <span className="text-xl leading-none">📋</span>
+            <FaRegClipboard className="text-lg" />
             Templates
           </button>
           <button
@@ -121,7 +121,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
                 : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
             }`}
           >
-            <span className="text-xl leading-none">{isDeleteMode ? "✕" : "🗑️"}</span>
+            {isDeleteMode ? <span className="text-base font-bold">✕</span> : <FaTrash className="text-base" />}
             {isDeleteMode ? "Exit Delete" : "Delete Col"}
           </button>
         </div>
