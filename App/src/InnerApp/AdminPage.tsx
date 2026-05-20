@@ -64,7 +64,7 @@ const AdminPage: React.FC = () => {
   const fetchCurrentUserRole = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/user/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/me`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -87,7 +87,7 @@ const AdminPage: React.FC = () => {
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/updateUserRole/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/updateUserRole/${userId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
