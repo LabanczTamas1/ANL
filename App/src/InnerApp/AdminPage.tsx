@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import FlashMessage from '../FlashMessage';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { FiSearch, FiUsers, FiShield, FiWifi, FiCalendar, FiBarChart2 } from 'react-icons/fi';
 import RequestStats from './admin/RequestStats';
 import AdminIPBan from './admin/AdminIPBan';
 import MeetingHosts from './admin/MeetingHosts';
@@ -17,42 +19,60 @@ interface User {
   company?: string;
 }
 
+const ROLE_BADGE: Record<string, string> = {
+  admin:     'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  owner:     'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+  user:      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  moderator: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+  guest:     'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+};
+
+const TABS = [
+  { id: 'users',         label: 'Users',         icon: FiUsers },
+  { id: 'stats',         label: 'API Stats',      icon: FiBarChart2 },
+  { id: 'ip_ban',        label: 'IP Bans',        icon: FiShield },
+  { id: 'meeting_hosts', label: 'Meeting Hosts',  icon: FiWifi },
+  { id: 'calendar',      label: 'Calendar',       icon: FiCalendar },
+];
+
 const AdminPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'users');
-  const [flashMessage, setFlashMessage] = useState<{ message: string; type: 'success' | 'error'; duration: number } | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>('user');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Fetch users from backend when the component is mounted
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`${API_BASE_URL}/api/users/listAllUsers`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        const response = await fetch(`${API_BASE_URL}/api/v1/user/listAllUsers`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch users');
         const data = await response.json();
         setUsers(data);
-        setFilteredUsers(data);
       } catch (err: any) {
-        setError(err.message || 'An error occurred');
+        toast.error(err.message || 'Failed to load users');
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchCurrentUserRole = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE_URL}/api/v1/user/me`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setCurrentUserRole(data.role);
+      } catch {
+        // non-critical
       }
     };
 
@@ -60,230 +80,180 @@ const AdminPage: React.FC = () => {
     fetchCurrentUserRole();
   }, []);
 
-  // Fetch current user's role
-  const fetchCurrentUserRole = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/v1/user/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch current user');
-      }
-
-      const data = await response.json();
-      setCurrentUserRole(data.role);
-    } catch (err: any) {
-      console.error('Error fetching current user role:', err.message);
-    }
-  };
-
-  // Handle role change
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_BASE_URL}/api/v1/user/updateUserRole/${userId}`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update user role');
-      }
-
-      const result = await response.json();
-     
-      // Update the user in the local state
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
-      );
-      setFilteredUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
-      );
-
-      setFlashMessage({
-        message: result.message || `User role updated successfully to ${newRole}`,
-        type: "success",
-        duration: 3000,
-      });
+      if (!response.ok) throw new Error('Failed to update user role');
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      toast.success(`Role updated to "${newRole}"`);
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
-      setFlashMessage({
-        message: err.message || 'Failed to update user role',
-        type: "error",
-        duration: 3000,
-      });
+      toast.error(err.message || 'Failed to update user role');
     }
   };
 
-  useEffect(() => {
-    if (flashMessage) {
-      const timer = setTimeout(() => {
-        setFlashMessage(null);
-      }, flashMessage.duration);
+  const displayName = (u: User) =>
+    u.firstName ? `${u.firstName} ${u.lastName}`.trim() : u.username;
 
-      return () => clearTimeout(timer);
-    }
-  }, [flashMessage]);
+  const filteredUsers = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return users.filter(u => {
+      const matchesQuery =
+        !q ||
+        u.id.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q) ||
+        u.firstName.toLowerCase().includes(q) ||
+        u.lastName.toLowerCase().includes(q) ||
+        (u.company ?? '').toLowerCase().includes(q);
+      const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+      return matchesQuery && matchesRole;
+    });
+  }, [users, searchQuery, roleFilter]);
 
-  // Handle tab click
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-  };
-
-  // Handle search query change
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    const lowerCaseQuery = query.toLowerCase();
-
-    const filtered = users.filter(
-      (user) =>
-        user.id.toLowerCase().includes(lowerCaseQuery) ||
-        user.email.toLowerCase().includes(lowerCaseQuery) ||
-        user.username.toLowerCase().includes(lowerCaseQuery) ||
-        user.firstName.toLowerCase().includes(lowerCaseQuery) ||
-        user.lastName.toLowerCase().includes(lowerCaseQuery)
-    );
-
-    setFilteredUsers(filtered);
-  };
+  const roleOptions = useMemo(() => {
+    const roles = Array.from(new Set(users.map(u => u.role))).sort();
+    return ['all', ...roles];
+  }, [users]);
 
   return (
-    <div className="container mx-auto p-4">
-      {/* Tabs Navigation */}
-      <div className="mb-4 flex space-x-4 border-b-2 border-gray-300">
-        <button
-          className={`pb-2 ${activeTab === 'users' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('users')}
-        >
-          Users
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'stats' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('stats')}
-        >
-          API Stats
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'ip_ban' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('ip_ban')}
-        >
-          IP Bans
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'meeting_hosts' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('meeting_hosts')}
-        >
-          Meeting Hosts
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'calendar' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('calendar')}
-        >
-          Calendar
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'active' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('active')}
-        >
-          Active
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'stale' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('stale')}
-        >
-          Stale
-        </button>
-        <button
-          className={`pb-2 ${activeTab === 'all' ? 'border-b-2 border-blue-500' : ''}`}
-          onClick={() => handleTabClick('all')}
-        >
-          All
-        </button>
+    <div className="min-h-full bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100">
+      <ToastContainer position="top-right" theme="colored" />
+
+      {/* ── Tab bar ── */}
+      <div className="border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
+        <nav className="flex gap-1 min-w-max">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === id
+                  ? 'border-[#65558F] text-[#65558F] dark:text-purple-400 dark:border-purple-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              <Icon className="text-base" />
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
 
-      {/* Display Content Based on Active Tab */}
-      {activeTab === 'users' && (
-        <>
-          {/* Search Bar */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by ID, email, or name"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded shadow-sm dark:bg-[#1e1e1e] dark:text-white dark:border-gray-600 dark:placeholder-gray-400"
-            />
-          </div>
+      <div className="p-4 md:p-6">
+        {/* ── Users Tab ── */}
+        {activeTab === 'users' && (
+          <>
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              {/* Search */}
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, username, company…"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
+                />
+              </div>
 
-          {loading && <p className="text-gray-500">Loading users...</p>}
-          {error && <p className="text-red-500">{error}</p>}
+              {/* Role filter */}
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
+              >
+                {roleOptions.map(r => (
+                  <option key={r} value={r}>
+                    {r === 'all' ? 'All roles' : r.charAt(0).toUpperCase() + r.slice(1)}
+                  </option>
+                ))}
+              </select>
 
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Users</h2>
-            {filteredUsers.length === 0 ? (
-              <p className="text-gray-500">No users found matching your search criteria.</p>
-            ) : (
-              <table className="min-w-full table-auto bg-white border border-gray-300 shadow-md rounded-lg">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="px-4 py-2 text-left">User ID</th>
-                    <th className="px-4 py-2 text-left">Name</th>
-                    <th className="px-4 py-2 text-left">Email</th>
-                    <th className="px-4 py-2 text-left">Role</th>
-                    <th className="px-4 py-2 text-left">Created At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b">
-                      <td className="px-4 py-2">{user.id}</td>
-                      <td className="px-4 py-2">{user.firstName ? `${user.firstName} ${user.lastName}`.trim() : user.username}</td>
-                      <td className="px-4 py-2">{user.email}</td>
-                      <td className="px-4 py-2">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          className="border border-gray-300 p-1 rounded"
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="user">User</option>
-                          <option value="owner">Owner</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-2">{new Date(user.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <span className="self-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                {filteredUsers.length} / {users.length} users
+              </span>
+            </div>
+
+            {/* States */}
+            {loading && (
+              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-8 justify-center">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Loading users…
+              </div>
             )}
-          </div>
-        </>
-      )}
 
-      {/* API Stats Tab */}
-      {activeTab === 'stats' && <RequestStats userRole={currentUserRole} />}
-      {activeTab === 'ip_ban' && <AdminIPBan/>}
-      {activeTab === 'meeting_hosts' && <MeetingHosts />}
-      {activeTab === 'calendar' && <CalendarConnection />}
+            {!loading && filteredUsers.length === 0 && (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-12">
+                No users match your search.
+              </p>
+            )}
 
-      {/* Other existing tabs would be here... */}
+            {/* Table — scrollable on mobile */}
+            {!loading && filteredUsers.length > 0 && (
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-[#1a1a2e] text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wider">
+                      <th className="px-4 py-3 text-left">Name</th>
+                      <th className="px-4 py-3 text-left hidden md:table-cell">Email</th>
+                      <th className="px-4 py-3 text-left hidden lg:table-cell">Company</th>
+                      <th className="px-4 py-3 text-left">Role</th>
+                      <th className="px-4 py-3 text-left hidden sm:table-cell">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {filteredUsers.map(user => (
+                      <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        {/* Name + email on mobile */}
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900 dark:text-white">{displayName(user)}</div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 md:hidden">{user.email}</div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 font-mono truncate max-w-[160px]">{user.id}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300 hidden md:table-cell">{user.email}</td>
+                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden lg:table-cell">{user.company || '—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${ROLE_BADGE[user.role] ?? ROLE_BADGE.guest}`}>
+                              {user.role}
+                            </span>
+                            <select
+                              value={user.role}
+                              onChange={e => handleRoleChange(user.id, e.target.value)}
+                              className="text-xs px-1.5 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#65558F]"
+                            >
+                              {['admin', 'owner', 'user', 'moderator', 'guest'].map(r => (
+                                <option key={r} value={r}>{r}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
 
-      {/* Render Flash Message */}
-      {flashMessage && <FlashMessage message={flashMessage.message} type={flashMessage.type} duration={flashMessage.duration} />}
+        {activeTab === 'stats'         && <RequestStats userRole={currentUserRole} />}
+        {activeTab === 'ip_ban'        && <AdminIPBan />}
+        {activeTab === 'meeting_hosts' && <MeetingHosts />}
+        {activeTab === 'calendar'      && <CalendarConnection />}
+      </div>
     </div>
   );
 };
