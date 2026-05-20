@@ -30,7 +30,7 @@ const Layout = () => {
         {/* Progress Bar */}
         <div className="md:hidden">
         </div>
-        <div className="bg-white dark:bg-[#1e1e1e]">
+        <div className="sticky top-0 z-10 bg-white dark:bg-[#1e1e1e]">
           <ProgressBar />
         </div>
 
