@@ -42,7 +42,7 @@ const UserTable: React.FC<Props> = ({ users, onRoleChange }) => (
                 <select
                   value={user.role}
                   onChange={e => onRoleChange(user.id, e.target.value)}
-                  className="text-xs px-1.5 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#65558F]"
+                  className="text-xs px-1.5 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#65558F] appearance-auto"
                 >
                   {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>

@@ -58,7 +58,7 @@ import Home from "./InnerApp/Home.tsx";
 import Account from "./InnerApp/Account.tsx";
 import AboutUs from "./OuterApp/AboutUs.tsx";
 import Kanban from "./InnerApp/Kanban/Kanban.tsx";
-import AdminPage from "./InnerApp/AdminPage.tsx";
+import AdminPage from "./InnerApp/AdminPage/index.tsx";
 import Booking from "./InnerApp/Booking/Booking.tsx";
 import Availability from "./InnerApp/Booking/Availability.tsx";
 import AvailabilityOverview from "./InnerApp/Booking/AvailabilityOverview.tsx";

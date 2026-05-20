@@ -35,7 +35,7 @@ const UserToolbar: React.FC<Props> = ({
     <select
       value={roleFilter}
       onChange={e => onRoleFilterChange(e.target.value)}
-      className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
+      className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
     >
       {roleOptions.map(r => (
         <option key={r} value={r}>
