@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck, FaTimes } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 const lightLogo = "/light-logo.png";
@@ -37,13 +37,19 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-[#1D2431] text-white overflow-y-auto overscroll-contain">
       <div className="flex flex-col p-4 pb-20">
-      
 
-        {/* Logo */}
-        <div className="text-xl font-bold mb-6">
-          <Link to="/home" onClick={closeMenu}>
+        {/* Top bar: Logo + Close */}
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/home" onClick={closeMenu} className="text-xl font-bold">
             <span className="flex text-white items-center"><img src={lightLogo} alt="logo" className="w-16"/> Ads and Leads </span>
           </Link>
+          <button
+            onClick={closeMenu}
+            className="text-white text-2xl p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Close menu"
+          >
+            <FaTimes />
+          </button>
         </div>
 
         {/* Menu Section */}
