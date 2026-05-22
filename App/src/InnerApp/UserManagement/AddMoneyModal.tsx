@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "@fortawesome/fontawesome-free/css/all.min.css";
+import { FiInfo, FiX } from "react-icons/fi";
 
 interface AddMoneyModalProps {
   username: string;
@@ -21,7 +21,6 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
 
   if (!isOpen) return null;
 
-  /** ✅ Only allow valid numeric input, including optional '-' and '.' */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (/^-?\d*\.?\d*$/.test(value)) {
@@ -30,82 +29,61 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
     }
   };
 
-  /** ✅ Fetch exchange rate (RON → targetCurrency) */
   const fetchExchangeRate = async (targetCurrency: string) => {
     if (targetCurrency.toUpperCase() === "RON") {
       setExchangeRate(1);
       return;
     }
-
     try {
-      const response = await fetch(
-        "https://api.exchangerate-api.com/v4/latest/RON"
-      );
+      const response = await fetch("https://api.exchangerate-api.com/v4/latest/RON");
       const data = await response.json();
-      const rate = data.rates?.[targetCurrency.toUpperCase()] || 1;
-      console.log("Fetched rate:", targetCurrency, rate);
-      setExchangeRate(rate);
-    } catch (error) {
-      console.error("Error fetching exchange rate:", error);
+      setExchangeRate(data.rates?.[targetCurrency.toUpperCase()] || 1);
+    } catch {
       setExchangeRate(1);
     }
   };
 
-  /** ✅ Update currency + fetch rate */
   const handleCurrencyChange = (currencyType: string) => {
     setCurrency(currencyType.toUpperCase());
     fetchExchangeRate(currencyType.toUpperCase());
   };
 
-  const convertToRON = (amount: number): number => {
-    if (currency === "RON") return amount;
-    // Convert foreign currency → RON
-    return Number((amount / exchangeRate).toFixed(2));
+  const convertToRON = (val: number): number => {
+    if (currency === "RON") return val;
+    return Number((val / exchangeRate).toFixed(2));
   };
 
-  /** ✅ Handle form submission */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const cleanValue = amount.trim();
-    const numericAmount = parseFloat(cleanValue);
-
-    console.log(
-      "amount added:",
-      typeof numericAmount,
-      numericAmount,
-      typeof amount,
-      amount
-    );
-
+    const numericAmount = parseFloat(amount.trim());
     if (isNaN(numericAmount) || numericAmount === 0) {
       setError("Please enter a valid non-zero number.");
       return;
     }
-
-    const ronAmount = convertToRON(numericAmount);
-    console.log(`Converted ${numericAmount} ${currency} → ${ronAmount} RON`);
-
-    // ✅ Pass clean numeric value up
     onAddMoney(convertToRON(numericAmount));
     setAmount("");
     setError(null);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
-        <h2 className="text-xl font-bold mb-4">Add Money for {username}</h2>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#1e1e1e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            Add Money for {username}
+          </h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+            <FiX className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label
-              className="flex gap-2 items-center text-center block text-gray-700 font-medium mb-2"
-              htmlFor="amount"
-            >
-              Amount{" "}
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" htmlFor="amount">
+              Amount
               <div className="relative group">
-                <i className="fas fa-info-circle text-md"></i>
-                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 md:w-[300px] w-[180px]">
+                <FiInfo className="w-4 h-4 text-gray-400" />
+                <div className="absolute left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg py-1.5 px-3 w-56 z-10 shadow-lg">
                   Add a '-' before the number to subtract from the total.
                 </div>
               </div>
@@ -117,33 +95,33 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
                 placeholder="Enter amount"
                 value={amount}
                 onChange={handleChange}
-                className="w-1/2 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
               />
               <select
                 value={currency}
                 onChange={(e) => handleCurrencyChange(e.target.value)}
-                className="ml-2 border border-gray-300 p-1 rounded"
+                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
               >
                 <option value="RON">RON</option>
-                <option value="EUR">EURO</option>
+                <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
                 <option value="HUF">HUF</option>
               </select>
             </div>
-            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+            {error && <p className="text-red-500 dark:text-red-400 text-sm mt-1.5">{error}</p>}
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg mr-2"
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 text-sm font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg"
+              className="px-4 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
             >
               Add Money
             </button>
