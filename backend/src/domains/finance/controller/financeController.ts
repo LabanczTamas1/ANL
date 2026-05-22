@@ -1,10 +1,15 @@
 // ---------------------------------------------------------------------------
-// Finance Controller — transaction ledger for user accounts
+// Finance Controller — multi-currency transaction ledger
 // ---------------------------------------------------------------------------
 
 import { Request, Response } from 'express';
 import { getRedisClient } from '../../../config/database.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import {
+  getExchangeRates,
+  convertCurrency,
+  isSupportedCurrency,
+} from '../service/currencyService.js';
 import crypto from 'crypto';
 
 const logger = createLogger('finance', 'controller');
@@ -76,7 +81,7 @@ export async function createTransaction(
 ): Promise<void> {
   try {
     const r = getRedisClient();
-    const { userId, amount, type, description } = req.body;
+    const { userId, amount, type, description, currency: inputCurrency } = req.body;
 
     // Validation
     if (!userId || amount === undefined || !type) {
@@ -97,6 +102,13 @@ export async function createTransaction(
       return;
     }
 
+    // Currency validation (default RON)
+    const originalCurrency = (inputCurrency || 'RON').toUpperCase();
+    if (!isSupportedCurrency(originalCurrency)) {
+      res.status(400).json({ error: `Unsupported currency: ${originalCurrency}` });
+      return;
+    }
+
     // Check target user exists
     const userExists = await r.exists(`user:${userId}`);
     if (!userExists) {
@@ -104,16 +116,25 @@ export async function createTransaction(
       return;
     }
 
-    // Get current balance
+    // Convert to RON if needed (balance is always stored in RON)
+    let amountInRON = numericAmount;
+    let exchangeRate = 1;
+    if (originalCurrency !== 'RON') {
+      const conversion = await convertCurrency(numericAmount, originalCurrency, 'RON');
+      amountInRON = parseFloat(conversion.converted.toFixed(2));
+      exchangeRate = conversion.rate;
+    }
+
+    // Get current balance (RON)
     const currentBalance = parseFloat(
       (await r.get(balanceKey(userId))) || '0',
     );
 
     // Calculate new balance
-    const delta = type === 'credit' ? numericAmount : -numericAmount;
+    const delta = type === 'credit' ? amountInRON : -amountInRON;
     const newBalance = parseFloat((currentBalance + delta).toFixed(2));
 
-    // Get performer info from authenticated user
+    // Get performer info
     const performer = req.user!;
     const performerName =
       [performer.firstName, performer.lastName].filter(Boolean).join(' ') ||
@@ -135,7 +156,11 @@ export async function createTransaction(
       id: txId,
       userId,
       userName: targetName,
-      amount: numericAmount.toFixed(2),
+      originalAmount: numericAmount.toFixed(2),
+      originalCurrency,
+      exchangeRate: exchangeRate.toFixed(6),
+      amount: amountInRON.toFixed(2),
+      currency: 'RON',
       type,
       description: description || '',
       performedBy: performer.id,
@@ -145,18 +170,20 @@ export async function createTransaction(
       createdAt: now,
     };
 
-    // Atomic write: update balance + store transaction + add to sorted set
+    // Atomic write
     const multi = r.multi();
     multi.set(balanceKey(userId), newBalance.toFixed(2));
     multi.hSet(txKey(txId), transaction);
-    multi.zAdd(userTxsKey(userId), {
-      score: Date.now(),
-      value: txId,
-    });
+    multi.zAdd(userTxsKey(userId), { score: Date.now(), value: txId });
     await multi.exec();
 
     logger.info(
-      { txId, userId, type, amount: numericAmount, performedBy: performer.id },
+      {
+        txId, userId, type,
+        originalAmount: numericAmount, originalCurrency,
+        amountRON: amountInRON, exchangeRate,
+        performedBy: performer.id,
+      },
       'Transaction created',
     );
 
@@ -164,7 +191,9 @@ export async function createTransaction(
       message: 'Transaction recorded successfully',
       transaction: {
         ...transaction,
-        amount: numericAmount,
+        originalAmount: numericAmount,
+        amount: amountInRON,
+        exchangeRate,
         balanceBefore: currentBalance,
         balanceAfter: newBalance,
       },
@@ -206,6 +235,9 @@ export async function getTransactionHistory(
       if (tx && tx.id) {
         transactions.push({
           ...tx,
+          originalAmount: parseFloat(tx.originalAmount || tx.amount),
+          originalCurrency: tx.originalCurrency || 'RON',
+          exchangeRate: parseFloat(tx.exchangeRate || '1'),
           amount: parseFloat(tx.amount),
           balanceBefore: parseFloat(tx.balanceBefore),
           balanceAfter: parseFloat(tx.balanceAfter),
@@ -223,6 +255,18 @@ export async function getTransactionHistory(
     });
   } catch (error) {
     logError(error, { context: 'getTransactionHistory' });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// ─── GET /rates ─────────────────────────────────────────────────────────────
+
+export async function getRates(_req: Request, res: Response): Promise<void> {
+  try {
+    const rates = await getExchangeRates();
+    res.status(200).json(rates);
+  } catch (error) {
+    logError(error, { context: 'getRates' });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
