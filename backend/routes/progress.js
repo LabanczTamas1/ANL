@@ -75,6 +75,7 @@ router.get("/allUsersProgress", authenticateJWT, async (req, res) => {
             email: userData.email,
             firstName: userData.firstName || "",
             lastName: userData.lastName || "",
+            company: userData.company || "",
             progressionStatus: userData.progressionStatus || "pending",
             progressionCategory: userData.progressionCategory || "",
             progressionTimeline: userData.progressionTimeline || "",
