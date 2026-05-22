@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiSearch, FiPlus, FiInfo } from "react-icons/fi";
+import { FiSearch, FiPlus, FiInfo, FiDollarSign, FiClock } from "react-icons/fi";
 import AddUserModal from "./AddUserModal";
+import AddMoneyModal from "./AddMoneyModal";
+import TransactionHistoryModal from "./TransactionHistoryModal";
 import UserDetailModal from "./UserDetailModal";
 
 interface User {
@@ -32,14 +34,33 @@ const STATUS_LABELS: Record<string, string> = {
 
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [balances, setBalances] = useState<Record<string, number>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isMoneyModalOpen, setIsMoneyModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [groupBy, setGroupBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  const fetchBalances = useCallback(async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/finance/balances`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBalances(data.balances || {});
+      }
+    } catch {
+      // silently fail — balances are supplementary
+    }
+  }, [API_BASE_URL]);
 
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem("authToken");
@@ -80,7 +101,8 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchBalances();
+  }, [fetchUsers, fetchBalances]);
 
   // Modal handlers
   const openDetailModal = (user: User) => {
@@ -91,6 +113,16 @@ const UserManagement = () => {
   const closeDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedUser(null);
+  };
+
+  const openMoneyModal = (user: User) => {
+    setSelectedUser({ ...user });
+    setIsMoneyModalOpen(true);
+  };
+
+  const openHistoryModal = (user: User) => {
+    setSelectedUser({ ...user });
+    setIsHistoryModalOpen(true);
   };
 
   // Add new user — just refresh the list after AddUserModal succeeds
@@ -266,8 +298,7 @@ const UserManagement = () => {
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Company</th>
                   <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Category</th>
-                  <th className="px-4 py-3 text-left">Timeline</th>
+                  <th className="px-4 py-3 text-right">Balance (RON)</th>
                   <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
@@ -291,20 +322,33 @@ const UserManagement = () => {
                         <option value="terminated">Terminated</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-xs">
-                      {user.progressionCategory || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 text-xs">
-                      {user.progressionTimeline || "—"}
+                    <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">
+                      {(balances[user.id] ?? 0).toFixed(2)}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => openDetailModal(user)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                      >
-                        <FiInfo className="text-sm" />
-                        Details
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-[#65558F] hover:bg-[#4e4070] text-white transition-colors"
+                          title="Add/Remove Money"
+                        >
+                          <FiDollarSign className="text-sm" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openHistoryModal(user); }}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                          title="Transaction History"
+                        >
+                          <FiClock className="text-sm" />
+                        </button>
+                        <button
+                          onClick={() => openDetailModal(user)}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                          title="User Details"
+                        >
+                          <FiInfo className="text-sm" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -330,12 +374,27 @@ const UserManagement = () => {
                 {user.company && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{user.company}</p>
                 )}
-                {(user.progressionCategory || user.progressionTimeline) && (
-                  <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    {user.progressionCategory && <span>Category: {user.progressionCategory}</span>}
-                    {user.progressionTimeline && <span>Timeline: {user.progressionTimeline}</span>}
+
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                    {(balances[user.id] ?? 0).toFixed(2)} RON
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#65558F] hover:bg-[#4e4070] text-white transition-colors"
+                      onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
+                    >
+                      <FiDollarSign className="text-sm" />
+                      Money
+                    </button>
+                    <button
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); openHistoryModal(user); }}
+                    >
+                      <FiClock className="text-sm" />
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
@@ -350,13 +409,37 @@ const UserManagement = () => {
       />
 
       {selectedUser && (
-        <UserDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={closeDetailModal}
-          user={selectedUser}
-          onStatusChange={(status) => handleStatusChange(selectedUser.id, status)}
-          onProgressUpdate={(updates) => handleProgressUpdate(selectedUser.id, updates)}
-        />
+        <>
+          <UserDetailModal
+            isOpen={isDetailModalOpen}
+            onClose={closeDetailModal}
+            user={selectedUser}
+            balance={balances[selectedUser.id] ?? 0}
+            onStatusChange={(status) => handleStatusChange(selectedUser.id, status)}
+            onProgressUpdate={(updates) => handleProgressUpdate(selectedUser.id, updates)}
+            onOpenMoney={() => { setIsDetailModalOpen(false); setIsMoneyModalOpen(true); }}
+            onOpenHistory={() => { setIsDetailModalOpen(false); setIsHistoryModalOpen(true); }}
+          />
+
+          <AddMoneyModal
+            isOpen={isMoneyModalOpen}
+            onClose={() => { setIsMoneyModalOpen(false); setSelectedUser(null); }}
+            userId={selectedUser.id}
+            userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
+            currentBalance={balances[selectedUser.id] ?? 0}
+            onSuccess={() => {
+              fetchBalances();
+              toast.success("Transaction recorded successfully");
+            }}
+          />
+
+          <TransactionHistoryModal
+            isOpen={isHistoryModalOpen}
+            onClose={() => { setIsHistoryModalOpen(false); setSelectedUser(null); }}
+            userId={selectedUser.id}
+            userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
+          />
+        </>
       )}
     </div>
   );

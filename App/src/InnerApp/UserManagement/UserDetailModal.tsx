@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { FiX } from "react-icons/fi";
+import { FiX, FiDollarSign, FiClock } from "react-icons/fi";
 
 interface User {
   id: string;
@@ -17,23 +17,22 @@ interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
+  balance: number;
   onStatusChange: (status: string) => void;
   onProgressUpdate: (updates: { progressionCategory?: string; progressionTimeline?: string }) => void;
+  onOpenMoney: () => void;
+  onOpenHistory: () => void;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  active: "Active",
-  inactive: "Inactive",
-  terminated: "Terminated",
-};
 
 const UserDetailModal = ({
   isOpen,
   onClose,
   user,
+  balance,
   onStatusChange,
   onProgressUpdate,
+  onOpenMoney,
+  onOpenHistory,
 }: UserDetailModalProps) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -133,6 +132,34 @@ const UserDetailModal = ({
                       placeholder="Enter timeline"
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#65558F]"
                     />
+                  </div>
+
+                  {/* Balance & Finance */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</h4>
+                        <p className="mt-1 text-lg font-mono font-semibold text-gray-900 dark:text-white">
+                          {balance.toFixed(2)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">RON</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={onOpenMoney}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
+                      >
+                        <FiDollarSign className="text-sm" />
+                        Add / Remove Money
+                      </button>
+                      <button
+                        onClick={onOpenHistory}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 text-sm font-medium transition-colors"
+                      >
+                        <FiClock className="text-sm" />
+                        History
+                      </button>
+                    </div>
                   </div>
                 </div>
               </Dialog.Panel>

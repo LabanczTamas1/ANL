@@ -17,6 +17,7 @@ import fileManagementRoutes from '../../domains/fileManagement/routes/fileManage
 import progressRoutes from '../../domains/progress/routes/progressRoutes.js';
 import reviewRoutes from '../../domains/review/routes/reviewRoutes.js';
 import youtubeRoutes from '../../domains/youtube/routes/youtubeRoutes.js';
+import financeRoutes from '../../domains/finance/routes/financeRoutes.js';
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use('/file', fileManagementRoutes);
 router.use('/progress', progressRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/youtube', youtubeRoutes);
+router.use('/finance', financeRoutes);
 
 export default router;
