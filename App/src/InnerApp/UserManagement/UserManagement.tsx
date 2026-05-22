@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FiSearch, FiPlus, FiDollarSign, FiInfo } from "react-icons/fi";
 import AddUserModal from "./AddUserModal";
 import AddMoneyModal from "./AddMoneyModal";
 import UserDetailModal from "./UserDetailModal";
@@ -12,6 +15,13 @@ interface User {
   status: string;
 }
 
+const STATUS_BADGE: Record<string, string> = {
+  new: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  active: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  failed: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  terminated: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
+};
+
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [currency, setCurrency] = useState("ron");
@@ -21,25 +31,15 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [exchangeRate, setExchangeRate] = useState(1);
   const [groupBy, setGroupBy] = useState<string>("all");
-  const [isMobile, setIsMobile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Responsive screen check
-  useEffect(() => {
-    const checkScreenSize = () => setIsMobile(window.innerWidth < 768);
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
-  // Fetch all users
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Authentication required. Please login again.");
+      toast.error("Authentication required. Please login again.");
       setLoading(false);
       return;
     }
@@ -54,12 +54,9 @@ const UserManagement = () => {
       if (!response.ok) throw new Error(`Failed to fetch users: ${response.status}`);
 
       const data = await response.json();
-      console.log("Fetched Users:", data.allUserData);
       setUsers(data.allUserData || []);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError("Failed to load users. Please try again.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load users.");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -91,13 +88,11 @@ const UserManagement = () => {
     setSelectedUser(null);
   };
 
-  const handleGroupChange = (value: string) => setGroupBy(value);
-
   // Add new user
   const handleAddUser = async (data: any) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Authentication required. Please login again.");
+      toast.error("Authentication required.");
       return;
     }
 
@@ -116,41 +111,34 @@ const UserManagement = () => {
 
       await fetchUsers();
       setIsModalOpen(false);
-    } catch (err) {
-      console.error("Error adding user:", err);
-      setError("Failed to add user. Please try again.");
+      toast.success("User added successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add user.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle step click
   const handleStepClick = async (userId: string, step: number) => {
     const userToUpdate = users.find((u) => u.id === userId);
     if (!userToUpdate) return;
-
     await handleUserUpdate({ id: userId, step });
   };
 
-  // Handle add money (main fix here)
   const handleAddMoney = async (userId: string, amount: number | string) => {
     const userToUpdate = users.find((u) => u.id === userId);
     if (!userToUpdate) return;
 
     const numericAmount = Number(amount);
     if (isNaN(numericAmount)) {
-      setError("Invalid amount entered.");
+      toast.error("Invalid amount entered.");
       return;
     }
 
     const updatedSpends = Number(userToUpdate.spends) + numericAmount;
-
-    await handleUserUpdate({
-      id: userId,
-      spends: updatedSpends,
-    });
-
+    await handleUserUpdate({ id: userId, spends: updatedSpends });
     closeMoneyModal();
+    toast.success(`Added ${numericAmount} to ${userToUpdate.name}'s balance`);
   };
 
   // Exchange rate
@@ -167,12 +155,9 @@ const UserManagement = () => {
       const data = await response.json();
       const rate = data.rates[targetCurrency.toUpperCase()];
       if (!rate) throw new Error("Invalid currency");
-
-      console.log("Exchange rate for", targetCurrency, ":", rate);
       setExchangeRate(rate);
-    } catch (err) {
-      console.error("Error fetching exchange rate:", err);
-      setError("Failed to fetch exchange rate. Using default 1.");
+    } catch (err: any) {
+      toast.error("Failed to fetch exchange rate.");
       setExchangeRate(1);
     }
   }, []);
@@ -184,21 +169,16 @@ const UserManagement = () => {
 
   const convertSpends = (amount: number) => (amount * exchangeRate).toFixed(2);
 
-  // Handle status change
   const handleStatusChange = async (userId: string, status: string) => {
     await handleUserUpdate({ id: userId, status });
   };
 
-  // Unified update function
   const handleUserUpdate = async (updatedUserData: Partial<User>) => {
-    if (!updatedUserData.id) {
-      setError("User ID is required for updates");
-      return;
-    }
+    if (!updatedUserData.id) return;
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Authentication required. Please login again.");
+      toast.error("Authentication required.");
       return;
     }
 
@@ -213,8 +193,6 @@ const UserManagement = () => {
         setSelectedUser(mergedUserData);
       }
 
-      console.log("Sending user update:", updatedUserData);
-
       const response = await fetch(`${API_BASE_URL}/api/modifyUserData`, {
         method: "PATCH",
         headers: {
@@ -227,222 +205,236 @@ const UserManagement = () => {
       if (!response.ok) throw new Error(`Failed to update user: ${response.status}`);
 
       const data = await response.json();
-      console.log("Update response:", data);
-
       if (data.updatedUser) {
         setUsers((prev) =>
           prev.map((u) => (u.id === data.updatedUser.id ? data.updatedUser : u))
         );
-
         if (selectedUser && selectedUser.id === data.updatedUser.id) {
           setSelectedUser(data.updatedUser);
         }
       }
-
-      setError(null);
-    } catch (err) {
-      console.error("Error updating user:", err);
+    } catch (err: any) {
       fetchUsers();
-      setError("Failed to update user. Please try again.");
+      toast.error(err.message || "Failed to update user.");
     }
   };
 
   // Filtered users
-  const filteredUsers =
-    users && users.length > 0
-      ? users.filter((u) => groupBy === "all" || u.status === groupBy)
-      : [];
+  const filteredUsers = users.filter((u) => {
+    const matchesGroup = groupBy === "all" || u.status === groupBy;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      !q ||
+      u.name.toLowerCase().includes(q) ||
+      u.company.toLowerCase().includes(q) ||
+      u.id.toLowerCase().includes(q);
+    return matchesGroup && matchesSearch;
+  });
 
   return (
-    <div className="p-4 md:p-8 h-full w-full">
-      <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">User Management</h1>
+    <div className="min-h-full bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 p-4 md:p-6">
+      <ToastContainer position="top-right" theme="colored" />
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <p>{error}</p>
-          <button className="underline text-sm" onClick={() => setError(null)}>
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0 mb-4">
-        <label className="flex items-center">
-          Group by:
-          <select
-            value={groupBy}
-            onChange={(e) => handleGroupChange(e.target.value)}
-            className="ml-2 border border-gray-300 p-1 rounded"
-          >
-            <option value="all">All</option>
-            <option value="new">New</option>
-            <option value="active">Active</option>
-            <option value="failed">Deal failed</option>
-            <option value="terminated">Terminated</option>
-          </select>
-        </label>
-
-        <label className="flex items-center">
-          Currency:
-          <select
-            value={currency}
-            onChange={(e) => handleCurrencyChange(e.target.value)}
-            className="ml-2 border border-gray-300 p-1 rounded"
-          >
-            <option value="ron">RON</option>
-            <option value="EUR">EURO</option>
-            <option value="USD">USD</option>
-            <option value="HUF">HUF</option>
-          </select>
-        </label>
-      </div>
-
-      {loading ? (
-        <div className="p-4 flex justify-center items-center">
-          <p>Loading users...</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto w-[800px] min-w-[80vw]">
-          <div className="max-h-[60vh] overflow-y-auto">
-            {isMobile ? (
-              // Mobile cards
-              <div className="grid grid-cols-1 gap-4">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="bg-white shadow rounded-lg p-4 border-l-4 border-[#65558F]"
-                      onClick={() => openDetailModal(user)}
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-semibold">{user.name}</h3>
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${
-                            user.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : user.status === "new"
-                              ? "bg-blue-100 text-blue-800"
-                              : user.status === "failed"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {user.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{user.company}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">
-                          {convertSpends(user.spends)} {currency.toUpperCase()}
-                        </span>
-                        <button
-                          className="bg-[#65558F] text-white px-2 py-1 rounded text-sm hover:bg-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openMoneyModal(user);
-                          }}
-                        >
-                          Add money
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center py-4 text-gray-500">No users found</p>
-                )}
-              </div>
-            ) : (
-              // Desktop table
-              <table className="min-w-full w-full bg-white shadow-md rounded-lg">
-                <thead className="bg-gray-100 border-b sticky top-0 z-10">
-                  <tr>
-                    <th className="text-left p-4">Name</th>
-                    <th className="text-left p-4">Company</th>
-                    <th className="text-left p-4">Progress</th>
-                    <th className="text-left p-4">Status</th>
-                    <th className="text-left p-4">Income ({currency.toUpperCase()})</th>
-                    <th className="text-left p-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4">{user.name}</td>
-                        <td className="p-4">{user.company}</td>
-                        <td className="p-4">
-                          <div className="flex items-center space-x-2">
-                            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
-                              <div
-                                key={step}
-                                className={`w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-colors duration-200 ${
-                                  user.step >= step
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-200 text-gray-600"
-                                }`}
-                                onClick={() => handleStepClick(user.id, step)}
-                              >
-                                {step}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <select
-                            value={user.status}
-                            onChange={(e) =>
-                              handleStatusChange(user.id, e.target.value)
-                            }
-                            className="border border-gray-300 p-1 rounded"
-                          >
-                            <option value="new">New</option>
-                            <option value="active">Active</option>
-                            <option value="failed">Deal failed</option>
-                            <option value="terminated">Terminated</option>
-                          </select>
-                        </td>
-                        <td className="p-4">{convertSpends(user.spends)}</td>
-                        <td className="p-4 flex space-x-2">
-                          <button
-                            className="bg-[#65558F] text-white px-2 py-1 rounded hover:bg-blue-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openMoneyModal(user);
-                            }}
-                          >
-                            Add money
-                          </button>
-                          <button
-                            className="bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
-                            onClick={() => openDetailModal(user)}
-                          >
-                            Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="p-4 text-center text-gray-500">
-                        No users found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold">User Management</h1>
         <button
-          className="bg-[#65558F] text-white px-4 py-2 rounded hover:bg-blue-600"
           onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
         >
-          Add new user
+          <FiPlus className="text-base" />
+          Add User
         </button>
       </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        {/* Search */}
+        <div className="relative flex-1">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search by name, company, ID…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
+          />
+        </div>
+
+        {/* Group filter */}
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value)}
+          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
+        >
+          <option value="all">All Statuses</option>
+          <option value="new">New</option>
+          <option value="active">Active</option>
+          <option value="failed">Deal Failed</option>
+          <option value="terminated">Terminated</option>
+        </select>
+
+        {/* Currency */}
+        <select
+          value={currency}
+          onChange={(e) => handleCurrencyChange(e.target.value)}
+          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
+        >
+          <option value="ron">RON</option>
+          <option value="EUR">EUR</option>
+          <option value="USD">USD</option>
+          <option value="HUF">HUF</option>
+        </select>
+
+        <span className="self-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+          {filteredUsers.length} / {users.length} users
+        </span>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-8 justify-center">
+          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          Loading users…
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && filteredUsers.length === 0 && (
+        <p className="text-center text-gray-500 dark:text-gray-400 py-12">
+          No users match your filters.
+        </p>
+      )}
+
+      {/* Table (desktop) / Cards (mobile) */}
+      {!loading && filteredUsers.length > 0 && (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-[#1a1a2e] text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wider">
+                  <th className="px-4 py-3 text-left">Name</th>
+                  <th className="px-4 py-3 text-left">Company</th>
+                  <th className="px-4 py-3 text-left">Progress</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Income ({currency.toUpperCase()})</th>
+                  <th className="px-4 py-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{user.name}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{user.company}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                          <button
+                            key={step}
+                            onClick={() => handleStepClick(user.id, step)}
+                            className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                              user.step >= step
+                                ? "bg-[#65558F] text-white"
+                                : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                            }`}
+                          >
+                            {step}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={user.status}
+                        onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                        className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#65558F] appearance-auto"
+                      >
+                        <option value="new">New</option>
+                        <option value="active">Active</option>
+                        <option value="failed">Deal Failed</option>
+                        <option value="terminated">Terminated</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-mono">
+                      {convertSpends(user.spends)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium bg-[#65558F] hover:bg-[#4e4070] text-white transition-colors"
+                        >
+                          <FiDollarSign className="text-sm" />
+                          Add
+                        </button>
+                        <button
+                          onClick={() => openDetailModal(user)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                        >
+                          <FiInfo className="text-sm" />
+                          Details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredUsers.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => openDetailModal(user)}
+                className="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1e1e1e] shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_BADGE[user.status] ?? STATUS_BADGE.terminated}`}>
+                    {user.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{user.company}</p>
+
+                {/* Step indicators */}
+                <div className="flex items-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                    <div
+                      key={step}
+                      className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-semibold ${
+                        user.step >= step
+                          ? "bg-[#65558F] text-white"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      {step}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                    {convertSpends(user.spends)} {currency.toUpperCase()}
+                  </span>
+                  <button
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#65558F] hover:bg-[#4e4070] text-white transition-colors"
+                    onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
+                  >
+                    <FiDollarSign className="text-sm" />
+                    Add money
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       <AddMoneyModal
