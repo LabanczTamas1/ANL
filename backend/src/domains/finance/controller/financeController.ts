@@ -388,7 +388,7 @@ export async function createPendingPayment(
       pendingPayment: {
         ...pendingPayment,
         originalAmount: numericAmount,
-        amountRON,
+        amountRON: amountInRON,
         exchangeRate,
       },
     });
@@ -419,12 +419,12 @@ export async function getUserPendingPayments(
           originalAmount: parseFloat(p.originalAmount),
           amountRON: parseFloat(p.amountRON),
           exchangeRate: parseFloat(p.exchangeRate),
-        });
+        } as Record<string, any>);
       }
     }
 
     // Sort by due date ascending
-    payments.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    payments.sort((a: any, b: any) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
     res.status(200).json({ userId, payments });
   } catch (error) {
@@ -452,11 +452,11 @@ export async function getAllPendingPayments(
           originalAmount: parseFloat(p.originalAmount),
           amountRON: parseFloat(p.amountRON),
           exchangeRate: parseFloat(p.exchangeRate),
-        });
+        } as Record<string, any>);
       }
     }
 
-    payments.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    payments.sort((a: any, b: any) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
     res.status(200).json({ payments });
   } catch (error) {
