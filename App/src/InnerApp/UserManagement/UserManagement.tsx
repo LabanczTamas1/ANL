@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiSearch, FiPlus, FiInfo, FiDollarSign, FiClock } from "react-icons/fi";
+import { FiSearch, FiPlus, FiInfo, FiDollarSign, FiClock, FiCalendar } from "react-icons/fi";
 import AddUserModal from "./AddUserModal";
 import AddMoneyModal from "./AddMoneyModal";
 import TransactionHistoryModal from "./TransactionHistoryModal";
 import UserDetailModal from "./UserDetailModal";
+import PendingPaymentModal from "./PendingPaymentModal";
+import PendingPaymentsModal from "./PendingPaymentsModal";
 
 interface User {
   id: string;
@@ -41,6 +43,8 @@ const UserManagement = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isMoneyModalOpen, setIsMoneyModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+  const [isPendingListOpen, setIsPendingListOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [groupBy, setGroupBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,6 +156,11 @@ const UserManagement = () => {
   const openHistoryModal = (user: User) => {
     setSelectedUser({ ...user });
     setIsHistoryModalOpen(true);
+  };
+
+  const openPendingModal = (user: User) => {
+    setSelectedUser({ ...user });
+    setIsPendingModalOpen(true);
   };
 
   // Add new user — just refresh the list after AddUserModal succeeds
@@ -304,6 +313,16 @@ const UserManagement = () => {
           ))}
         </select>
 
+        {/* Global pending payments button */}
+        <button
+          onClick={() => { setSelectedUser(null); setIsPendingListOpen(true); }}
+          className="flex items-center gap-1.5 px-3 py-2 rounded border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-sm font-medium transition-colors"
+          title="View all expected payments"
+        >
+          <FiCalendar className="text-sm" />
+          Expected
+        </button>
+
         <span className="self-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
           {filteredUsers.length} / {users.length} users
         </span>
@@ -374,6 +393,13 @@ const UserManagement = () => {
                           title="Add/Remove Money"
                         >
                           <FiDollarSign className="text-sm" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openPendingModal(user); }}
+                          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                          title="Expected Payment"
+                        >
+                          <FiCalendar className="text-sm" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openHistoryModal(user); }}
@@ -462,6 +488,7 @@ const UserManagement = () => {
             onProgressUpdate={(updates) => handleProgressUpdate(selectedUser.id, updates)}
             onOpenMoney={() => { setIsDetailModalOpen(false); setIsMoneyModalOpen(true); }}
             onOpenHistory={() => { setIsDetailModalOpen(false); setIsHistoryModalOpen(true); }}
+            onOpenPending={() => { setIsDetailModalOpen(false); setIsPendingModalOpen(true); }}
           />
 
           <AddMoneyModal
@@ -484,7 +511,38 @@ const UserManagement = () => {
             userId={selectedUser.id}
             userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
           />
+
+          <PendingPaymentModal
+            isOpen={isPendingModalOpen}
+            onClose={() => { setIsPendingModalOpen(false); setSelectedUser(null); }}
+            userId={selectedUser.id}
+            userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
+            onSuccess={() => {
+              toast.success("Expected payment created");
+            }}
+          />
+
+          <PendingPaymentsModal
+            isOpen={isPendingListOpen}
+            onClose={() => { setIsPendingListOpen(false); setSelectedUser(null); }}
+            userId={selectedUser.id}
+            userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
+            onUpdate={() => {
+              fetchBalances();
+            }}
+          />
         </>
+      )}
+
+      {/* Global pending payments list (no user selected) */}
+      {!selectedUser && (
+        <PendingPaymentsModal
+          isOpen={isPendingListOpen}
+          onClose={() => setIsPendingListOpen(false)}
+          onUpdate={() => {
+            fetchBalances();
+          }}
+        />
       )}
     </div>
   );

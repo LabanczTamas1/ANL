@@ -17,6 +17,10 @@ import {
 } from './config/postgresql.js';
 import { ensureAdminAccount } from './utils/ensureAdminAccount.js';
 import { logger, logError } from './utils/logger.js';
+import {
+  startFinanceScheduler,
+  stopFinanceScheduler,
+} from './domains/finance/scheduler/financeScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Works in both dev (src/) and prod (dist/) — migrations/ sits one level up from both
@@ -46,7 +50,10 @@ async function bootstrap(): Promise<void> {
     await ensureAdminAccount();
     logger.info('Admin account check completed');
 
-    // 5. Start HTTP server
+    // 5. Start schedulers
+    startFinanceScheduler();
+
+    // 6. Start HTTP server
     const server = app.listen(env.PORT, () => {
       logger.info({ port: env.PORT }, `Server running at http://localhost:${env.PORT}`);
     });
@@ -60,6 +67,7 @@ async function bootstrap(): Promise<void> {
       server.close(async () => {
         logger.info('HTTP server closed');
 
+        stopFinanceScheduler();
         await closePostgresPool();
         await closeRedisClient();
 
