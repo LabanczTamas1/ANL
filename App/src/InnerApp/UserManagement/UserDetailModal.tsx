@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { FiX, FiDollarSign, FiClock } from "react-icons/fi";
+import { FiX, FiDollarSign, FiClock, FiCalendar } from "react-icons/fi";
 
 interface User {
   id: string;
@@ -24,6 +24,7 @@ interface UserDetailModalProps {
   onProgressUpdate: (updates: { progressionCategory?: string; progressionTimeline?: string }) => void;
   onOpenMoney: () => void;
   onOpenHistory: () => void;
+  onOpenPending: () => void;
 }
 
 const UserDetailModal = ({
@@ -37,6 +38,7 @@ const UserDetailModal = ({
   onProgressUpdate,
   onOpenMoney,
   onOpenHistory,
+  onOpenPending,
 }: UserDetailModalProps) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -159,7 +161,14 @@ const UserDetailModal = ({
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
                       >
                         <FiDollarSign className="text-sm" />
-                        Add / Remove Money
+                        Add / Remove
+                      </button>
+                      <button
+                        onClick={onOpenPending}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-sm font-medium transition-colors"
+                      >
+                        <FiCalendar className="text-sm" />
+                        Expected
                       </button>
                       <button
                         onClick={onOpenHistory}
