@@ -32,6 +32,8 @@ const STATUS_LABELS: Record<string, string> = {
   terminated: "Terminated",
 };
 
+const DISPLAY_CURRENCIES = ["RON", "EUR", "USD", "GBP", "HUF", "CHF"] as const;
+
 const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [balances, setBalances] = useState<Record<string, number>>({});
@@ -43,8 +45,34 @@ const UserManagement = () => {
   const [groupBy, setGroupBy] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [displayCurrency, setDisplayCurrency] = useState("RON");
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Rate to convert RON → display currency
+  const displayRate = displayCurrency === "RON" ? 1 : (exchangeRates[displayCurrency] || 1);
+
+  const formatBalance = (ronAmount: number) => {
+    const converted = ronAmount * displayRate;
+    return `${converted.toFixed(2)} ${displayCurrency}`;
+  };
+
+  const fetchRates = useCallback(async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/finance/rates`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setExchangeRates(data.rates || {});
+      }
+    } catch {
+      // silently fail
+    }
+  }, [API_BASE_URL]);
 
   const fetchBalances = useCallback(async () => {
     const token = localStorage.getItem("authToken");
@@ -102,7 +130,8 @@ const UserManagement = () => {
   useEffect(() => {
     fetchUsers();
     fetchBalances();
-  }, [fetchUsers, fetchBalances]);
+    fetchRates();
+  }, [fetchUsers, fetchBalances, fetchRates]);
 
   // Modal handlers
   const openDetailModal = (user: User) => {
@@ -263,6 +292,18 @@ const UserManagement = () => {
           <option value="terminated">Terminated</option>
         </select>
 
+        {/* Display currency selector */}
+        <select
+          value={displayCurrency}
+          onChange={(e) => setDisplayCurrency(e.target.value)}
+          className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
+          title="Display currency"
+        >
+          {DISPLAY_CURRENCIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+
         <span className="self-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
           {filteredUsers.length} / {users.length} users
         </span>
@@ -298,7 +339,7 @@ const UserManagement = () => {
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Company</th>
                   <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-right">Balance (RON)</th>
+                  <th className="px-4 py-3 text-right">Balance ({displayCurrency})</th>
                   <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
@@ -323,7 +364,7 @@ const UserManagement = () => {
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">
-                      {(balances[user.id] ?? 0).toFixed(2)}
+                      {formatBalance(balances[user.id] ?? 0)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
@@ -377,7 +418,7 @@ const UserManagement = () => {
 
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
-                    {(balances[user.id] ?? 0).toFixed(2)} RON
+                    {formatBalance(balances[user.id] ?? 0)}
                   </span>
                   <div className="flex gap-1.5">
                     <button
@@ -415,6 +456,8 @@ const UserManagement = () => {
             onClose={closeDetailModal}
             user={selectedUser}
             balance={balances[selectedUser.id] ?? 0}
+            displayCurrency={displayCurrency}
+            displayRate={displayRate}
             onStatusChange={(status) => handleStatusChange(selectedUser.id, status)}
             onProgressUpdate={(updates) => handleProgressUpdate(selectedUser.id, updates)}
             onOpenMoney={() => { setIsDetailModalOpen(false); setIsMoneyModalOpen(true); }}
@@ -427,6 +470,8 @@ const UserManagement = () => {
             userId={selectedUser.id}
             userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
             currentBalance={balances[selectedUser.id] ?? 0}
+            displayCurrency={displayCurrency}
+            displayRate={displayRate}
             onSuccess={() => {
               fetchBalances();
               toast.success("Transaction recorded successfully");

@@ -18,6 +18,8 @@ interface UserDetailModalProps {
   onClose: () => void;
   user: User;
   balance: number;
+  displayCurrency: string;
+  displayRate: number;
   onStatusChange: (status: string) => void;
   onProgressUpdate: (updates: { progressionCategory?: string; progressionTimeline?: string }) => void;
   onOpenMoney: () => void;
@@ -29,6 +31,8 @@ const UserDetailModal = ({
   onClose,
   user,
   balance,
+  displayCurrency,
+  displayRate,
   onStatusChange,
   onProgressUpdate,
   onOpenMoney,
@@ -140,8 +144,13 @@ const UserDetailModal = ({
                       <div>
                         <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</h4>
                         <p className="mt-1 text-lg font-mono font-semibold text-gray-900 dark:text-white">
-                          {balance.toFixed(2)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">RON</span>
+                          {(balance * displayRate).toFixed(2)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{displayCurrency}</span>
                         </p>
+                        {displayCurrency !== "RON" && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                            {balance.toFixed(2)} RON
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">

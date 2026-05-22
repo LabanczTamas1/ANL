@@ -12,6 +12,9 @@ interface Transaction {
   id: string;
   userId: string;
   userName: string;
+  originalAmount: number;
+  originalCurrency: string;
+  exchangeRate: number;
   amount: number;
   type: "credit" | "debit";
   description: string;
@@ -180,15 +183,25 @@ const TransactionHistoryModal = ({
                             {/* Details */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <span
-                                  className={`text-sm font-semibold ${
-                                    tx.type === "credit"
-                                      ? "text-green-600 dark:text-green-400"
-                                      : "text-red-600 dark:text-red-400"
-                                  }`}
-                                >
-                                  {tx.type === "credit" ? "+" : "−"}{tx.amount.toFixed(2)} RON
-                                </span>
+                                <div className="flex flex-col">
+                                  <span
+                                    className={`text-sm font-semibold ${
+                                      tx.type === "credit"
+                                        ? "text-green-600 dark:text-green-400"
+                                        : "text-red-600 dark:text-red-400"
+                                    }`}
+                                  >
+                                    {tx.type === "credit" ? "+" : "−"}{tx.amount.toFixed(2)} RON
+                                  </span>
+                                  {tx.originalCurrency && tx.originalCurrency !== "RON" && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      {tx.type === "credit" ? "+" : "−"}{tx.originalAmount.toFixed(2)} {tx.originalCurrency}
+                                      <span className="ml-1 text-gray-400 dark:text-gray-500">
+                                        @ {tx.exchangeRate.toFixed(4)}
+                                      </span>
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                                   {formatDate(tx.createdAt)} · {formatTime(tx.createdAt)}
                                 </span>

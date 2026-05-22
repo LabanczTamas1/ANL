@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/balance/:userId', authMiddleware, fc.getBalance);
 router.get('/balances', authMiddleware, fc.getAllBalances);
+router.get('/rates', authMiddleware, fc.getRates);
 router.post('/transaction', authMiddleware, fc.createTransaction);
 router.get('/history/:userId', authMiddleware, fc.getTransactionHistory);
 

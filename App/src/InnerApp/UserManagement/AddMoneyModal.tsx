@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiX, FiInfo } from "react-icons/fi";
+
+const CURRENCIES = ["RON", "EUR", "USD", "GBP", "HUF", "CHF"] as const;
 
 interface AddMoneyModalProps {
   isOpen: boolean;
@@ -7,6 +9,8 @@ interface AddMoneyModalProps {
   userId: string;
   userName: string;
   currentBalance: number;
+  displayCurrency: string;
+  displayRate: number;
   onSuccess: () => void;
 }
 
@@ -16,15 +20,42 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
   userId,
   userName,
   currentBalance,
+  displayCurrency,
+  displayRate,
   onSuccess,
 }) => {
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("RON");
   const [type, setType] = useState<"credit" | "debit">("credit");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [previewRate, setPreviewRate] = useState<number | null>(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Fetch conversion rate when currency changes
+  useEffect(() => {
+    if (!isOpen) return;
+    if (currency === "RON") {
+      setPreviewRate(1);
+      return;
+    }
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    fetch(`${API_BASE_URL}/api/v1/finance/rates`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const rate = data.rates?.[currency];
+        // rate = how many currency units per 1 RON
+        // to convert FROM currency TO RON: amount / rate
+        setPreviewRate(rate ? 1 / rate : null);
+      })
+      .catch(() => setPreviewRate(null));
+  }, [currency, isOpen, API_BASE_URL]);
 
   if (!isOpen) return null;
 
@@ -35,6 +66,16 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
       setError(null);
     }
   };
+
+  const ronEquivalent =
+    amount && parseFloat(amount) > 0 && previewRate
+      ? parseFloat((parseFloat(amount) * previewRate).toFixed(2))
+      : null;
+
+  const displayEquivalent = (ronAmount: number) =>
+    displayCurrency === "RON"
+      ? `${ronAmount.toFixed(2)} RON`
+      : `${(ronAmount * displayRate).toFixed(2)} ${displayCurrency}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +99,13 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userId, amount: numericAmount, type, description }),
+        body: JSON.stringify({
+          userId,
+          amount: numericAmount,
+          type,
+          description,
+          currency,
+        }),
       });
 
       const result = await response.json();
@@ -67,6 +114,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
       setAmount("");
       setDescription("");
       setType("credit");
+      setCurrency("RON");
       setError(null);
       onSuccess();
       onClose();
@@ -98,7 +146,15 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
             <span className="font-medium text-gray-900 dark:text-white">{userName}</span>
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Current balance: <span className="font-mono font-medium">{currentBalance.toFixed(2)} RON</span>
+            Current balance:{" "}
+            <span className="font-mono font-medium">
+              {displayEquivalent(currentBalance)}
+            </span>
+            {displayCurrency !== "RON" && (
+              <span className="text-gray-400 dark:text-gray-500 ml-1">
+                ({currentBalance.toFixed(2)} RON)
+              </span>
+            )}
           </p>
         </div>
 
@@ -134,26 +190,47 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
             </div>
           </div>
 
-          {/* Amount */}
+          {/* Amount + Currency */}
           <div>
             <label className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-              Amount (RON)
+              Amount
               <div className="relative group">
                 <FiInfo className="w-3.5 h-3.5 text-gray-400 cursor-help" />
-                <div className="absolute left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg py-1.5 px-3 w-52 z-10 shadow-lg">
-                  Amount in RON. All transactions are recorded and visible in the history.
+                <div className="absolute left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg py-1.5 px-3 w-56 z-10 shadow-lg">
+                  Enter the amount in the selected currency. It will be auto-converted to RON at the live exchange rate.
                 </div>
               </div>
             </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={handleAmountChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={amount}
+                onChange={handleAmountChange}
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
+                autoFocus
+              />
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Live conversion preview */}
+            {currency !== "RON" && ronEquivalent !== null && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                ≈ {ronEquivalent.toFixed(2)} RON
+                {previewRate && (
+                  <span className="ml-1">(1 {currency} = {previewRate.toFixed(4)} RON)</span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* Description */}
@@ -173,11 +250,14 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
 
           {/* Preview */}
-          {amount && parseFloat(amount) > 0 && (
+          {ronEquivalent !== null && (
             <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300">
-              Balance after: <span className="font-mono font-medium">
-                {(currentBalance + (type === "credit" ? parseFloat(amount) : -parseFloat(amount))).toFixed(2)} RON
-              </span>
+              <div className="flex justify-between">
+                <span>Balance after:</span>
+                <span className="font-mono font-medium">
+                  {(currentBalance + (type === "credit" ? ronEquivalent : -ronEquivalent)).toFixed(2)} RON
+                </span>
+              </div>
             </div>
           )}
 
