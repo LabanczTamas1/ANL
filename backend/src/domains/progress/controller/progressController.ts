@@ -81,6 +81,7 @@ export async function allUsersProgress(
             email: userData.email,
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
+            company: userData.company || '',
             progressionStatus: userData.progressionStatus || 'pending',
             progressionCategory: userData.progressionCategory || '',
             progressionTimeline: userData.progressionTimeline || '',

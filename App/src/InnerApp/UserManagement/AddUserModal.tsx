@@ -30,7 +30,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("No auth token found");
 
-      const response = await fetch(`${API_BASE_URL}/api/add-user`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/add-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
