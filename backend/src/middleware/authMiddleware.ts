@@ -4,14 +4,14 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../utils/jwt.js';
-import { getRedisClient } from '../config/database.js';
 import { createLogger } from '../utils/logger.js';
+import * as userRepo from '../domains/user/repository/userRepository.js';
 
 const logger = createLogger('auth', 'middleware');
 
 /**
  * Verify the access token from the `Authorization: Bearer <token>` header.
- * Attaches `req.user` with id, role, and Redis-stored user data.
+ * Attaches `req.user` with id, role, and PG-stored user data.
  */
 export async function authMiddleware(
   req: Request,
@@ -42,26 +42,20 @@ export async function authMiddleware(
       return;
     }
 
-    const redisClient = getRedisClient();
-    const exists = await redisClient.exists(`user:${userId}`);
-    if (!exists) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const userData = await redisClient.hGetAll(`user:${userId}`);
-    if (!userData) {
-      res.status(404).json({ error: 'User data not found' });
-      return;
-    }
-
     req.user = {
-      id: userId,
-      sub: userId,
-      email: decoded.email || userData.email,
-      username: decoded.username || userData.username,
-      role: userData.role || decoded.role || 'user',
-      ...userData,
+      id: user.id,
+      sub: user.id,
+      email: user.email,
+      username: user.username || '',
+      role: user.role || 'user',
+      firstName: user.first_name,
+      lastName: user.last_name,
     };
 
     logger.debug(

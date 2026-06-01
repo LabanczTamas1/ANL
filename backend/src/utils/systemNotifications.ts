@@ -3,8 +3,8 @@
 // ---------------------------------------------------------------------------
 
 import { v4 as uuidv4 } from 'uuid';
-import { getRedisClient } from '../config/database.js';
 import { createLogger } from './logger.js';
+import { query } from './db.js';
 
 const logger = createLogger('system', 'infra');
 
@@ -14,11 +14,8 @@ const SYSTEM_SENDER = {
   fromEmail: 'system@anl.internal',
 };
 
-/** TTL for system notifications in Redis (90 days) */
-const NOTIFICATION_TTL_SECONDS = 90 * 24 * 60 * 60;
-
 /**
- * Deliver a system notification directly into a user's inbox.
+ * Deliver a system notification directly into a user's inbox (messages table).
  * Nothing is sent to any real email address.
  */
 export async function sendSystemNotification(
@@ -27,28 +24,19 @@ export async function sendSystemNotification(
   body: string,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
-    const mailId = uuidv4();
-    const timestamp = Date.now();
-    const mailDetailsKey = `MailDetails:${mailId}`;
-
-    await redisClient.hSet(mailDetailsKey, {
-      fromId: SYSTEM_SENDER.fromId,
-      fromName: SYSTEM_SENDER.fromName,
-      fromEmail: SYSTEM_SENDER.fromEmail,
-      subject,
-      recipient: userId,
-      body,
-      timeSended: String(timestamp),
-      isRead: 'false',
-    });
-
-    await redisClient.expire(mailDetailsKey, NOTIFICATION_TTL_SECONDS);
-
-    await redisClient.zAdd(`inbox:${userId}`, {
-      score: timestamp,
-      value: mailId,
-    });
+    await query(
+      `INSERT INTO messages (id, from_id, from_name, from_email, recipient_id, subject, body, is_system)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+      [
+        uuidv4(),
+        SYSTEM_SENDER.fromId,
+        SYSTEM_SENDER.fromName,
+        SYSTEM_SENDER.fromEmail,
+        userId,
+        subject,
+        body,
+      ],
+    );
   } catch (err) {
     // Never let a notification failure break the parent request
     logger.error({ err, userId }, 'Failed to deliver system notification');

@@ -5,10 +5,11 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
-import { getRedisClient } from '../../../config/database.js';
 import { env } from '../../../config/env.js';
 import { JwtService } from '../../../utils/jwt.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { query, queryOne, execute } from '../../../utils/db.js';
+import * as userRepo from '../../user/repository/userRepository.js';
 
 const logger = createLogger('email', 'controller');
 
@@ -16,19 +17,17 @@ const logger = createLogger('email', 'controller');
 // SSE — push unread-count updates to connected clients
 // ---------------------------------------------------------------------------
 
-const sseClients = new Map<string, Response[]>(); // userId → open SSE responses
+const sseClients = new Map<string, Response[]>();
 
 async function emitUnreadCount(userId: string): Promise<void> {
   const clients = sseClients.get(userId);
   if (!clients || clients.length === 0) return;
 
-  const r = getRedisClient();
-  const mails = await r.zRange(`inbox:${userId}`, 0, -1);
-  let count = 0;
-  for (const mailId of mails) {
-    const isRead = await r.hGet(`MailDetails:${mailId}`, 'isRead');
-    if (isRead === 'false' || !isRead) count++;
-  }
+  const row = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count FROM messages WHERE recipient_id = $1 AND is_read = false`,
+    [userId],
+  );
+  const count = parseInt(row?.count || '0', 10);
 
   const payload = `data: ${JSON.stringify({ count })}\n\n`;
   for (const res of [...clients]) {
@@ -39,7 +38,7 @@ async function emitUnreadCount(userId: string): Promise<void> {
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // STARTTLS on port 587
+  secure: false,
   auth: {
     user: env.SMTP_USER || 'deid.unideb@gmail.com',
     pass: env.SMTP_PASS || '',
@@ -55,40 +54,32 @@ export async function saveEmail(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
     const recipientString = typeof recipient === 'string' ? recipient : JSON.stringify(recipient);
     const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
 
-    const userName = `username:${name}`;
-    const userId = (await r.get(`user:${userName}`)) || (await r.get(userName));
-
-    if (!userId) {
+    const user = await userRepo.findByUsername(name);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const userData = await r.hGetAll(`user:${userId}`);
-    const fromEmail = userData.email;
-
     const mailId = uuidv4();
-    const timestamp = Date.now();
 
-    await r.hSet(`MailDetails:${mailId}`, {
-      fromId: userId,
-      fromName: name,
-      fromEmail: fromEmail,
-      subject,
-      recipient: recipientString,
-      body: bodyString,
-      timeSended: String(timestamp),
-      isRead: 'false',
-    });
+    // Save to messages table (inbox)
+    await query(
+      `INSERT INTO messages (id, from_id, from_name, from_email, recipient_id, subject, body)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [mailId, user.id, name, user.email, user.id, subject, bodyString],
+    );
 
-    await r.zAdd(`inbox:${userId}`, { score: timestamp, value: mailId });
-    await r.zAdd(`SentMail:${userId}`, { score: timestamp, value: mailId });
-    await r.expire(`MailDetails:${mailId}`, 30 * 24 * 60 * 60);
+    // Save to sent_messages table
+    await query(
+      `INSERT INTO sent_messages (id, from_id, from_name, from_email, recipient_email, subject, body)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [uuidv4(), user.id, name, user.email, recipientString, subject, bodyString],
+    );
 
-    try { await emitUnreadCount(userId); } catch (_) {}
+    try { await emitUnreadCount(user.id); } catch (_) {}
 
     await transporter.sendMail({
       from: `"${env.SMTP_FROM_NAME}" <${env.SMTP_FROM_EMAIL}>`,
@@ -107,15 +98,20 @@ export async function saveEmail(req: Request, res: Response): Promise<void> {
 export async function getInbox(req: Request, res: Response): Promise<void> {
   const { username } = req.params;
   try {
-    const r = getRedisClient();
-    const userId = await r.get(`username:${username}`);
-    const mails = await r.zRange(`inbox:${userId}`, 0, -1);
+    const user = await userRepo.findByUsername(username);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
 
-    const mailDetails = await Promise.all(
-      mails.map((mailId) => r.hGetAll(`MailDetails:${mailId}`)),
+    const rows = await query(
+      `SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
+              subject, body, is_read as "isRead", is_system as "isSystem", created_at as "timeSended"
+       FROM messages WHERE recipient_id = $1 ORDER BY created_at DESC`,
+      [user.id],
     );
 
-    res.json(mailDetails);
+    res.json(rows);
   } catch (error) {
     logError(error, { context: 'getInbox' });
     res.status(500).json({ error: 'Internal server error' });
@@ -125,15 +121,20 @@ export async function getInbox(req: Request, res: Response): Promise<void> {
 export async function getSentMails(req: Request, res: Response): Promise<void> {
   const { username } = req.params;
   try {
-    const r = getRedisClient();
-    const userId = await r.get(`username:${username}`);
-    const mails = await r.zRange(`SentMail:${userId}`, 0, -1);
+    const user = await userRepo.findByUsername(username);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
 
-    const mailDetails = await Promise.all(
-      mails.map((mailId) => r.hGetAll(`MailDetails:${mailId}`)),
+    const rows = await query(
+      `SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
+              recipient_email as "recipient", subject, body, created_at as "timeSended"
+       FROM sent_messages WHERE from_id = $1 ORDER BY created_at DESC`,
+      [user.id],
     );
 
-    res.json(mailDetails);
+    res.json(rows);
   } catch (error) {
     logError(error, { context: 'getSentMails' });
     res.status(500).json({ error: 'Internal server error' });
@@ -149,21 +150,22 @@ export async function markAsRead(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
     const name = username || req.body.name;
-    const userId =
-      (await r.get(`user:username:${name}`)) ||
-      (await r.get(`username:${name}`));
-
-    if (!userId) {
+    const user = await userRepo.findByUsername(name);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    for (const emailId of emailIds) {
-      await r.hSet(`MailDetails:${emailId}`, { isRead: 'true' });
+    if (emailIds.length > 0) {
+      const placeholders = emailIds.map((_: string, i: number) => `$${i + 1}`).join(', ');
+      await execute(
+        `UPDATE messages SET is_read = true WHERE id IN (${placeholders})`,
+        emailIds,
+      );
     }
-    try { await emitUnreadCount(userId); } catch (_) {}
+
+    try { await emitUnreadCount(user.id); } catch (_) {}
 
     res.status(200).json({ message: 'Emails marked as read successfully' });
   } catch (error) {
@@ -176,25 +178,18 @@ export async function getUnreadCount(req: Request, res: Response): Promise<void>
   const { username } = req.query;
 
   try {
-    const r = getRedisClient();
-    const userId =
-      (await r.get(`user:username:${username}`)) ||
-      (await r.get(`username:${username}`));
-
-    if (!userId) {
+    const user = await userRepo.findByUsername(username as string);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const mails = await r.zRange(`inbox:${userId}`, 0, -1);
-    let unreadCount = 0;
+    const row = await queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM messages WHERE recipient_id = $1 AND is_read = false`,
+      [user.id],
+    );
 
-    for (const mailId of mails) {
-      const isRead = await r.hGet(`MailDetails:${mailId}`, 'isRead');
-      if (isRead === 'false' || !isRead) unreadCount++;
-    }
-
-    res.json({ count: unreadCount });
+    res.json({ count: parseInt(row?.count || '0', 10) });
   } catch (error) {
     logError(error, { context: 'getUnreadCount' });
     res.status(500).json({ error: 'Internal server error' });
@@ -214,19 +209,19 @@ export async function deleteEmails(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
-    const userId = await r.get(`username:${username}`);
-
-    if (!userId) {
+    const user = await userRepo.findByUsername(username);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    for (const emailId of emailIds) {
-      await r.del(`MailDetails:${emailId}`);
-      await r.zRem(`inbox:${userId}`, emailId);
-    }
-    try { await emitUnreadCount(userId); } catch (_) {}
+    const placeholders = emailIds.map((_: string, i: number) => `$${i + 1}`).join(', ');
+    await execute(
+      `DELETE FROM messages WHERE id IN (${placeholders})`,
+      emailIds,
+    );
+
+    try { await emitUnreadCount(user.id); } catch (_) {}
 
     res.status(200).json({
       message: `Successfully deleted ${emailIds.length} email(s)`,

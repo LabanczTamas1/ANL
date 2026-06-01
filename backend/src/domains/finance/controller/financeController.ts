@@ -1,19 +1,17 @@
 // ---------------------------------------------------------------------------
-// Finance Controller — multi-currency transaction ledger
+// Finance Controller — multi-currency transaction ledger (PostgreSQL)
 // ---------------------------------------------------------------------------
 
 import { Request, Response } from 'express';
-import { getRedisClient } from '../../../config/database.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { query, queryOne, execute } from '../../../utils/db.js';
+import * as userRepo from '../../user/repository/userRepository.js';
 import {
   getExchangeRates,
   convertCurrency,
   isSupportedCurrency,
 } from '../service/currencyService.js';
 import {
-  pendingKey,
-  userPendingsKey,
-  allPendingsKey,
   logPendingEvent,
   sendDuePaymentEmail,
 } from '../service/pendingPaymentService.js';
@@ -21,27 +19,24 @@ import crypto from 'crypto';
 
 const logger = createLogger('finance', 'controller');
 
-// ─── Key helpers ─────────────────────────────────────────────────────────────
-
-const balanceKey = (userId: string) => `finance:balance:${userId}`;
-const txKey = (txId: string) => `finance:tx:${txId}`;
-const userTxsKey = (userId: string) => `finance:user:${userId}:txs`;
-
 // ─── GET /balance/:userId ────────────────────────────────────────────────────
 
 export async function getBalance(req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
     const { userId } = req.params;
 
-    const userExists = await r.exists(`user:${userId}`);
-    if (!userExists) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const balance = await r.get(balanceKey(userId));
-    res.status(200).json({ userId, balance: parseFloat(balance || '0') });
+    const row = await queryOne<{ balance: string }>(
+      `SELECT COALESCE(balance, 0) as balance FROM user_balances WHERE user_id = $1`,
+      [userId],
+    );
+
+    res.status(200).json({ userId, balance: parseFloat(row?.balance || '0') });
   } catch (error) {
     logError(error, { context: 'getBalance' });
     res.status(500).json({ error: 'Internal server error' });
@@ -55,23 +50,14 @@ export async function getAllBalances(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
+    const rows = await query<{ user_id: string; balance: string }>(
+      `SELECT user_id, balance FROM user_balances`,
+    );
+
     const balances: Record<string, number> = {};
-
-    let cursor = 0;
-    do {
-      const result = await r.scan(cursor, {
-        MATCH: 'finance:balance:*',
-        COUNT: 200,
-      });
-      cursor = result.cursor;
-
-      for (const key of result.keys) {
-        const userId = key.replace('finance:balance:', '');
-        const val = await r.get(key);
-        balances[userId] = parseFloat(val || '0');
-      }
-    } while (cursor !== 0);
+    for (const row of rows) {
+      balances[row.user_id] = parseFloat(row.balance);
+    }
 
     res.status(200).json({ balances });
   } catch (error) {
@@ -87,10 +73,8 @@ export async function createTransaction(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { userId, amount, type, description, currency: inputCurrency } = req.body;
 
-    // Validation
     if (!userId || amount === undefined || !type) {
       res.status(400).json({
         error: 'Missing required fields: userId, amount, type',
@@ -109,21 +93,19 @@ export async function createTransaction(
       return;
     }
 
-    // Currency validation (default RON)
     const originalCurrency = (inputCurrency || 'RON').toUpperCase();
     if (!isSupportedCurrency(originalCurrency)) {
       res.status(400).json({ error: `Unsupported currency: ${originalCurrency}` });
       return;
     }
 
-    // Check target user exists
-    const userExists = await r.exists(`user:${userId}`);
-    if (!userExists) {
+    const targetUser = await userRepo.findById(userId);
+    if (!targetUser) {
       res.status(404).json({ error: 'Target user not found' });
       return;
     }
 
-    // Convert to RON if needed (balance is always stored in RON)
+    // Convert to RON
     let amountInRON = numericAmount;
     let exchangeRate = 1;
     if (originalCurrency !== 'RON') {
@@ -132,77 +114,61 @@ export async function createTransaction(
       exchangeRate = conversion.rate;
     }
 
-    // Get current balance (RON)
-    const currentBalance = parseFloat(
-      (await r.get(balanceKey(userId))) || '0',
+    // Get current balance
+    const balanceRow = await queryOne<{ balance: string }>(
+      `SELECT COALESCE(balance, 0) as balance FROM user_balances WHERE user_id = $1`,
+      [userId],
     );
+    const currentBalance = parseFloat(balanceRow?.balance || '0');
 
-    // Calculate new balance
     const delta = type === 'credit' ? amountInRON : -amountInRON;
     const newBalance = parseFloat((currentBalance + delta).toFixed(2));
 
-    // Get performer info
     const performer = req.user!;
     const performerName =
       [performer.firstName, performer.lastName].filter(Boolean).join(' ') ||
-      performer.username ||
-      performer.email;
+      performer.username || performer.email;
 
-    // Get target user info
-    const targetUser = await r.hGetAll(`user:${userId}`);
     const targetName =
-      [targetUser.firstName, targetUser.lastName].filter(Boolean).join(' ') ||
-      targetUser.username ||
-      targetUser.email;
+      `${targetUser.first_name} ${targetUser.last_name}`.trim() ||
+      targetUser.username || targetUser.email;
 
-    // Create transaction record
     const txId = crypto.randomUUID();
-    const now = new Date().toISOString();
 
-    const transaction = {
-      id: txId,
-      userId,
-      userName: targetName,
-      originalAmount: numericAmount.toFixed(2),
-      originalCurrency,
-      exchangeRate: exchangeRate.toFixed(6),
-      amount: amountInRON.toFixed(2),
-      currency: 'RON',
-      type,
-      description: description || '',
-      performedBy: performer.id,
-      performedByName: performerName,
-      balanceBefore: currentBalance.toFixed(2),
-      balanceAfter: newBalance.toFixed(2),
-      createdAt: now,
-    };
+    // Upsert balance + insert transaction
+    await query(
+      `INSERT INTO user_balances (user_id, balance) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET balance = $2, updated_at = now()`,
+      [userId, newBalance.toFixed(2)],
+    );
 
-    // Atomic write
-    const multi = r.multi();
-    multi.set(balanceKey(userId), newBalance.toFixed(2));
-    multi.hSet(txKey(txId), transaction);
-    multi.zAdd(userTxsKey(userId), { score: Date.now(), value: txId });
-    await multi.exec();
+    await query(
+      `INSERT INTO finance_transactions (id, user_id, user_name, original_amount, original_currency, exchange_rate, amount, type, description, performed_by, performed_by_name, balance_before, balance_after)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [
+        txId, userId, targetName,
+        numericAmount.toFixed(2), originalCurrency, exchangeRate.toFixed(6),
+        amountInRON.toFixed(2), type, description || '',
+        performer.id, performerName,
+        currentBalance.toFixed(2), newBalance.toFixed(2),
+      ],
+    );
 
     logger.info(
-      {
-        txId, userId, type,
-        originalAmount: numericAmount, originalCurrency,
-        amountRON: amountInRON, exchangeRate,
-        performedBy: performer.id,
-      },
+      { txId, userId, type, originalAmount: numericAmount, originalCurrency, amountRON: amountInRON, performedBy: performer.id },
       'Transaction created',
     );
 
     res.status(201).json({
       message: 'Transaction recorded successfully',
       transaction: {
-        ...transaction,
-        originalAmount: numericAmount,
-        amount: amountInRON,
-        exchangeRate,
-        balanceBefore: currentBalance,
-        balanceAfter: newBalance,
+        id: txId, userId, userName: targetName,
+        originalAmount: numericAmount, originalCurrency, exchangeRate,
+        amount: amountInRON, currency: 'RON', type,
+        description: description || '',
+        performedBy: performer.id, performedByName: performerName,
+        balanceBefore: currentBalance, balanceAfter: newBalance,
+        createdAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -218,45 +184,47 @@ export async function getTransactionHistory(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { userId } = req.params;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
 
-    const userExists = await r.exists(`user:${userId}`);
-    if (!userExists) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const total = await r.zCard(userTxsKey(userId));
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
+    const countRow = await queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM finance_transactions WHERE user_id = $1`,
+      [userId],
+    );
+    const total = parseInt(countRow?.count || '0', 10);
 
-    // Get transaction IDs in reverse chronological order
-    const txIds = await r.zRange(userTxsKey(userId), start, end, { REV: true });
+    const offset = (page - 1) * limit;
+    const rows = await query(
+      `SELECT id, user_id as "userId", user_name as "userName",
+              original_amount as "originalAmount", original_currency as "originalCurrency",
+              exchange_rate as "exchangeRate", amount, type, description, event_type as "eventType",
+              performed_by as "performedBy", performed_by_name as "performedByName",
+              balance_before as "balanceBefore", balance_after as "balanceAfter",
+              pending_id as "pendingId", created_at as "createdAt"
+       FROM finance_transactions WHERE user_id = $1
+       ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [userId, limit, offset],
+    );
 
-    const transactions = [];
-    for (const id of txIds) {
-      const tx = await r.hGetAll(txKey(id));
-      if (tx && tx.id) {
-        transactions.push({
-          ...tx,
-          originalAmount: parseFloat(tx.originalAmount || tx.amount),
-          originalCurrency: tx.originalCurrency || 'RON',
-          exchangeRate: parseFloat(tx.exchangeRate || '1'),
-          amount: parseFloat(tx.amount),
-          balanceBefore: parseFloat(tx.balanceBefore),
-          balanceAfter: parseFloat(tx.balanceAfter),
-        });
-      }
-    }
+    const transactions = rows.map((tx: any) => ({
+      ...tx,
+      originalAmount: parseFloat(tx.originalAmount),
+      originalCurrency: tx.originalCurrency || 'RON',
+      exchangeRate: parseFloat(tx.exchangeRate || '1'),
+      amount: parseFloat(tx.amount),
+      balanceBefore: parseFloat(tx.balanceBefore),
+      balanceAfter: parseFloat(tx.balanceAfter),
+    }));
 
     res.status(200).json({
-      userId,
-      page,
-      limit,
-      total,
+      userId, page, limit, total,
       totalPages: Math.ceil(total / limit),
       transactions,
     });
@@ -289,7 +257,6 @@ export async function createPendingPayment(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { userId, amount, currency: inputCurrency, description, dueDate } = req.body;
 
     if (!userId || amount === undefined || !dueDate) {
@@ -305,7 +272,6 @@ export async function createPendingPayment(
       return;
     }
 
-    // Validate due date format (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
       res.status(400).json({ error: 'dueDate must be in YYYY-MM-DD format' });
       return;
@@ -317,14 +283,12 @@ export async function createPendingPayment(
       return;
     }
 
-    // Check user exists
-    const userExists = await r.exists(`user:${userId}`);
-    if (!userExists) {
+    const targetUser = await userRepo.findById(userId);
+    if (!targetUser) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    // Convert to RON for reference
     let amountInRON = numericAmount;
     let exchangeRate = 1;
     if (originalCurrency !== 'RON') {
@@ -333,50 +297,28 @@ export async function createPendingPayment(
       exchangeRate = conversion.rate;
     }
 
-    // Get user info
-    const targetUser = await r.hGetAll(`user:${userId}`);
     const targetName =
-      [targetUser.firstName, targetUser.lastName].filter(Boolean).join(' ') ||
+      `${targetUser.first_name} ${targetUser.last_name}`.trim() ||
       targetUser.username || targetUser.email;
 
-    // Get performer info
     const performer = req.user!;
     const performerName =
       [performer.firstName, performer.lastName].filter(Boolean).join(' ') ||
       performer.username || performer.email;
 
     const pendingId = crypto.randomUUID();
-    const now = new Date().toISOString();
 
-    const pendingPayment = {
-      id: pendingId,
-      userId,
-      userName: targetName,
-      originalAmount: numericAmount.toFixed(2),
-      originalCurrency,
-      exchangeRate: exchangeRate.toFixed(6),
-      amountRON: amountInRON.toFixed(2),
-      description: description || '',
-      dueDate,
-      status: 'pending', // pending | confirmed | rejected
-      notified: 'false',
-      notifiedAt: '',
-      createdBy: performer.id,
-      createdByName: performerName,
-      createdAt: now,
-      resolvedAt: '',
-      resolvedBy: '',
-      resolvedByName: '',
-    };
+    await query(
+      `INSERT INTO pending_payments (id, user_id, user_name, original_amount, original_currency, exchange_rate, amount_in_ron, description, due_date, created_by, created_by_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        pendingId, userId, targetName,
+        numericAmount.toFixed(2), originalCurrency, exchangeRate.toFixed(6),
+        amountInRON.toFixed(2), description || '', dueDate,
+        performer.id, performerName,
+      ],
+    );
 
-    // Store
-    const multi = r.multi();
-    multi.hSet(pendingKey(pendingId), pendingPayment);
-    multi.sAdd(allPendingsKey(), pendingId);
-    multi.sAdd(userPendingsKey(userId), pendingId);
-    await multi.exec();
-
-    // Log event on user's account
     await logPendingEvent(userId, pendingId, 'expected_payment_created',
       `Expected payment of ${numericAmount.toFixed(2)} ${originalCurrency} created, due ${dueDate}. ${description || ''}`);
 
@@ -386,10 +328,12 @@ export async function createPendingPayment(
     res.status(201).json({
       message: 'Expected payment created',
       pendingPayment: {
-        ...pendingPayment,
-        originalAmount: numericAmount,
-        amountRON: amountInRON,
-        exchangeRate,
+        id: pendingId, userId, userName: targetName,
+        originalAmount: numericAmount, originalCurrency, exchangeRate,
+        amountRON: amountInRON, description: description || '',
+        dueDate, status: 'pending',
+        createdBy: performer.id, createdByName: performerName,
+        createdAt: new Date().toISOString(),
       },
     });
   } catch (error) {
@@ -405,26 +349,26 @@ export async function getUserPendingPayments(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { userId } = req.params;
 
-    const pendingIds = await r.sMembers(userPendingsKey(userId));
-    const payments = [];
+    const rows = await query(
+      `SELECT id, user_id as "userId", user_name as "userName",
+              original_amount as "originalAmount", original_currency as "originalCurrency",
+              exchange_rate as "exchangeRate", amount_in_ron as "amountRON",
+              description, due_date as "dueDate", status, notified,
+              created_by as "createdBy", created_by_name as "createdByName",
+              created_at as "createdAt", resolved_at as "resolvedAt",
+              resolved_by as "resolvedBy", resolved_by_name as "resolvedByName"
+       FROM pending_payments WHERE user_id = $1 ORDER BY due_date ASC`,
+      [userId],
+    );
 
-    for (const id of pendingIds) {
-      const p = await r.hGetAll(pendingKey(id));
-      if (p && p.id) {
-        payments.push({
-          ...p,
-          originalAmount: parseFloat(p.originalAmount),
-          amountRON: parseFloat(p.amountRON),
-          exchangeRate: parseFloat(p.exchangeRate),
-        } as Record<string, any>);
-      }
-    }
-
-    // Sort by due date ascending
-    payments.sort((a: any, b: any) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    const payments = rows.map((p: any) => ({
+      ...p,
+      originalAmount: parseFloat(p.originalAmount),
+      amountRON: parseFloat(p.amountRON),
+      exchangeRate: parseFloat(p.exchangeRate),
+    }));
 
     res.status(200).json({ userId, payments });
   } catch (error) {
@@ -440,23 +384,22 @@ export async function getAllPendingPayments(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
-    const pendingIds = await r.sMembers(allPendingsKey());
-    const payments = [];
+    const rows = await query(
+      `SELECT id, user_id as "userId", user_name as "userName",
+              original_amount as "originalAmount", original_currency as "originalCurrency",
+              exchange_rate as "exchangeRate", amount_in_ron as "amountRON",
+              description, due_date as "dueDate", status, notified,
+              created_by as "createdBy", created_by_name as "createdByName",
+              created_at as "createdAt"
+       FROM pending_payments ORDER BY due_date ASC`,
+    );
 
-    for (const id of pendingIds) {
-      const p = await r.hGetAll(pendingKey(id));
-      if (p && p.id) {
-        payments.push({
-          ...p,
-          originalAmount: parseFloat(p.originalAmount),
-          amountRON: parseFloat(p.amountRON),
-          exchangeRate: parseFloat(p.exchangeRate),
-        } as Record<string, any>);
-      }
-    }
-
-    payments.sort((a: any, b: any) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    const payments = rows.map((p: any) => ({
+      ...p,
+      originalAmount: parseFloat(p.originalAmount),
+      amountRON: parseFloat(p.amountRON),
+      exchangeRate: parseFloat(p.exchangeRate),
+    }));
 
     res.status(200).json({ payments });
   } catch (error) {
@@ -472,11 +415,13 @@ export async function confirmPendingPayment(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { pendingId } = req.params;
 
-    const pending = await r.hGetAll(pendingKey(pendingId));
-    if (!pending || !pending.id) {
+    const pending = await queryOne<any>(
+      `SELECT * FROM pending_payments WHERE id = $1`,
+      [pendingId],
+    );
+    if (!pending) {
       res.status(404).json({ error: 'Pending payment not found' });
       return;
     }
@@ -491,9 +436,8 @@ export async function confirmPendingPayment(
       [performer.firstName, performer.lastName].filter(Boolean).join(' ') ||
       performer.username || performer.email;
 
-    // Re-convert at current exchange rate for accuracy
-    const originalAmount = parseFloat(pending.originalAmount);
-    const originalCurrency = pending.originalCurrency;
+    const originalAmount = parseFloat(pending.original_amount);
+    const originalCurrency = pending.original_currency;
     let amountInRON = originalAmount;
     let currentExchangeRate = 1;
 
@@ -503,70 +447,66 @@ export async function confirmPendingPayment(
       currentExchangeRate = conversion.rate;
     }
 
-    // Credit the user's balance
-    const currentBalance = parseFloat(
-      (await r.get(balanceKey(pending.userId))) || '0',
+    // Get current balance
+    const balanceRow = await queryOne<{ balance: string }>(
+      `SELECT COALESCE(balance, 0) as balance FROM user_balances WHERE user_id = $1`,
+      [pending.user_id],
     );
+    const currentBalance = parseFloat(balanceRow?.balance || '0');
     const newBalance = parseFloat((currentBalance + amountInRON).toFixed(2));
 
-    // Get target user info
-    const targetUser = await r.hGetAll(`user:${pending.userId}`);
+    const targetUser = await userRepo.findById(pending.user_id);
     const targetName =
-      [targetUser.firstName, targetUser.lastName].filter(Boolean).join(' ') ||
-      targetUser.username || targetUser.email;
+      targetUser
+        ? (`${targetUser.first_name} ${targetUser.last_name}`.trim() || targetUser.username || targetUser.email)
+        : pending.user_name;
 
-    // Create a real transaction record
     const txId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    const transaction = {
-      id: txId,
-      userId: pending.userId,
-      userName: targetName,
-      originalAmount: originalAmount.toFixed(2),
-      originalCurrency,
-      exchangeRate: currentExchangeRate.toFixed(6),
-      amount: amountInRON.toFixed(2),
-      currency: 'RON',
-      type: 'credit',
-      description: `[Expected Payment Confirmed] ${pending.description || ''}`.trim(),
-      performedBy: performer.id,
-      performedByName: performerName,
-      balanceBefore: currentBalance.toFixed(2),
-      balanceAfter: newBalance.toFixed(2),
-      pendingId,
-      createdAt: now,
-    };
+    // Upsert balance
+    await query(
+      `INSERT INTO user_balances (user_id, balance) VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET balance = $2, updated_at = now()`,
+      [pending.user_id, newBalance.toFixed(2)],
+    );
 
-    // Atomic write: update balance + create tx + update pending status
-    const multi = r.multi();
-    multi.set(balanceKey(pending.userId), newBalance.toFixed(2));
-    multi.hSet(txKey(txId), transaction);
-    multi.zAdd(userTxsKey(pending.userId), { score: Date.now(), value: txId });
-    multi.hSet(pendingKey(pendingId), {
-      status: 'confirmed',
-      resolvedAt: now,
-      resolvedBy: performer.id,
-      resolvedByName: performerName,
-    });
-    await multi.exec();
+    // Insert transaction
+    await query(
+      `INSERT INTO finance_transactions (id, user_id, user_name, original_amount, original_currency, exchange_rate, amount, type, description, performed_by, performed_by_name, balance_before, balance_after, pending_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'credit', $8, $9, $10, $11, $12, $13)`,
+      [
+        txId, pending.user_id, targetName,
+        originalAmount.toFixed(2), originalCurrency, currentExchangeRate.toFixed(6),
+        amountInRON.toFixed(2),
+        `[Expected Payment Confirmed] ${pending.description || ''}`.trim(),
+        performer.id, performerName,
+        currentBalance.toFixed(2), newBalance.toFixed(2), pendingId,
+      ],
+    );
 
-    // Log event
-    await logPendingEvent(pending.userId, pendingId, 'payment_confirmed',
+    // Update pending status
+    await execute(
+      `UPDATE pending_payments SET status = 'confirmed', resolved_at = now(), resolved_by = $1, resolved_by_name = $2 WHERE id = $3`,
+      [performer.id, performerName, pendingId],
+    );
+
+    await logPendingEvent(pending.user_id, pendingId, 'payment_confirmed',
       `Expected payment of ${originalAmount.toFixed(2)} ${originalCurrency} confirmed by ${performerName}. ${amountInRON.toFixed(2)} RON credited.`);
 
-    logger.info({ pendingId, userId: pending.userId, amountRON: amountInRON, confirmedBy: performer.id },
+    logger.info({ pendingId, userId: pending.user_id, amountRON: amountInRON, confirmedBy: performer.id },
       'Pending payment confirmed and credited');
 
     res.status(200).json({
       message: 'Payment confirmed and credited',
       transaction: {
-        ...transaction,
-        originalAmount,
-        amount: amountInRON,
-        exchangeRate: currentExchangeRate,
-        balanceBefore: currentBalance,
-        balanceAfter: newBalance,
+        id: txId, userId: pending.user_id, userName: targetName,
+        originalAmount, originalCurrency, exchangeRate: currentExchangeRate,
+        amount: amountInRON, currency: 'RON', type: 'credit',
+        description: `[Expected Payment Confirmed] ${pending.description || ''}`.trim(),
+        performedBy: performer.id, performedByName: performerName,
+        balanceBefore: currentBalance, balanceAfter: newBalance,
+        pendingId, createdAt: now,
       },
     });
   } catch (error) {
@@ -582,12 +522,14 @@ export async function rejectPendingPayment(
   res: Response,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
     const { pendingId } = req.params;
     const { reason } = req.body;
 
-    const pending = await r.hGetAll(pendingKey(pendingId));
-    if (!pending || !pending.id) {
+    const pending = await queryOne<any>(
+      `SELECT * FROM pending_payments WHERE id = $1`,
+      [pendingId],
+    );
+    if (!pending) {
       res.status(404).json({ error: 'Pending payment not found' });
       return;
     }
@@ -602,21 +544,15 @@ export async function rejectPendingPayment(
       [performer.firstName, performer.lastName].filter(Boolean).join(' ') ||
       performer.username || performer.email;
 
-    const now = new Date().toISOString();
+    await execute(
+      `UPDATE pending_payments SET status = 'rejected', resolved_at = now(), resolved_by = $1, resolved_by_name = $2 WHERE id = $3`,
+      [performer.id, performerName, pendingId],
+    );
 
-    await r.hSet(pendingKey(pendingId), {
-      status: 'rejected',
-      resolvedAt: now,
-      resolvedBy: performer.id,
-      resolvedByName: performerName,
-      rejectionReason: reason || '',
-    });
+    await logPendingEvent(pending.user_id, pendingId, 'payment_rejected',
+      `Expected payment of ${pending.original_amount} ${pending.original_currency} rejected by ${performerName}. ${reason ? `Reason: ${reason}` : 'No reason provided.'}`);
 
-    // Log event
-    await logPendingEvent(pending.userId, pendingId, 'payment_rejected',
-      `Expected payment of ${pending.originalAmount} ${pending.originalCurrency} rejected by ${performerName}. ${reason ? `Reason: ${reason}` : 'No reason provided.'}`);
-
-    logger.info({ pendingId, userId: pending.userId, rejectedBy: performer.id },
+    logger.info({ pendingId, userId: pending.user_id, rejectedBy: performer.id },
       'Pending payment rejected');
 
     res.status(200).json({ message: 'Payment rejected', pendingId });

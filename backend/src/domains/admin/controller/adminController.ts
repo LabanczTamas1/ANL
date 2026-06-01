@@ -4,17 +4,16 @@
 // ---------------------------------------------------------------------------
 
 import { Request, Response } from 'express';
-import { getRedisClient } from '../../../config/database.js';
 import {
   getRequestStats,
   resetRequestStats,
 } from '../../../utils/admin/trackRequest.js';
 import { googleCalendarService } from '../../booking/service/googleCalendarService.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { query, queryOne, execute } from '../../../utils/db.js';
+import * as userRepo from '../../user/repository/userRepository.js';
 
 const logger = createLogger('admin', 'controller');
-
-const MEETING_HOSTS_KEY = 'settings:meeting_hosts';
 
 export async function getStats(_req: Request, res: Response): Promise<void> {
   try {
@@ -38,13 +37,21 @@ export async function resetStats(_req: Request, res: Response): Promise<void> {
 
 export async function banIp(req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
     const { ip } = req.body;
     if (!ip) {
       res.status(400).json({ error: 'IP address is required' });
       return;
     }
-    await r.sAdd('banned_ips', ip);
+    // banned_ips stored in app_settings as jsonb array
+    await execute(
+      `INSERT INTO app_settings (key, value) VALUES ('banned_ips', '[]'::jsonb)
+       ON CONFLICT (key) DO NOTHING`,
+    );
+    await execute(
+      `UPDATE app_settings SET value = value || $1::jsonb, updated_at = now()
+       WHERE key = 'banned_ips' AND NOT value @> $1::jsonb`,
+      [JSON.stringify([ip])],
+    );
     res.json({ message: `IP ${ip} has been banned.` });
   } catch (err) {
     logError(err, { context: 'banIp' });
@@ -54,13 +61,16 @@ export async function banIp(req: Request, res: Response): Promise<void> {
 
 export async function unbanIp(req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
     const { ip } = req.body;
     if (!ip) {
       res.status(400).json({ error: 'IP address is required' });
       return;
     }
-    await r.sRem('banned_ips', ip);
+    const row = await queryOne<{ value: string[] }>(`SELECT value FROM app_settings WHERE key = 'banned_ips'`);
+    if (row) {
+      const ips = (Array.isArray(row.value) ? row.value : []).filter((i: string) => i !== ip);
+      await execute(`UPDATE app_settings SET value = $1::jsonb, updated_at = now() WHERE key = 'banned_ips'`, [JSON.stringify(ips)]);
+    }
     res.json({ message: `IP ${ip} has been unbanned.` });
   } catch (err) {
     logError(err, { context: 'unbanIp' });
@@ -70,8 +80,8 @@ export async function unbanIp(req: Request, res: Response): Promise<void> {
 
 export async function getBannedIps(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const ips = await r.sMembers('banned_ips');
+    const row = await queryOne<{ value: string[] }>(`SELECT value FROM app_settings WHERE key = 'banned_ips'`);
+    const ips = row ? (Array.isArray(row.value) ? row.value : []) : [];
     res.json({ banned: ips });
   } catch (err) {
     logError(err, { context: 'getBannedIps' });
@@ -81,57 +91,33 @@ export async function getBannedIps(_req: Request, res: Response): Promise<void> 
 
 export async function getEmails(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const pattern = 'user:email:*';
-    const userDetails: Record<string, string>[] = [];
-    const emails: string[] = [];
-
-    let cursor = 0;
-    do {
-      const result = await r.scan(cursor, { MATCH: pattern, COUNT: 100 });
-      cursor = result.cursor;
-      for (const key of result.keys) {
-        const email = key.replace('user:email:', '');
-        emails.push(email);
-        const userId = await r.get(key);
-        const userInfo = await r.hGetAll(`user:${userId}`);
-        userDetails.push({
-          userId: userId || '',
-          email,
-          firstName: userInfo.firstName || '',
-          lastName: userInfo.lastName || '',
-          username: userInfo.username || '',
-          createdAt: userInfo.createdAt || '',
-        });
-      }
-    } while (cursor !== 0);
+    const users = await userRepo.findAll();
+    const userDetails = users.map((u: any) => ({
+      userId: u.id,
+      email: u.email,
+      firstName: u.first_name || '',
+      lastName: u.last_name || '',
+      username: u.username || '',
+      createdAt: u.created_at || '',
+    }));
 
     res.status(200).json({
       success: true,
-      count: emails.length,
+      count: userDetails.length,
       emails: userDetails,
     });
   } catch (err) {
     logError(err, { context: 'getEmails' });
-    res.status(500).json({
-      success: false,
-      error: 'Server error while fetching emails',
-    });
+    res.status(500).json({ success: false, error: 'Server error while fetching emails' });
   }
 }
 
-// ---------------------------------------------------------------------------
-// Meeting Hosts — manage who gets invited to booking meetings
-// ---------------------------------------------------------------------------
+// Meeting hosts — stored in app_settings as jsonb array
 
-/**
- * GET /admin/meeting-hosts
- * Returns the list of emails that are invited to every booking meeting.
- */
 export async function getMeetingHosts(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const hosts = await r.sMembers(MEETING_HOSTS_KEY);
+    const row = await queryOne<{ value: string[] }>(`SELECT value FROM app_settings WHERE key = 'meeting_hosts'`);
+    const hosts = row ? (Array.isArray(row.value) ? row.value : []) : [];
     res.json({ hosts: hosts.sort() });
   } catch (err) {
     logError(err, { context: 'getMeetingHosts' });
@@ -139,16 +125,9 @@ export async function getMeetingHosts(_req: Request, res: Response): Promise<voi
   }
 }
 
-/**
- * POST /admin/meeting-hosts
- * Add one or more emails to the meeting hosts list.
- * Body: { emails: string | string[] }
- */
 export async function addMeetingHost(req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
     const { emails } = req.body;
-
     const emailList: string[] = (Array.isArray(emails) ? emails : [emails])
       .map((e: string) => e?.trim()?.toLowerCase())
       .filter(Boolean);
@@ -158,7 +137,6 @@ export async function addMeetingHost(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const invalid = emailList.filter((e) => !emailRegex.test(e));
     if (invalid.length > 0) {
@@ -166,42 +144,47 @@ export async function addMeetingHost(req: Request, res: Response): Promise<void>
       return;
     }
 
-    await r.sAdd(MEETING_HOSTS_KEY, emailList);
-    const hosts = await r.sMembers(MEETING_HOSTS_KEY);
+    await execute(
+      `INSERT INTO app_settings (key, value) VALUES ('meeting_hosts', '[]'::jsonb)
+       ON CONFLICT (key) DO NOTHING`,
+    );
+
+    // Get current, merge, update
+    const row = await queryOne<{ value: string[] }>(`SELECT value FROM app_settings WHERE key = 'meeting_hosts'`);
+    const current = row ? (Array.isArray(row.value) ? row.value : []) : [];
+    const merged = [...new Set([...current, ...emailList])];
+    await execute(`UPDATE app_settings SET value = $1::jsonb, updated_at = now() WHERE key = 'meeting_hosts'`, [JSON.stringify(merged)]);
 
     logger.info({ added: emailList, by: req.user?.email }, 'Meeting hosts added');
-    res.json({ message: `Added ${emailList.length} host(s)`, hosts: hosts.sort() });
+    res.json({ message: `Added ${emailList.length} host(s)`, hosts: merged.sort() });
   } catch (err) {
     logError(err, { context: 'addMeetingHost' });
     res.status(500).json({ error: 'Failed to add meeting host' });
   }
 }
 
-/**
- * DELETE /admin/meeting-hosts
- * Remove an email from the meeting hosts list.
- * Body: { email: string }
- */
 export async function removeMeetingHost(req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
     const { email } = req.body;
-
     if (!email?.trim()) {
       res.status(400).json({ error: 'Email is required' });
       return;
     }
 
-    const removed = await r.sRem(MEETING_HOSTS_KEY, email.trim().toLowerCase());
-    const hosts = await r.sMembers(MEETING_HOSTS_KEY);
+    const normalised = email.trim().toLowerCase();
+    const row = await queryOne<{ value: string[] }>(`SELECT value FROM app_settings WHERE key = 'meeting_hosts'`);
+    const current = row ? (Array.isArray(row.value) ? row.value : []) : [];
 
-    if (!removed) {
-      res.status(404).json({ error: 'Email not found in meeting hosts', hosts: hosts.sort() });
+    if (!current.includes(normalised)) {
+      res.status(404).json({ error: 'Email not found in meeting hosts', hosts: current.sort() });
       return;
     }
 
+    const updated = current.filter((e: string) => e !== normalised);
+    await execute(`UPDATE app_settings SET value = $1::jsonb, updated_at = now() WHERE key = 'meeting_hosts'`, [JSON.stringify(updated)]);
+
     logger.info({ removed: email, by: req.user?.email }, 'Meeting host removed');
-    res.json({ message: `Removed ${email}`, hosts: hosts.sort() });
+    res.json({ message: `Removed ${email}`, hosts: updated.sort() });
   } catch (err) {
     logError(err, { context: 'removeMeetingHost' });
     res.status(500).json({ error: 'Failed to remove meeting host' });

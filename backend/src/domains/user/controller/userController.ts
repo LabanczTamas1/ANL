@@ -4,33 +4,31 @@
 
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getRedisClient } from '../../../config/database.js';
-import { listAllUsers } from '../../../utils/listAllUsers.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 import {
   notifyRoleChanged,
   notifyProfileUpdated,
 } from '../../../utils/systemNotifications.js';
+import * as userRepo from '../repository/userRepository.js';
 
 const logger = createLogger('user', 'controller');
 
 export async function getMe(req: Request, res: Response): Promise<void> {
   try {
-    const redisClient = getRedisClient();
-    const userData = await redisClient.hGetAll(`user:${req.user!.id}`);
+    const user = await userRepo.findById(req.user!.id);
 
-    if (!userData || Object.keys(userData).length === 0) {
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
     res.json({
-      userId: req.user!.id,
-      username: userData.username || userData.email,
-      email: userData.email,
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
-      role: userData.role || req.user!.role || 'user',
+      userId: user.id,
+      username: user.username || user.email,
+      email: user.email,
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      role: user.role || req.user!.role || 'user',
     });
   } catch (err) {
     logError(err, { context: 'getMe' });
@@ -43,16 +41,15 @@ export async function getUserByUsername(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { username } = req.params;
-    const user = await redisClient.hGetAll(`user:${username}`);
+    const user = await userRepo.findByUsername(username);
 
-    if (!user || Object.keys(user).length === 0) {
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    res.json(user);
+    res.json(userRepo.toApiUser(user));
   } catch {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -63,7 +60,6 @@ export async function updateUserRole(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { userId } = req.params;
     const { role } = req.body;
 
@@ -75,19 +71,17 @@ export async function updateUserRole(
       return;
     }
 
-    const userKey = `user:${userId}`;
-    const userData = await redisClient.hGetAll(userKey);
-
-    if (!userData || Object.keys(userData).length === 0) {
+    const user = await userRepo.findById(userId);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    await redisClient.hSet(userKey, 'role', role);
+    const updated = await userRepo.updateUser(userId, { role });
 
     await notifyRoleChanged(
       userId,
-      userData.firstName || userData.username || 'there',
+      user.first_name || user.username || 'there',
       role,
     );
 
@@ -95,7 +89,12 @@ export async function updateUserRole(
 
     res.status(200).json({
       message: `User role updated successfully to ${role}`,
-      user: { id: userId, email: userData.email, name: userData.name, role },
+      user: {
+        id: userId,
+        email: user.email,
+        name: `${user.first_name} ${user.last_name}`.trim(),
+        role,
+      },
     });
   } catch (error) {
     logError(error, { context: 'updateUserRole' });
@@ -108,8 +107,8 @@ export async function getAllUsers(
   res: Response,
 ): Promise<void> {
   try {
-    const users = await listAllUsers();
-    res.status(200).json(users);
+    const users = await userRepo.findAll();
+    res.status(200).json(users.map(userRepo.toApiUser));
   } catch (error) {
     logError(error, { context: 'getAllUsers' });
     res.status(500).json({ error: 'Internal server error' });
@@ -118,7 +117,6 @@ export async function getAllUsers(
 
 export async function addUser(req: Request, res: Response): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { firstName, lastName, email, username, company } = req.body;
 
     if (!firstName || !lastName || !email || !username) {
@@ -128,8 +126,7 @@ export async function addUser(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const userExists = await redisClient.exists(`user:email:${email}`);
-    if (userExists) {
+    if (await userRepo.emailExists(email)) {
       res
         .status(409)
         .json({ error: 'User already exists with this email' });
@@ -138,7 +135,7 @@ export async function addUser(req: Request, res: Response): Promise<void> {
 
     const userId = uuidv4();
 
-    await redisClient.hSet(`user:${userId}`, {
+    await userRepo.createUser({
       id: userId,
       email,
       firstName,
@@ -146,11 +143,7 @@ export async function addUser(req: Request, res: Response): Promise<void> {
       username,
       company: company || '',
       role: 'user',
-      createdAt: new Date().toISOString(),
     });
-
-    await redisClient.set(`user:email:${email}`, userId);
-    await redisClient.set(`user:username:${username}`, userId);
 
     logger.info({ userId, email }, 'User created');
 
@@ -167,22 +160,21 @@ export async function addUser(req: Request, res: Response): Promise<void> {
 
 export async function getProfile(req: Request, res: Response): Promise<void> {
   try {
-    const redisClient = getRedisClient();
-    const userData = await redisClient.hGetAll(`user:${req.user!.id}`);
+    const user = await userRepo.findById(req.user!.id);
 
-    if (!userData || Object.keys(userData).length === 0) {
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
     res.json({
-      id: req.user!.id,
-      email: userData.email,
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
-      username: userData.username || '',
-      company: userData.company || '',
-      role: userData.role || 'user',
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      username: user.username || '',
+      company: user.company || '',
+      role: user.role || 'user',
     });
   } catch (error) {
     logError(error, { context: 'getProfile' });
@@ -195,59 +187,49 @@ export async function updateProfile(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { firstName, lastName, phoneNumber, company, profileImg } = req.body;
 
-    const userKey = `user:${req.user!.id}`;
-    const userData = await redisClient.hGetAll(userKey);
-
-    if (!userData || Object.keys(userData).length === 0) {
+    const user = await userRepo.findById(req.user!.id);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const updatedData: Record<string, string> = {};
-    if (firstName !== undefined) updatedData.firstName = firstName;
-    if (lastName !== undefined) updatedData.lastName = lastName;
-    if (phoneNumber !== undefined) updatedData.phoneNumber = phoneNumber;
-    if (company !== undefined) updatedData.company = company;
-    if (profileImg !== undefined) updatedData.profileImg = profileImg;
+    const updates: Record<string, any> = {};
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName !== undefined) updates.lastName = lastName;
+    if (phoneNumber !== undefined) updates.phone = phoneNumber;
+    if (company !== undefined) updates.company = company;
+    if (profileImg !== undefined) updates.profilePicture = profileImg;
 
-    await redisClient.hSet(userKey, updatedData);
-    const updated = await redisClient.hGetAll(userKey);
+    const updated = await userRepo.updateUser(req.user!.id, updates);
 
     // Notify only for fields that actually changed
     const fieldLabels: Record<string, string> = {
       firstName: 'First name',
       lastName: 'Last name',
-      phoneNumber: 'Phone number',
+      phone: 'Phone number',
       company: 'Company',
-      profileImg: 'Profile image',
+      profilePicture: 'Profile image',
     };
-    const changedFields = Object.keys(updatedData)
-      .filter((k) => updatedData[k] !== userData[k])
+    const changedFields = Object.keys(updates)
+      .filter((k) => {
+        const col = k === 'firstName' ? 'first_name' : k === 'lastName' ? 'last_name' : k === 'profilePicture' ? 'profile_picture' : k;
+        return (user as any)[col] !== updates[k];
+      })
       .map((k) => fieldLabels[k] ?? k);
 
     if (changedFields.length > 0) {
       await notifyProfileUpdated(
         req.user!.id,
-        updated.firstName || updated.username || 'there',
+        updated?.first_name || updated?.username || 'there',
         changedFields,
       );
     }
 
     res.status(200).json({
       message: 'Profile updated successfully',
-      user: {
-        id: req.user!.id,
-        email: updated.email,
-        firstName: updated.firstName || '',
-        lastName: updated.lastName || '',
-        username: updated.username || '',
-        phoneNumber: updated.phoneNumber || '',
-        company: updated.company || '',
-        profileImg: updated.profileImg || '',
-      },
+      user: updated ? userRepo.toApiUser(updated) : null,
     });
   } catch (error) {
     logError(error, { context: 'updateProfile' });
@@ -260,23 +242,22 @@ export async function getUserById(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { userId } = req.params;
-    const userData = await redisClient.hGetAll(`user:${userId}`);
+    const user = await userRepo.findById(userId);
 
-    if (!userData || Object.keys(userData).length === 0) {
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
     res.json({
-      id: userId,
-      email: userData.email,
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
-      username: userData.username || '',
-      company: userData.company || '',
-      role: userData.role || 'user',
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      username: user.username || '',
+      company: user.company || '',
+      role: user.role || 'user',
     });
   } catch (error) {
     logError(error, { context: 'getUserById' });
@@ -289,7 +270,6 @@ export async function changePassword(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
@@ -301,15 +281,13 @@ export async function changePassword(
       return;
     }
 
-    const userKey = `user:${req.user!.id}`;
-    const userData = await redisClient.hGetAll(userKey);
-
-    if (!userData || Object.keys(userData).length === 0) {
+    const user = await userRepo.findById(req.user!.id);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const storedHash = userData.hashedPassword || userData.password || '';
+    const storedHash = user.password || '';
     if (!storedHash) {
       res.status(400).json({ error: 'Password change not available for OAuth accounts' });
       return;
@@ -323,7 +301,7 @@ export async function changePassword(
     }
 
     const newHash = await bcrypt.hash(newPassword, 10);
-    await redisClient.hSet(userKey, 'hashedPassword', newHash);
+    await userRepo.updateUser(req.user!.id, { password: newHash });
 
     logger.info({ userId: req.user!.id }, 'Password changed successfully');
     res.status(200).json({ message: 'Password updated successfully' });
@@ -338,49 +316,31 @@ export async function modifyUserData(
   res: Response,
 ): Promise<void> {
   try {
-    const redisClient = getRedisClient();
-    const { firstName, lastName, email, username, company, country, state, city } =
-      req.body;
+    const { firstName, lastName, email, username, company } = req.body;
 
-    const userKey = `user:${req.user!.id}`;
-    const currentUserData = await redisClient.hGetAll(userKey);
-
-    if (!currentUserData || Object.keys(currentUserData).length === 0) {
+    const user = await userRepo.findById(req.user!.id);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const updatedData: Record<string, string> = {};
-    if (firstName) updatedData.firstName = firstName;
-    if (lastName) updatedData.lastName = lastName;
-    if (email) updatedData.email = email;
-    if (username) updatedData.username = username;
-    if (company) updatedData.company = company;
-    if (country) updatedData.country = country;
-    if (state) updatedData.state = state;
-    if (city) updatedData.city = city;
+    const updates: Record<string, any> = {};
+    if (firstName) updates.firstName = firstName;
+    if (lastName) updates.lastName = lastName;
+    if (email) updates.email = email;
+    if (username) updates.username = username;
+    if (company) updates.company = company;
 
-    if (Object.keys(updatedData).length === 0) {
+    if (Object.keys(updates).length === 0) {
       res.status(400).json({ error: 'No data provided to update' });
       return;
     }
 
-    await redisClient.hSet(userKey, updatedData);
-    const updated = await redisClient.hGetAll(userKey);
+    const updated = await userRepo.updateUser(req.user!.id, updates);
 
     res.status(200).json({
       message: 'User data modified successfully',
-      user: {
-        id: req.user!.id,
-        firstName: updated.firstName || '',
-        lastName: updated.lastName || '',
-        email: updated.email || '',
-        username: updated.username || '',
-        company: updated.company || '',
-        country: updated.country || '',
-        state: updated.state || '',
-        city: updated.city || '',
-      },
+      user: updated ? userRepo.toApiUser(updated) : null,
     });
   } catch (error) {
     logError(error, { context: 'modifyUserData' });

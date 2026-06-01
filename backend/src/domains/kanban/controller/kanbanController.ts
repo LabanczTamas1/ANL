@@ -1,11 +1,11 @@
 // ---------------------------------------------------------------------------
-// Kanban Controller — columns, cards, comments
+// Kanban Controller — columns, cards, comments, templates (PostgreSQL)
 // ---------------------------------------------------------------------------
 
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getRedisClient } from '../../../config/database.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { query, queryOne, execute } from '../../../utils/db.js';
 
 const logger = createLogger('kanban', 'controller');
 
@@ -18,17 +18,18 @@ async function logActivity(
   details?: string,
 ): Promise<void> {
   try {
-    const r = getRedisClient();
-    const entry = JSON.stringify({
-      action,
-      userName,
-      details: details || '',
-      timestamp: Date.now(),
-    });
-    await r.lPush(`CardActivity:${cardId}`, entry);
+    await query(
+      `INSERT INTO kanban_activity (id, card_id, action, user_name, details) VALUES ($1, $2, $3, $4, $5)`,
+      [uuidv4(), cardId, action, userName, details || ''],
+    );
   } catch (err) {
     logError(err, { context: 'logActivity', cardId });
   }
+}
+
+function getUserName(req: Request): string {
+  const u = req.user as any;
+  return u?.firstName && u?.lastName ? `${u.firstName} ${u.lastName}` : 'Unknown';
 }
 
 // ---- Columns ----
@@ -36,15 +37,13 @@ async function logActivity(
 export async function createColumn(req: Request, res: Response): Promise<void> {
   const { priority, tagColor, columnName, cardNumbers } = req.body;
   try {
-    const r = getRedisClient();
     const columnId = uuidv4();
 
-    await r.zAdd('KanbanTable', { score: priority, value: columnId });
-    await r.hSet(`Boards:${columnId}`, {
-      ColumnName: columnName,
-      tagColor: tagColor,
-      CardNumber: String(cardNumbers),
-    });
+    await query(
+      `INSERT INTO kanban_columns (id, column_name, tag_color, priority, card_count)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [columnId, columnName, tagColor, priority, cardNumbers || 0],
+    );
 
     res.json({ columnId, tagColor, columnName, priority, cardNumbers });
   } catch (error) {
@@ -55,17 +54,13 @@ export async function createColumn(req: Request, res: Response): Promise<void> {
 
 export async function getColumns(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const columnIds = await r.zRange('KanbanTable', 0, -1);
-
-    const columnDetails = await Promise.all(
-      columnIds.map(async (columnId) => {
-        const details = await r.hGetAll(`Boards:${columnId}`);
-        return { columnId, ...details };
-      }),
+    const rows = await query(
+      `SELECT id as "columnId", column_name as "ColumnName", tag_color as "tagColor",
+              priority, card_count as "CardNumber"
+       FROM kanban_columns ORDER BY priority ASC`,
     );
 
-    res.json({ columns: columnDetails });
+    res.json({ columns: rows });
   } catch (error) {
     logError(error, { context: 'getColumns' });
     res.status(500).json({ error: 'Failed to fetch columns' });
@@ -80,12 +75,12 @@ export async function updateColumnPriority(req: Request, res: Response): Promise
   }
 
   try {
-    const r = getRedisClient();
-    await Promise.all(
-      columns.map((col: { columnId: string; priority: number }) =>
-        r.zAdd('KanbanTable', { score: col.priority, value: col.columnId }),
-      ),
-    );
+    for (const col of columns as { columnId: string; priority: number }[]) {
+      await execute(
+        `UPDATE kanban_columns SET priority = $1, updated_at = now() WHERE id = $2`,
+        [col.priority, col.columnId],
+      );
+    }
     res.status(200).json({ success: true, message: 'Priorities updated successfully' });
   } catch (error) {
     logError(error, { context: 'updateColumnPriority' });
@@ -96,9 +91,7 @@ export async function updateColumnPriority(req: Request, res: Response): Promise
 export async function deleteColumn(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   try {
-    const r = getRedisClient();
-    await r.zRem('KanbanTable', id);
-    await r.del(`Boards:${id}`);
+    await execute(`DELETE FROM kanban_columns WHERE id = $1`, [id]);
     res.status(200).json({ success: true, message: 'Column deleted successfully' });
   } catch (error) {
     logError(error, { context: 'deleteColumn' });
@@ -111,7 +104,7 @@ export async function deleteColumn(req: Request, res: Response): Promise<void> {
 export async function createCard(req: Request, res: Response): Promise<void> {
   const {
     name, isCommented, columnId, contactName, businessName, firstContact,
-    phoneNumber, email, website, instagram, facebook,
+    phoneNumber, email, website, instagram, facebook, fields, templateId,
   } = req.body;
 
   if (!name || !columnId) {
@@ -120,59 +113,41 @@ export async function createCard(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
     const cardId = uuidv4();
     const timestamp = Date.now();
 
-    await r.zAdd(`SortedCards:${columnId}`, [{ score: timestamp, value: cardId }]);
-
-    const columnData = await r.hGetAll(`Boards:${columnId}`);
-    await r.hSet(`Boards:${columnId}`, {
-      CardNumber: String(parseInt(columnData.CardNumber, 10) + 1),
-    });
-
-    // Support dynamic fields
-    const { fields, templateId } = req.body;
-
-    const hash: Record<string, string> = {
-      ColumnId: columnId,
-      Name: name,
-      DateOfAdded: String(timestamp),
-      IsCommented: String(isCommented ?? false),
-    };
-
+    let fieldsJson: any = null;
     if (fields && Array.isArray(fields)) {
-      // new-style dynamic fields
-      hash.Fields = JSON.stringify(fields);
-      if (templateId) hash.TemplateId = templateId;
-    } else {
-      // legacy hardcoded fields
-      hash.ContactName = contactName || '';
-      hash.BusinessName = businessName || '';
-      hash.FirstContact = firstContact || '';
-      hash.PhoneNumber = phoneNumber || '';
-      hash.Email = email || '';
-      hash.Website = website || '';
-      hash.Instagram = instagram || '';
-      hash.Facebook = facebook || '';
+      fieldsJson = JSON.stringify(fields);
     }
 
-    await r.hSet(`CardDetails:${cardId}`, hash);
+    await query(
+      `INSERT INTO kanban_cards (id, column_id, name, sort_order, is_commented, template_id,
+         contact_name, business_name, first_contact, phone_number, email, website, instagram, facebook, fields)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      [
+        cardId, columnId, name, timestamp, isCommented ?? false, templateId || null,
+        contactName || '', businessName || '', firstContact || '',
+        phoneNumber || '', email || '', website || '', instagram || '', facebook || '',
+        fieldsJson,
+      ],
+    );
 
-    // Update LastUsedAt on the template so it sorts to the top next time
+    // Update card count
+    await execute(
+      `UPDATE kanban_columns SET card_count = card_count + 1 WHERE id = $1`,
+      [columnId],
+    );
+
+    // Update template last used
     if (templateId) {
-      const templateExists = await r.exists(`KanbanTemplate:${templateId}`);
-      if (templateExists) {
-        await r.hSet(`KanbanTemplate:${templateId}`, 'LastUsedAt', String(timestamp));
-      }
+      await execute(
+        `UPDATE kanban_templates SET last_used_at = now() WHERE id = $1`,
+        [templateId],
+      );
     }
 
-    // Log activity
-    const userName =
-      (req as any).user?.firstName && (req as any).user?.lastName
-        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
-        : 'Unknown';
-    await logActivity(cardId, 'created', userName, `Card "${name}" created`);
+    await logActivity(cardId, 'created', getUserName(req), `Card "${name}" created`);
 
     res.status(200).json({ message: 'Card saved successfully', cardId });
   } catch (error) {
@@ -182,30 +157,46 @@ export async function createCard(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateCard(req: Request, res: Response): Promise<void> {
-  const { name, updatedValue } = req.body;
+  const { name: fieldName, updatedValue } = req.body;
   const { cardId } = req.params;
 
-  if (!name || !updatedValue) {
+  if (!fieldName || !updatedValue) {
     res.status(400).json({ error: 'Input field id and value are missing' });
     return;
   }
 
   try {
-    const r = getRedisClient();
-
-    // Support updating dynamic Fields array
-    if (name === 'Fields' && typeof updatedValue === 'object') {
-      await r.hSet(`CardDetails:${cardId}`, 'Fields', JSON.stringify(updatedValue));
+    if (fieldName === 'Fields' && typeof updatedValue === 'object') {
+      await execute(
+        `UPDATE kanban_cards SET fields = $1, updated_at = now() WHERE id = $2`,
+        [JSON.stringify(updatedValue), cardId],
+      );
     } else {
-      await r.hSet(`CardDetails:${cardId}`, name, updatedValue);
+      // Map frontend field names to DB columns
+      const fieldMap: Record<string, string> = {
+        Name: 'name',
+        ContactName: 'contact_name',
+        BusinessName: 'business_name',
+        FirstContact: 'first_contact',
+        PhoneNumber: 'phone_number',
+        Email: 'email',
+        Website: 'website',
+        Instagram: 'instagram',
+        Facebook: 'facebook',
+        IsCommented: 'is_commented',
+        ColumnId: 'column_id',
+      };
+
+      const col = fieldMap[fieldName];
+      if (col) {
+        await execute(
+          `UPDATE kanban_cards SET ${col} = $1, updated_at = now() WHERE id = $2`,
+          [updatedValue, cardId],
+        );
+      }
     }
 
-    // Log activity
-    const userName =
-      (req as any).user?.firstName && (req as any).user?.lastName
-        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
-        : 'Unknown';
-    await logActivity(cardId, 'updated', userName, `Updated field "${name}"`);
+    await logActivity(cardId, 'updated', getUserName(req), `Updated field "${fieldName}"`);
 
     res.status(200).json({ message: 'Update was successful', cardId });
   } catch (error) {
@@ -224,20 +215,18 @@ export async function deleteCard(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
-    const cardExists = await r.exists(`CardDetails:${cardId}`);
-    if (!cardExists) {
+    const card = await queryOne(`SELECT id FROM kanban_cards WHERE id = $1`, [cardId]);
+    if (!card) {
       res.status(404).json({ error: 'Card not found' });
       return;
     }
 
-    await r.zRem(`SortedCards:${columnId}`, cardId);
-    await r.del(`CardDetails:${cardId}`);
+    await execute(`DELETE FROM kanban_cards WHERE id = $1`, [cardId]);
 
-    const columnData = await r.hGetAll(`Boards:${columnId}`);
-    await r.hSet(`Boards:${columnId}`, {
-      CardNumber: String(parseInt(columnData.CardNumber, 10) - 1),
-    });
+    await execute(
+      `UPDATE kanban_columns SET card_count = GREATEST(card_count - 1, 0) WHERE id = $1`,
+      [columnId],
+    );
 
     res.status(200).json({ message: 'Card deleted successfully' });
   } catch (error) {
@@ -249,11 +238,28 @@ export async function deleteCard(req: Request, res: Response): Promise<void> {
 export async function getCards(req: Request, res: Response): Promise<void> {
   const { columnId } = req.params;
   try {
-    const r = getRedisClient();
-    const cardIds = await r.zRange(`SortedCards:${columnId}`, 0, -1);
-    const cardDetails = await Promise.all(
-      cardIds.map((id) => r.hGetAll(`CardDetails:${id}`)),
+    const rows = await query(
+      `SELECT id, column_id as "ColumnId", name as "Name", sort_order as "DateOfAdded",
+              is_commented as "IsCommented", template_id as "TemplateId",
+              contact_name as "ContactName", business_name as "BusinessName",
+              first_contact as "FirstContact", phone_number as "PhoneNumber",
+              email as "Email", website as "Website", instagram as "Instagram",
+              facebook as "Facebook", fields as "Fields"
+       FROM kanban_cards WHERE column_id = $1 ORDER BY sort_order ASC`,
+      [columnId],
     );
+
+    const cardIds = rows.map((r: any) => r.id);
+    const cardDetails = rows.map((r: any) => {
+      const result: Record<string, any> = { ...r };
+      if (result.Fields && typeof result.Fields === 'string') {
+        result.Fields = JSON.parse(result.Fields);
+      }
+      result.IsCommented = String(result.IsCommented);
+      result.DateOfAdded = String(result.DateOfAdded);
+      return result;
+    });
+
     res.json({ cardDetails, cardIds });
   } catch (error) {
     logError(error, { context: 'getCards' });
@@ -270,50 +276,41 @@ export async function moveCard(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const r = getRedisClient();
-    const srcKey = `SortedCards:${sourceColumnId}`;
-    const dstKey = `SortedCards:${destinationColumnId}`;
+    // Update the card's column and sort order
+    await execute(
+      `UPDATE kanban_cards SET column_id = $1, sort_order = $2, updated_at = now() WHERE id = $3`,
+      [destinationColumnId, newIndex, cardId],
+    );
 
+    // Reorder destination column cards
+    const destCards = await query<{ id: string }>(
+      `SELECT id FROM kanban_cards WHERE column_id = $1 AND id != $2 ORDER BY sort_order ASC`,
+      [destinationColumnId, cardId],
+    );
+
+    const reordered = [...destCards.map(c => c.id)];
+    reordered.splice(newIndex, 0, cardId);
+
+    for (let i = 0; i < reordered.length; i++) {
+      await execute(
+        `UPDATE kanban_cards SET sort_order = $1 WHERE id = $2`,
+        [i, reordered[i]],
+      );
+    }
+
+    // Update column card counts if cross-column move
     if (sourceColumnId !== destinationColumnId) {
-      await r.zRem(srcKey, cardId);
+      await execute(
+        `UPDATE kanban_columns SET card_count = card_count + 1 WHERE id = $1`,
+        [destinationColumnId],
+      );
+      await execute(
+        `UPDATE kanban_columns SET card_count = GREATEST(card_count - 1, 0) WHERE id = $1`,
+        [sourceColumnId],
+      );
     }
 
-    await r.zAdd(dstKey, [{ score: newIndex, value: cardId }]);
-
-    const destinationCards = await r.zRangeWithScores(dstKey, 0, -1);
-    const reordered = destinationCards.filter((c) => c.value !== cardId);
-    reordered.splice(newIndex, 0, { score: newIndex, value: cardId });
-
-    for (let i = 0; i < reordered.length; i++) reordered[i].score = i;
-
-    await r.zRemRangeByRank(dstKey, 0, -1);
-    for (const card of reordered) {
-      await r.zAdd(dstKey, [{ score: card.score, value: card.value }]);
-    }
-
-    const timestamp = Date.now();
-    await r.hSet(`CardDetails:${cardId}`, {
-      ColumnId: destinationColumnId,
-      DateOfAdded: String(timestamp),
-    });
-
-    if (sourceColumnId !== destinationColumnId) {
-      const dstData = await r.hGetAll(`Boards:${destinationColumnId}`);
-      await r.hSet(`Boards:${destinationColumnId}`, {
-        CardNumber: String(parseInt(dstData.CardNumber, 10) + 1),
-      });
-      const srcData = await r.hGetAll(`Boards:${sourceColumnId}`);
-      await r.hSet(`Boards:${sourceColumnId}`, {
-        CardNumber: String(parseInt(srcData.CardNumber, 10) - 1),
-      });
-    }
-
-    // Log activity
-    const userName =
-      (req as any).user?.firstName && (req as any).user?.lastName
-        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
-        : 'Unknown';
-    await logActivity(cardId, 'moved', userName,
+    await logActivity(cardId, 'moved', getUserName(req),
       sourceColumnId === destinationColumnId
         ? 'Reordered within column'
         : `Moved from column ${sourceColumnId} to ${destinationColumnId}`);
@@ -332,21 +329,18 @@ export async function createComment(req: Request, res: Response): Promise<void> 
   const { cardId } = req.params;
 
   try {
-    const r = getRedisClient();
     const commentId = uuidv4();
-    const timestamp = Date.now();
 
-    await r.hSet(`Comments:${commentId}`, {
-      CommentId: commentId,
-      UserName: userName,
-      DateAdded: String(timestamp),
-      Body: body,
-    });
+    await query(
+      `INSERT INTO kanban_comments (id, card_id, user_name, body) VALUES ($1, $2, $3, $4)`,
+      [commentId, cardId, userName, body],
+    );
 
-    await r.hSet(`CardDetails:${cardId}`, { IsCommented: 'true' });
-    await r.sAdd(`CardComments:${cardId}`, commentId);
+    await execute(
+      `UPDATE kanban_cards SET is_commented = true WHERE id = $1`,
+      [cardId],
+    );
 
-    // Log activity
     await logActivity(cardId, 'commented', userName, `Added a comment`);
 
     res.status(200).json({ message: 'Comment saved successfully', commentId });
@@ -360,15 +354,16 @@ export async function getComments(req: Request, res: Response): Promise<void> {
   const { cardId } = req.params;
 
   try {
-    const r = getRedisClient();
-    const isCommented = await r.hGet(`CardDetails:${cardId}`, 'IsCommented');
+    const rows = await query(
+      `SELECT id as "CommentId", user_name as "UserName", body as "Body",
+              EXTRACT(EPOCH FROM created_at)::bigint * 1000 as "DateAdded",
+              EXTRACT(EPOCH FROM updated_at)::bigint * 1000 as "DateUpdated"
+       FROM kanban_comments WHERE card_id = $1 ORDER BY created_at ASC`,
+      [cardId],
+    );
 
-    if (isCommented) {
-      const commentIds = await r.sMembers(`CardComments:${cardId}`);
-      const CommentsDetails = await Promise.all(
-        commentIds.map((id) => r.hGetAll(`Comments:${id}`)),
-      );
-      res.status(200).json({ CommentsDetails });
+    if (rows.length > 0) {
+      res.status(200).json({ CommentsDetails: rows });
     } else {
       res.status(200).json({ message: 'No comment found.' });
     }
@@ -383,17 +378,15 @@ export async function updateComment(req: Request, res: Response): Promise<void> 
   const { commentId } = req.params;
 
   try {
-    const r = getRedisClient();
-    const exists = await r.exists(`Comments:${commentId}`);
-    if (!exists) {
+    const count = await execute(
+      `UPDATE kanban_comments SET body = $1, updated_at = now() WHERE id = $2`,
+      [body, commentId],
+    );
+
+    if (count === 0) {
       res.status(404).json({ error: 'Comment not found' });
       return;
     }
-
-    await r.hSet(`Comments:${commentId}`, {
-      Body: body,
-      DateUpdated: String(Date.now()),
-    });
 
     res.status(200).json({ message: 'Comment updated successfully' });
   } catch (error) {
@@ -406,51 +399,39 @@ export async function deleteComment(req: Request, res: Response): Promise<void> 
   const { commentId } = req.params;
 
   try {
-    const r = getRedisClient();
-    const commentData = await r.hGetAll(`Comments:${commentId}`);
+    const comment = await queryOne<{ card_id: string; user_name: string; body: string }>(
+      `SELECT card_id, user_name, body FROM kanban_comments WHERE id = $1`,
+      [commentId],
+    );
 
-    if (!commentData || Object.keys(commentData).length === 0) {
+    if (!comment) {
       res.status(404).json({ error: 'Comment not found' });
       return;
     }
 
-    const cardKeys = await r.keys('CardComments:*');
-    let associatedCardId: string | null = null;
+    await execute(`DELETE FROM kanban_comments WHERE id = $1`, [commentId]);
 
-    for (const cardKey of cardKeys) {
-      const isMember = await r.sIsMember(cardKey, commentId);
-      if (isMember) {
-        associatedCardId = cardKey.replace('CardComments:', '');
-        break;
-      }
+    // Check remaining comments on the card
+    const remaining = await queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM kanban_comments WHERE card_id = $1`,
+      [comment.card_id],
+    );
+
+    if (parseInt(remaining?.count || '0', 10) === 0) {
+      await execute(
+        `UPDATE kanban_cards SET is_commented = false WHERE id = $1`,
+        [comment.card_id],
+      );
     }
 
-    if (!associatedCardId) {
-      res.status(404).json({ error: 'Associated card not found for the comment' });
-      return;
-    }
-
-    await r.del(`Comments:${commentId}`);
-    await r.sRem(`CardComments:${associatedCardId}`, commentId);
-
-    const remaining = await r.sCard(`CardComments:${associatedCardId}`);
-    if (remaining === 0) {
-      await r.hSet(`CardDetails:${associatedCardId}`, { IsCommented: 'false' });
-    }
-
-    // Log activity
-    const userName =
-      (req as any).user?.firstName && (req as any).user?.lastName
-        ? `${(req as any).user.firstName} ${(req as any).user.lastName}`
-        : 'Unknown';
-    await logActivity(associatedCardId, 'comment_deleted', userName, 'Deleted a comment');
+    await logActivity(comment.card_id, 'comment_deleted', getUserName(req), 'Deleted a comment');
 
     res.status(200).json({
       message: 'Comment deleted successfully',
       deletedComment: {
         commentId,
-        userName: commentData.UserName,
-        body: commentData.Body,
+        userName: comment.user_name,
+        body: comment.body,
       },
     });
   } catch (error) {
@@ -469,16 +450,12 @@ export async function createTemplate(req: Request, res: Response): Promise<void>
   }
 
   try {
-    const r = getRedisClient();
     const templateId = uuidv4();
-    const timestamp = Date.now();
 
-    await r.hSet(`KanbanTemplate:${templateId}`, {
-      Name: name,
-      Fields: JSON.stringify(fields),
-      CreatedAt: String(timestamp),
-    });
-    await r.sAdd('KanbanTemplates', templateId);
+    await query(
+      `INSERT INTO kanban_templates (id, name, fields) VALUES ($1, $2, $3)`,
+      [templateId, name, JSON.stringify(fields)],
+    );
 
     res.status(200).json({ templateId, name, fields });
   } catch (error) {
@@ -489,29 +466,18 @@ export async function createTemplate(req: Request, res: Response): Promise<void>
 
 export async function getTemplates(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const templateIds = await r.sMembers('KanbanTemplates');
-
-    const templates = await Promise.all(
-      templateIds.map(async (id) => {
-        const data = await r.hGetAll(`KanbanTemplate:${id}`);
-        return {
-          id,
-          name: data.Name,
-          fields: JSON.parse(data.Fields || '[]'),
-          createdAt: data.CreatedAt,
-          lastUsedAt: data.LastUsedAt || null,
-        };
-      }),
+    const rows = await query(
+      `SELECT id, name, fields, created_at as "createdAt", last_used_at as "lastUsedAt"
+       FROM kanban_templates ORDER BY COALESCE(last_used_at, created_at) DESC`,
     );
 
-    // Sort: most recently used first, then most recently created
-    templates.sort((a, b) => {
-      const aT = Number(a.lastUsedAt) || 0;
-      const bT = Number(b.lastUsedAt) || 0;
-      if (bT !== aT) return bT - aT;
-      return Number(b.createdAt || 0) - Number(a.createdAt || 0);
-    });
+    const templates = rows.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      fields: typeof t.fields === 'string' ? JSON.parse(t.fields) : t.fields,
+      createdAt: t.createdAt,
+      lastUsedAt: t.lastUsedAt,
+    }));
 
     res.status(200).json({ templates });
   } catch (error) {
@@ -523,9 +489,7 @@ export async function getTemplates(_req: Request, res: Response): Promise<void> 
 export async function deleteTemplate(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   try {
-    const r = getRedisClient();
-    await r.del(`KanbanTemplate:${id}`);
-    await r.sRem('KanbanTemplates', id);
+    await execute(`DELETE FROM kanban_templates WHERE id = $1`, [id]);
     res.status(200).json({ message: 'Template deleted successfully' });
   } catch (error) {
     logError(error, { context: 'deleteTemplate' });
@@ -538,10 +502,14 @@ export async function deleteTemplate(req: Request, res: Response): Promise<void>
 export async function getCardActivity(req: Request, res: Response): Promise<void> {
   const { cardId } = req.params;
   try {
-    const r = getRedisClient();
-    const raw = await r.lRange(`CardActivity:${cardId}`, 0, 99);
-    const activities = raw.map((entry) => JSON.parse(entry));
-    res.status(200).json({ activities });
+    const rows = await query(
+      `SELECT action, user_name as "userName", details,
+              EXTRACT(EPOCH FROM created_at)::bigint * 1000 as "timestamp"
+       FROM kanban_activity WHERE card_id = $1 ORDER BY created_at DESC LIMIT 100`,
+      [cardId],
+    );
+
+    res.status(200).json({ activities: rows });
   } catch (error) {
     logError(error, { context: 'getCardActivity' });
     res.status(500).json({ error: 'Failed to fetch activity' });
