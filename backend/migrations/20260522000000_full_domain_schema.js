@@ -52,7 +52,7 @@ export const up = (pgm) => {
     from_id: { type: 'varchar(255)', notNull: true },
     from_name: { type: 'varchar(255)', notNull: true, default: "''" },
     from_email: { type: 'varchar(255)', default: "''" },
-    to_user_id: { type: 'uuid', notNull: true },
+    recipient_id: { type: 'uuid', notNull: true },
     subject: { type: 'varchar(500)', notNull: true },
     body: { type: 'text', notNull: true },
     is_read: { type: 'boolean', notNull: true, default: false },
@@ -60,19 +60,23 @@ export const up = (pgm) => {
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
   }, { ifNotExists: true });
 
-  pgm.createIndex('messages', 'to_user_id', { ifNotExists: true });
-  pgm.createIndex('messages', ['to_user_id', 'is_read'], { ifNotExists: true });
+  pgm.createIndex('messages', 'recipient_id', { ifNotExists: true });
+  pgm.createIndex('messages', ['recipient_id', 'is_read'], { ifNotExists: true });
   pgm.createIndex('messages', 'created_at', { ifNotExists: true });
 
   // ─── SENT MESSAGES (tracking who sent what) ─────────────────────────────
   pgm.createTable('sent_messages', {
     id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
-    message_id: { type: 'uuid', notNull: true, references: 'messages', onDelete: 'CASCADE' },
-    sender_user_id: { type: 'uuid', notNull: true },
+    from_id: { type: 'varchar(255)', notNull: true },
+    from_name: { type: 'varchar(255)', notNull: true, default: "''" },
+    from_email: { type: 'varchar(255)', default: "''" },
+    recipient_email: { type: 'varchar(255)', notNull: true },
+    subject: { type: 'varchar(500)', notNull: true },
+    body: { type: 'text', notNull: true },
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
   }, { ifNotExists: true });
 
-  pgm.createIndex('sent_messages', 'sender_user_id', { ifNotExists: true });
+  pgm.createIndex('sent_messages', 'from_id', { ifNotExists: true });
 
   // ─── REVIEWS ─────────────────────────────────────────────────────────────
   pgm.createTable('reviews', {
@@ -165,7 +169,7 @@ export const up = (pgm) => {
     original_amount: { type: 'numeric(14,2)', notNull: true },
     original_currency: { type: 'varchar(10)', notNull: true, default: "'RON'" },
     exchange_rate: { type: 'numeric(14,6)', notNull: true, default: 1 },
-    amount_ron: { type: 'numeric(14,2)', notNull: true },
+    amount_in_ron: { type: 'numeric(14,2)', notNull: true },
     description: { type: 'text', default: "''" },
     due_date: { type: 'date', notNull: true },
     status: { type: 'varchar(20)', notNull: true, default: "'pending'" },
@@ -194,22 +198,24 @@ export const up = (pgm) => {
   // ─── KANBAN COLUMNS ─────────────────────────────────────────────────────
   pgm.createTable('kanban_columns', {
     id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
-    name: { type: 'varchar(255)', notNull: true },
+    column_name: { type: 'varchar(255)', notNull: true },
     tag_color: { type: 'varchar(50)', default: "'#cccccc'" },
-    position: { type: 'integer', notNull: true, default: 0 },
+    priority: { type: 'integer', notNull: true, default: 0 },
     card_count: { type: 'integer', notNull: true, default: 0 },
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
+    updated_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
   }, { ifNotExists: true });
 
-  pgm.createIndex('kanban_columns', 'position', { ifNotExists: true });
+  pgm.createIndex('kanban_columns', 'priority', { ifNotExists: true });
 
   // ─── KANBAN CARDS ───────────────────────────────────────────────────────
   pgm.createTable('kanban_cards', {
     id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
     column_id: { type: 'uuid', notNull: true, references: 'kanban_columns', onDelete: 'CASCADE' },
-    position: { type: 'integer', notNull: true, default: 0 },
+    name: { type: 'varchar(255)', default: "''" },
+    sort_order: { type: 'integer', notNull: true, default: 0 },
     template_id: { type: 'uuid' },
-    fields: { type: 'jsonb', default: "'{}'" },
+    fields: { type: 'jsonb', default: pgm.func("'{}'::jsonb") },
     contact_name: { type: 'varchar(255)', default: "''" },
     business_name: { type: 'varchar(255)', default: "''" },
     first_contact: { type: 'varchar(255)', default: "''" },
@@ -220,10 +226,11 @@ export const up = (pgm) => {
     facebook: { type: 'varchar(255)', default: "''" },
     is_commented: { type: 'boolean', notNull: true, default: false },
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
+    updated_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
   }, { ifNotExists: true });
 
   pgm.createIndex('kanban_cards', 'column_id', { ifNotExists: true });
-  pgm.createIndex('kanban_cards', ['column_id', 'position'], { ifNotExists: true });
+  pgm.createIndex('kanban_cards', ['column_id', 'sort_order'], { ifNotExists: true });
 
   // ─── KANBAN COMMENTS ────────────────────────────────────────────────────
   pgm.createTable('kanban_comments', {
@@ -253,7 +260,7 @@ export const up = (pgm) => {
   pgm.createTable('kanban_templates', {
     id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
     name: { type: 'varchar(255)', notNull: true },
-    fields: { type: 'jsonb', notNull: true, default: "'[]'" },
+    fields: { type: 'jsonb', notNull: true, default: pgm.func("'[]'::jsonb") },
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
     last_used_at: { type: 'timestamptz' },
   }, { ifNotExists: true });
@@ -261,7 +268,7 @@ export const up = (pgm) => {
   // ─── APP SETTINGS ──────────────────────────────────────────────────────
   pgm.createTable('app_settings', {
     key: { type: 'varchar(255)', primaryKey: true },
-    value: { type: 'jsonb', notNull: true, default: "'{}'" },
+    value: { type: 'jsonb', notNull: true, default: pgm.func("'{}'::jsonb") },
     updated_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
   }, { ifNotExists: true });
 
