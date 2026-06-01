@@ -9,3 +9,9 @@ node_modules
 # Logs
 logs/
 *.log
+
+# Build output
+dist/
+
+# Test coverage
+coverage/
