@@ -3,19 +3,13 @@
 // ---------------------------------------------------------------------------
 
 import nodemailer from 'nodemailer';
-import { getRedisClient } from '../../../config/database.js';
 import { env } from '../../../config/env.js';
 import { createLogger, logError } from '../../../utils/logger.js';
+import { query, queryOne, execute } from '../../../utils/db.js';
+import * as userRepo from '../../user/repository/userRepository.js';
+import crypto from 'crypto';
 
 const logger = createLogger('finance', 'service');
-
-// ─── Redis key helpers ───────────────────────────────────────────────────────
-
-const pendingKey = (id: string) => `finance:pending:${id}`;
-const userPendingsKey = (userId: string) => `finance:user:${userId}:pendings`;
-const allPendingsKey = () => `finance:pending:all`;
-
-export { pendingKey, userPendingsKey, allPendingsKey };
 
 // ─── SMTP transporter ────────────────────────────────────────────────────────
 
@@ -92,8 +86,7 @@ export async function sendDuePaymentEmail(params: {
         </div>
 
         <p style="color: #888; font-size: 12px; margin-bottom: 0;">
-          This is an automated notification from ANL Finance. The payment will not be credited automatically — 
-          it requires your manual confirmation.
+          This is an automated notification from ANL Finance.
         </p>
       </div>
     </div>
@@ -105,7 +98,7 @@ export async function sendDuePaymentEmail(params: {
       to: ownerEmail,
       subject: `Payment Due: ${amount.toFixed(2)} ${currency} from ${clientName}`,
       html,
-      text: `Hi ${ownerName},\n\nAn expected payment of ${amount.toFixed(2)} ${currency} from ${clientName} is now due (${dueDate}).\nDescription: ${description || 'N/A'}\n\nPlease log in to confirm or reject: ${confirmUrl}\n\nThis payment will NOT be credited automatically.`,
+      text: `Hi ${ownerName},\n\nAn expected payment of ${amount.toFixed(2)} ${currency} from ${clientName} is now due (${dueDate}).\nDescription: ${description || 'N/A'}\n\nPlease log in to confirm or reject: ${confirmUrl}`,
     });
 
     logger.info({ pendingId, ownerEmail }, 'Due payment notification email sent');
@@ -118,81 +111,54 @@ export async function sendDuePaymentEmail(params: {
 // ─── Check for due payments and send notifications ───────────────────────────
 
 export async function checkDuePayments(): Promise<void> {
-  const r = getRedisClient();
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
 
   try {
-    // Get all pending payment IDs
-    const pendingIds = await r.sMembers(allPendingsKey());
+    const duePendings = await query<any>(
+      `SELECT * FROM pending_payments WHERE status = 'pending' AND notified = false AND due_date <= $1`,
+      [today],
+    );
 
-    for (const id of pendingIds) {
-      const pending = await r.hGetAll(pendingKey(id));
-      if (!pending || !pending.id) continue;
+    for (const pending of duePendings) {
+      const owners = await userRepo.findByRole('admin');
+      const ownerUsers = [
+        ...owners,
+        ...(await userRepo.findByRole('owner')),
+      ];
 
-      // Skip if already notified or resolved
-      if (pending.status !== 'pending') continue;
-      if (pending.notified === 'true') continue;
+      for (const owner of ownerUsers) {
+        const ownerName =
+          `${owner.first_name} ${owner.last_name}`.trim() || owner.username || owner.email;
 
-      // Check if due date has arrived
-      if (pending.dueDate <= today) {
-        // Get all owners/admins to notify
-        const owners = await getOwnersAndAdmins();
-
-        for (const owner of owners) {
-          await sendDuePaymentEmail({
-            ownerEmail: owner.email,
-            ownerName: owner.name,
-            clientName: pending.userName,
-            amount: parseFloat(pending.originalAmount),
-            currency: pending.originalCurrency,
-            description: pending.description,
-            dueDate: pending.dueDate,
-            pendingId: id,
-          });
-        }
-
-        // Mark as notified
-        await r.hSet(pendingKey(id), 'notified', 'true');
-        await r.hSet(pendingKey(id), 'notifiedAt', new Date().toISOString());
-
-        // Log event on the user's account
-        await logPendingEvent(pending.userId, id, 'due_notification_sent', 
-          `Expected payment of ${pending.originalAmount} ${pending.originalCurrency} is now due. Owners notified.`);
-
-        logger.info({ pendingId: id, dueDate: pending.dueDate, userId: pending.userId }, 
-          'Due payment notification processed');
+        await sendDuePaymentEmail({
+          ownerEmail: owner.email,
+          ownerName,
+          clientName: pending.user_name,
+          amount: parseFloat(pending.original_amount),
+          currency: pending.original_currency,
+          description: pending.description,
+          dueDate: pending.due_date instanceof Date
+            ? pending.due_date.toISOString().split('T')[0]
+            : String(pending.due_date),
+          pendingId: pending.id,
+        });
       }
+
+      // Mark as notified
+      await execute(
+        `UPDATE pending_payments SET notified = true, notified_at = now() WHERE id = $1`,
+        [pending.id],
+      );
+
+      await logPendingEvent(pending.user_id, pending.id, 'due_notification_sent',
+        `Expected payment of ${pending.original_amount} ${pending.original_currency} is now due. Owners notified.`);
+
+      logger.info({ pendingId: pending.id, dueDate: pending.due_date, userId: pending.user_id },
+        'Due payment notification processed');
     }
   } catch (err) {
     logError(err, { context: 'checkDuePayments' });
   }
-}
-
-// ─── Get all admin/owner users ───────────────────────────────────────────────
-
-async function getOwnersAndAdmins(): Promise<{ id: string; email: string; name: string }[]> {
-  const r = getRedisClient();
-  const results: { id: string; email: string; name: string }[] = [];
-
-  let cursor = 0;
-  do {
-    const scan = await r.scan(cursor, { MATCH: 'user:*', COUNT: 200 });
-    cursor = scan.cursor;
-
-    for (const key of scan.keys) {
-      // Skip non-user-data keys
-      if (key.includes(':') && key.split(':').length > 2) continue;
-
-      const userData = await r.hGetAll(key);
-      if (userData.role === 'admin' || userData.role === 'owner') {
-        const name = [userData.firstName, userData.lastName].filter(Boolean).join(' ')
-          || userData.username || userData.email;
-        results.push({ id: userData.id || key.replace('user:', ''), email: userData.email, name });
-      }
-    }
-  } while (cursor !== 0);
-
-  return results;
 }
 
 // ─── Log pending payment event to the user's transaction history ─────────────
@@ -203,26 +169,17 @@ export async function logPendingEvent(
   eventType: string,
   description: string,
 ): Promise<void> {
-  const r = getRedisClient();
-  const crypto = await import('crypto');
   const txId = crypto.randomUUID();
-  const now = new Date().toISOString();
 
-  const logEntry = {
-    id: txId,
-    userId,
-    pendingId,
-    type: 'log',
-    eventType,
-    amount: '0.00',
-    description,
-    performedBy: 'system',
-    performedByName: 'System',
-    balanceBefore: (await r.get(`finance:balance:${userId}`)) || '0',
-    balanceAfter: (await r.get(`finance:balance:${userId}`)) || '0',
-    createdAt: now,
-  };
+  const balanceRow = await queryOne<{ balance: string }>(
+    `SELECT COALESCE(balance, 0) as balance FROM user_balances WHERE user_id = $1`,
+    [userId],
+  );
+  const currentBalance = balanceRow?.balance || '0';
 
-  await r.hSet(`finance:tx:${txId}`, logEntry);
-  await r.zAdd(`finance:user:${userId}:txs`, { score: Date.now(), value: txId });
+  await query(
+    `INSERT INTO finance_transactions (id, user_id, type, event_type, amount, description, performed_by, performed_by_name, balance_before, balance_after, pending_id)
+     VALUES ($1, $2, 'log', $3, 0, $4, 'system', 'System', $5, $5, $6)`,
+    [txId, userId, eventType, description, currentBalance, pendingId],
+  );
 }

@@ -2,9 +2,9 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { v4 as uuidv4 } from 'uuid';
-import { getRedisClient } from '../config/database.js';
 import { env } from '../config/env.js';
 import { createLogger } from './logger.js';
+import * as userRepo from '../domains/user/repository/userRepository.js';
 
 const logger = createLogger('passport', 'infra');
 
@@ -21,7 +21,6 @@ passport.use(
     },
     async (req: any, accessToken, refreshToken, profile, done) => {
       try {
-        const redisClient = getRedisClient();
         const userEmail =
           profile.emails && profile.emails[0]
             ? profile.emails[0].value
@@ -41,13 +40,16 @@ passport.use(
           userRole = 'admin';
         }
 
-        const userKey = `user:email:${userEmail}`;
-        const userExists = await redisClient.exists(userKey);
-
-        if (userExists) {
-          const userId = await redisClient.get(userKey);
-          const userData = await redisClient.hGetAll(`user:${userId}`);
-          return done(null, { id: userId!, ...userData } as Express.User);
+        const existing = await userRepo.findByEmail(userEmail);
+        if (existing) {
+          return done(null, {
+            id: existing.id,
+            email: existing.email,
+            username: existing.username,
+            role: existing.role,
+            accessToken,
+            refreshToken,
+          } as unknown as Express.User);
         }
 
         const userId = uuidv4();
@@ -55,7 +57,7 @@ passport.use(
           ? profile.displayName.toLowerCase().replace(/\s/g, '')
           : userEmail.split('@')[0];
 
-        const newUser: Record<string, string> = {
+        const newUser = await userRepo.createUser({
           id: userId,
           email: userEmail,
           username,
@@ -64,14 +66,16 @@ passport.use(
           provider: 'google',
           role: userRole,
           googleId: profile.id,
-          createdAt: new Date().toISOString(),
-        };
+        });
 
-        await redisClient.set(userKey, userId);
-        await redisClient.hSet(`user:${userId}`, newUser);
-        await redisClient.set(`user:username:${username}`, userId);
-
-        return done(null, newUser as unknown as Express.User);
+        return done(null, {
+          id: newUser.id,
+          email: newUser.email,
+          username: newUser.username,
+          role: newUser.role,
+          accessToken,
+          refreshToken,
+        } as unknown as Express.User);
       } catch (error) {
         logger.error({ err: error }, 'Error in Google auth strategy');
         return done(error as Error, undefined);
@@ -96,30 +100,31 @@ passport.use(
     } as any,
     async (req: any, accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
-        const redisClient = getRedisClient();
         const userEmail =
           profile.emails && profile.emails[0]
             ? profile.emails[0].value
             : null;
 
         if (userEmail) {
-          const userKey = `user:email:${userEmail}`;
-          const userExists = await redisClient.exists(userKey);
-
-          if (userExists) {
-            const userId = await redisClient.get(userKey);
-            const userData = await redisClient.hGetAll(`user:${userId}`);
-            return done(null, { id: userId, ...userData });
+          const existing = await userRepo.findByEmail(userEmail);
+          if (existing) {
+            return done(null, {
+              id: existing.id,
+              email: existing.email,
+              username: existing.username,
+              role: existing.role,
+            });
           }
         }
 
-        const facebookIdKey = `user:facebook:${profile.id}`;
-        const userByFbExists = await redisClient.exists(facebookIdKey);
-
-        if (userByFbExists) {
-          const userId = await redisClient.get(facebookIdKey);
-          const userData = await redisClient.hGetAll(`user:${userId}`);
-          return done(null, { id: userId, ...userData });
+        const existingByFb = await userRepo.findByFacebookId(profile.id);
+        if (existingByFb) {
+          return done(null, {
+            id: existingByFb.id,
+            email: existingByFb.email,
+            username: existingByFb.username,
+            role: existingByFb.role,
+          });
         }
 
         const userId = uuidv4();
@@ -129,7 +134,7 @@ passport.use(
             ? userEmail.split('@')[0]
             : `fb_${profile.id}`;
 
-        const newUser: Record<string, string> = {
+        const newUser = await userRepo.createUser({
           id: userId,
           email: userEmail || `${profile.id}@facebook.com`,
           username,
@@ -138,16 +143,14 @@ passport.use(
           provider: 'facebook',
           facebookId: profile.id,
           role: 'user',
-          createdAt: new Date().toISOString(),
-        };
+        });
 
-        if (userEmail) {
-          await redisClient.set(`user:email:${userEmail}`, userId);
-        }
-        await redisClient.set(`user:facebook:${profile.id}`, userId);
-        await redisClient.hSet(`user:${userId}`, newUser);
-
-        return done(null, newUser);
+        return done(null, {
+          id: newUser.id,
+          email: newUser.email,
+          username: newUser.username,
+          role: newUser.role,
+        });
       } catch (error) {
         logger.error({ err: error }, 'Error in Facebook auth strategy');
         return done(error, false);
@@ -165,12 +168,16 @@ passport.serializeUser((user: any, done) => {
 
 passport.deserializeUser(async (id: string, done) => {
   try {
-    const redisClient = getRedisClient();
-    const userData = await redisClient.hGetAll(`user:${id}`);
-    if (!userData || Object.keys(userData).length === 0) {
+    const user = await userRepo.findById(id);
+    if (!user) {
       return done(new Error('User not found'), null);
     }
-    done(null, userData as unknown as Express.User);
+    done(null, {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    } as unknown as Express.User);
   } catch (error) {
     done(error, null);
   }

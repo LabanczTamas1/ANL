@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { getRedisClient } from '../../config/database.js';
+import { queryOne } from '../db.js';
 import { createLogger } from '../logger.js';
 
 const logger = createLogger('admin', 'middleware');
-const blockedIPsKey = 'banned_ips';
 
 export function blockBannedIPs() {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -13,9 +12,11 @@ export function blockBannedIPs() {
       '';
 
     try {
-      const redisClient = getRedisClient();
-      const isBanned = await redisClient.sIsMember(blockedIPsKey, ip);
-      if (isBanned) {
+      const row = await queryOne<{ value: string[] }>(
+        `SELECT value FROM app_settings WHERE key = 'banned_ips'`,
+      );
+      const bannedIps = row ? (Array.isArray(row.value) ? row.value : []) : [];
+      if (bannedIps.includes(ip)) {
         logger.warn({ ip, url: req.originalUrl }, 'Blocked banned IP');
         res.status(403).json({ error: 'Access denied: IP is banned' });
         return;
@@ -23,7 +24,7 @@ export function blockBannedIPs() {
       next();
     } catch (err) {
       logger.error({ err }, 'IP check error');
-      next(); // Let the request pass if Redis fails
+      next();
     }
   };
 }

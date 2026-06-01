@@ -19,6 +19,7 @@ import {
 } from '../../../utils/tokenStore.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 import { notifyWelcome } from '../../../utils/systemNotifications.js';
+import * as userRepo from '../repository/userRepository.js';
 
 const logger = createLogger('user', 'controller');
 
@@ -57,12 +58,12 @@ export function googleCallback(req: Request, res: Response): void {
         const redisClient = getRedisClient();
         const { email, timeZone, date, time, eventTitle } = req.calendarState;
 
-        const userData = await redisClient.hGetAll(`user:${req.user.id}`);
+        const userData = await userRepo.findById(req.user.id);
 
         const token = JwtService.signLegacy({
           id: req.user.id,
           email: req.user.email,
-          role: userData.role || 'user',
+          role: userData?.role || 'user',
           accessToken: req.user.accessToken,
           refreshToken: req.user.refreshToken,
         });
@@ -151,8 +152,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 
     const email = rawEmail.trim().toLowerCase();
 
-    const userExists = await redisClient.exists(`user:email:${email}`);
-    if (userExists) {
+    if (await userRepo.emailExists(email)) {
       res.status(409).json({ error: 'User already exists' });
       return;
     }
@@ -160,7 +160,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     const userId = uuidv4();
     const hashedPw = await hashPassword(password);
 
-    await redisClient.hSet(`user:${userId}`, {
+    await userRepo.createUser({
       id: userId,
       email,
       firstName,
@@ -168,14 +168,10 @@ export async function register(req: Request, res: Response): Promise<void> {
       username,
       password: hashedPw,
       role: 'user',
-      verified: 'false',
-      createdAt: new Date().toISOString(),
+      verified: false,
     });
 
-    await redisClient.set(`user:email:${email}`, userId);
-    await redisClient.set(`user:username:${username}`, userId);
-
-    // Email verification code
+    // Email verification code (ephemeral — stays in Redis)
     const verificationCode = crypto.randomInt(100000, 999999).toString();
     await redisClient.set(`verify:email:${email}`, verificationCode, {
       EX: 15 * 60,
@@ -261,23 +257,19 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const userId = await redisClient.get(`user:email:${email}`);
-    if (!userId) {
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    await redisClient.hSet(`user:${userId}`, {
-      verified: 'true',
-      verifiedAt: new Date().toISOString(),
-    });
+    await userRepo.updateUser(user.id, { verified: true });
     await redisClient.del(`verify:email:${email}`);
 
-    const userData = await redisClient.hGetAll(`user:${userId}`);
-    await notifyWelcome(userId, userData.firstName || userData.username || 'there');
+    await notifyWelcome(user.id, user.first_name || user.username || 'there');
 
-    logger.info({ userId, email }, 'Email verified');
-    res.status(200).json({ message: 'Email successfully verified', userId });
+    logger.info({ userId: user.id, email }, 'Email verified');
+    res.status(200).json({ message: 'Email successfully verified', userId: user.id });
   } catch (error) {
     logError(error, { context: 'verifyEmail' });
     res.status(500).json({ error: 'Email verification failed' });
@@ -302,14 +294,13 @@ export async function resendVerification(
     }
 
     const email = rawEmail.trim().toLowerCase();
-    const userId = await redisClient.get(`user:email:${email}`);
-    if (!userId) {
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const user = await redisClient.hGetAll(`user:${userId}`);
-    if (user.verified === 'true') {
+    if (user.verified) {
       res.status(400).json({ error: 'User is already verified' });
       return;
     }
@@ -334,7 +325,7 @@ export async function resendVerification(
       html: `<p>Your new verification code is: <strong>${verificationCode}</strong></p>`,
     });
 
-    logger.info({ userId, email }, 'Verification code resent');
+    logger.info({ userId: user.id, email }, 'Verification code resent');
     res
       .status(200)
       .json({ message: 'Verification code resent. Please check your email.' });
@@ -350,7 +341,6 @@ export async function resendVerification(
 
 export async function login(req: Request, res: Response): Promise<void> {
   try {
-    const redisClient = getRedisClient();
     const { email: rawEmail, password } = req.body;
 
     if (!rawEmail || !password) {
@@ -358,28 +348,20 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const email = rawEmail.trim().toLowerCase();
-    let userId: string | null;
-    if (email.includes('@')) {
-      userId = await redisClient.get(`user:email:${email}`);
-    } else {
-      userId = await redisClient.get(`user:username:${email}`);
-    }
+    const emailOrUsername = rawEmail.trim().toLowerCase();
 
-    if (!userId) {
+    const user = emailOrUsername.includes('@')
+      ? await userRepo.findByEmail(emailOrUsername)
+      : await userRepo.findByUsername(emailOrUsername);
+
+    if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
-
-    const userData = await redisClient.hGetAll(`user:${userId}`);
-    if (!userData) {
-      res.status(404).json({ error: 'User not found' });
       return;
     }
 
     const passwordValid = await verifyPassword(
       password,
-      userData.password || userData.hashedPassword || '',
+      user.password || '',
     );
     if (!passwordValid) {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -388,15 +370,15 @@ export async function login(req: Request, res: Response): Promise<void> {
 
     // Issue tokens
     const accessToken = JwtService.signAccessToken({
-      id: userId,
-      email: userData.email,
-      username: userData.username,
-      role: userData.role || 'user',
+      id: user.id,
+      email: user.email,
+      username: user.username || '',
+      role: user.role || 'user',
     });
 
     const { token: refreshTokenStr, jti, fid } =
-      JwtService.signRefreshToken(userId);
-    await registerToken(userId, fid, jti);
+      JwtService.signRefreshToken(user.id);
+    await registerToken(user.id, fid, jti);
 
     const isWeb = req.headers['x-client-platform'] === 'web';
     if (isWeb) {
@@ -409,18 +391,18 @@ export async function login(req: Request, res: Response): Promise<void> {
       });
     }
 
-    logger.info({ userId, email: userData.email }, 'User logged in');
+    logger.info({ userId: user.id, email: user.email }, 'User logged in');
 
     res.json({
       accessToken,
       ...(isWeb ? {} : { refreshToken: refreshTokenStr }),
-      userId,
+      userId: user.id,
       user: {
-        id: userId,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        verified: userData.verified,
+        id: user.id,
+        email: user.email,
+        name: `${user.first_name} ${user.last_name}`.trim(),
+        role: user.role,
+        verified: user.verified,
       },
     });
   } catch (error) {
@@ -469,14 +451,13 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     await blacklistToken(jti, fid);
 
     // Issue new pair
-    const redisClient = getRedisClient();
-    const userData = await redisClient.hGetAll(`user:${userId}`);
+    const user = await userRepo.findById(userId);
 
     const accessToken = JwtService.signAccessToken({
       id: userId,
-      email: userData.email,
-      username: userData.username,
-      role: userData.role || 'user',
+      email: user?.email || '',
+      username: user?.username || '',
+      role: user?.role || 'user',
     });
 
     const { token: newRefreshStr, jti: newJti } =
@@ -563,10 +544,10 @@ export async function forgotPassword(
     }
 
     const email = rawEmail.trim().toLowerCase();
-    const userId = await redisClient.get(`user:email:${email}`);
+    const user = await userRepo.findByEmail(email);
 
     // Always return success to avoid leaking whether the email exists
-    if (!userId) {
+    if (!user) {
       logger.info({ email }, 'Forgot-password request for unknown email');
       res.status(200).json({
         message: 'If that email exists, a reset code has been sent.',
@@ -601,7 +582,7 @@ export async function forgotPassword(
         `,
       });
 
-    logger.info({ userId, email }, 'Password reset code sent');
+    logger.info({ userId: user.id, email }, 'Password reset code sent');
     res.status(200).json({
       message: 'If that email exists, a reset code has been sent.',
     });
@@ -649,17 +630,17 @@ export async function resetPassword(
       return;
     }
 
-    const userId = await redisClient.get(`user:email:${email}`);
-    if (!userId) {
+    const user = await userRepo.findByEmail(email);
+    if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
     const hashedPw = await hashPassword(newPassword);
-    await redisClient.hSet(`user:${userId}`, { password: hashedPw });
+    await userRepo.updateUser(user.id, { password: hashedPw });
     await redisClient.del(`reset:password:${email}`);
 
-    logger.info({ userId, email }, 'Password reset successfully');
+    logger.info({ userId: user.id, email }, 'Password reset successfully');
     res.status(200).json({ message: 'Password has been reset successfully' });
   } catch (error) {
     logError(error, { context: 'resetPassword' });

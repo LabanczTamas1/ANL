@@ -1,44 +1,36 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-import { getRedisClient } from '../config/database.js';
 import { createLogger } from './logger.js';
+import * as userRepo from '../domains/user/repository/userRepository.js';
 
 const logger = createLogger('admin', 'infra');
 
 export async function ensureAdminAccount(): Promise<void> {
   try {
-    const redisClient = getRedisClient();
-
-    const adminUsername = 'admin';
     const adminEmail = 'admin@example.com';
 
-    const adminId = await redisClient.get(`username:${adminUsername}`);
-    if (adminId) {
+    const existing = await userRepo.findByEmail(adminEmail);
+    if (existing) {
       logger.info('Admin account already exists');
       return;
     }
 
-    const adminIdGenerated = uuidv4();
     const adminPassword = 'Admin123!';
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-    const adminKey = `user:${adminIdGenerated}`;
-    await redisClient.sAdd('users', adminIdGenerated);
-
-    await redisClient.hSet(adminKey, {
+    await userRepo.createUser({
+      id: uuidv4(),
+      email: adminEmail,
+      username: 'admin',
+      password: hashedPassword,
       firstName: 'Admin',
       lastName: 'User',
-      email: adminEmail,
-      username: adminUsername,
-      hashedPassword,
       role: 'admin',
+      verified: true,
     });
 
-    await redisClient.set(`username:${adminUsername}`, adminIdGenerated);
-    await redisClient.set(`email:${adminEmail}`, adminIdGenerated);
-
     logger.info(
-      { username: adminUsername },
+      { username: 'admin' },
       'Admin account created successfully',
     );
   } catch (error) {

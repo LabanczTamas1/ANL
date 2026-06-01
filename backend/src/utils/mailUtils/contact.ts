@@ -1,16 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
 import { Request, Response } from 'express';
-import { getRedisClient } from '../../config/database.js';
 import { env } from '../../config/env.js';
 import { createLogger } from '../logger.js';
+import { execute } from '../db.js';
 
 const logger = createLogger('contact', 'controller');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // STARTTLS on port 587
+  secure: false,
   auth: {
     user: env.SMTP_USER || 'deid.unideb@gmail.com',
     pass: env.SMTP_PASS || '',
@@ -29,20 +29,9 @@ export async function handleContactSubmission(
   }
 
   try {
-    const redisClient = getRedisClient();
-    const date = new Date().toISOString().split('T')[0];
-    const hashKey = `contact:${date}`;
-    const entryId = uuidv4();
-
-    await redisClient.hSet(
-      hashKey,
-      entryId,
-      JSON.stringify({
-        fullName,
-        email,
-        message,
-        timestamp: new Date().toISOString(),
-      }),
+    await execute(
+      `INSERT INTO contact_submissions (id, full_name, email, message) VALUES ($1, $2, $3, $4)`,
+      [uuidv4(), fullName, email, message],
     );
 
     const mailOptions = {
@@ -54,13 +43,9 @@ export async function handleContactSubmission(
 
     await transporter.sendMail(mailOptions);
 
-    res
-      .status(201)
-      .json({ message: 'Contact form submitted and email sent successfully.' });
+    res.status(201).json({ message: 'Contact form submitted and email sent successfully.' });
   } catch (err) {
     logger.error({ err }, 'Contact form error');
-    res
-      .status(500)
-      .json({ error: 'Internal server error. Please try again later.' });
+    res.status(500).json({ error: 'Internal server error. Please try again later.' });
   }
 }

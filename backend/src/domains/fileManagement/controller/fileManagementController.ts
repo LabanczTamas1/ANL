@@ -1,10 +1,11 @@
 // ---------------------------------------------------------------------------
-// File Management Controller — Kanban import/export
+// File Management Controller — Kanban import/export (PostgreSQL)
 // ---------------------------------------------------------------------------
 
 import { Request, Response } from 'express';
 import multer from 'multer';
-import { getRedisClient } from '../../../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
+import { query, execute } from '../../../utils/db.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 
 const logger = createLogger('fileManagement', 'controller');
@@ -12,53 +13,45 @@ const logger = createLogger('fileManagement', 'controller');
 export const upload = multer({ storage: multer.memoryStorage() });
 
 async function processNewFormat(jsonData: any): Promise<void> {
-  const r = getRedisClient();
   const { kanbanTable, boardData, cardDetails } = jsonData;
 
   if (kanbanTable?.length) {
-    const entries = kanbanTable.map((item: any) => ({
-      score: Number(item.score),
-      value: String(item.value),
-    }));
-    if (entries.length > 0) await r.zAdd('KanbanTable', entries);
-  }
-
-  if (boardData) {
-    for (const [boardId, data] of Object.entries(boardData) as any) {
-      await r.hSet(`Boards:${boardId}`, {
-        ColumnName: data.ColumnName,
-        tagColor: data.tagColor,
-        CardNumber: String(data.CardNumber),
-      });
+    for (const item of kanbanTable) {
+      const colId = String(item.value);
+      const board = boardData?.[colId];
+      await execute(
+        `INSERT INTO kanban_columns (id, column_name, tag_color, priority, card_count)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (id) DO UPDATE SET column_name = $2, tag_color = $3, priority = $4, card_count = $5`,
+        [colId, board?.ColumnName || '', board?.tagColor || '', Number(item.score), Number(board?.CardNumber || 0)],
+      );
     }
   }
 
   if (cardDetails) {
     for (const [cardId, data] of Object.entries(cardDetails) as any) {
-      await r.hSet(`CardDetails:${cardId}`, {
-        ColumnId: data.ColumnId,
-        ContactName: data.ContactName,
-        BusinessName: data.BusinessName,
-        DateOfAdded: String(data.DateOfAdded),
-        FirstContact: data.FirstContact,
-        PhoneNumber: data.PhoneNumber,
-        Email: data.Email,
-        Website: data.Website,
-        Instagram: data.Instagram,
-        Facebook: data.Facebook,
-        IsCommented: data.IsCommented,
-      });
+      const fieldsJson = data.Fields ? JSON.stringify(
+        typeof data.Fields === 'string' ? JSON.parse(data.Fields) : data.Fields
+      ) : null;
 
-      await r.zAdd(`SortedCards:${data.ColumnId}`, {
-        score: Number(data.DateOfAdded),
-        value: cardId,
-      });
+      await execute(
+        `INSERT INTO kanban_cards (id, column_id, name, sort_order, is_commented, contact_name,
+           business_name, first_contact, phone_number, email, website, instagram, facebook, fields)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         ON CONFLICT (id) DO UPDATE SET column_id = $2, name = $3, sort_order = $4`,
+        [
+          cardId, data.ColumnId, data.Name || data.ContactName || '', Number(data.DateOfAdded || 0),
+          data.IsCommented === 'true' || data.IsCommented === true,
+          data.ContactName || '', data.BusinessName || '', data.FirstContact || '',
+          data.PhoneNumber || '', data.Email || '', data.Website || '',
+          data.Instagram || '', data.Facebook || '', fieldsJson,
+        ],
+      );
     }
   }
 }
 
 async function processOldFormat(jsonData: any): Promise<void> {
-  const r = getRedisClient();
   const lists = jsonData.lists || [];
   const cards = jsonData.cards || [];
 
@@ -68,42 +61,35 @@ async function processOldFormat(jsonData: any): Promise<void> {
     if (isNaN(posScore)) continue;
 
     try {
-      await r.zAdd('KanbanTable', { score: posScore, value: list.id });
-      await r.hSet(`Boards:${list.id}`, {
-        ColumnName: list.name || '',
-        tagColor: list.color || '',
-        CardNumber: String(list.cardCount || 0),
-      });
+      await execute(
+        `INSERT INTO kanban_columns (id, column_name, tag_color, priority, card_count)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (id) DO UPDATE SET column_name = $2, tag_color = $3, priority = $4, card_count = $5`,
+        [list.id, list.name || '', list.color || '', posScore, Number(list.cardCount || 0)],
+      );
     } catch (err) {
-      logger.error({ err, listId: list.id }, 'Error storing list in Redis');
+      logger.error({ err, listId: list.id }, 'Error storing list');
     }
   }
 
   for (const card of cards) {
     try {
-      const cardId = card.id || crypto.randomUUID();
-      const columnId = card.listId;
-
-      await r.hSet(`CardDetails:${cardId}`, {
-        ColumnId: columnId,
-        ContactName: card.name || '',
-        BusinessName: card.company || '',
-        DateOfAdded: String(card.createdAt || Date.now()),
-        FirstContact: card.firstContact || '',
-        PhoneNumber: card.phone || '',
-        Email: card.email || '',
-        Website: card.website || '',
-        Instagram: card.instagram || '',
-        Facebook: card.facebook || '',
-        IsCommented: card.hasComments ? 'true' : 'false',
-      });
-
-      await r.zAdd(`SortedCards:${columnId}`, {
-        score: card.position || 0,
-        value: cardId,
-      });
+      const cardId = card.id || uuidv4();
+      await execute(
+        `INSERT INTO kanban_cards (id, column_id, name, sort_order, is_commented, contact_name,
+           business_name, first_contact, phone_number, email, website, instagram, facebook)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         ON CONFLICT (id) DO UPDATE SET column_id = $2, name = $3`,
+        [
+          cardId, card.listId, card.name || '', Number(card.position || 0),
+          card.hasComments === true,
+          card.name || '', card.company || '', card.firstContact || '',
+          card.phone || '', card.email || '', card.website || '',
+          card.instagram || '', card.facebook || '',
+        ],
+      );
     } catch (err) {
-      logger.error({ err }, 'Error storing card in Redis');
+      logger.error({ err }, 'Error storing card');
     }
   }
 }
@@ -128,8 +114,7 @@ export async function uploadFile(req: Request, res: Response): Promise<void> {
 
     if (!isNewFormat && !isOldFormat) {
       res.status(400).json({
-        error:
-          'Invalid JSON format. Must contain kanbanTable/boardData or lists/cards',
+        error: 'Invalid JSON format. Must contain kanbanTable/boardData or lists/cards',
       });
       return;
     }
@@ -149,37 +134,34 @@ export async function uploadFile(req: Request, res: Response): Promise<void> {
 
 export async function exportData(_req: Request, res: Response): Promise<void> {
   try {
-    const r = getRedisClient();
-    const kanbanTable = await r.zRangeWithScores('KanbanTable', 0, -1);
+    const columns = await query(
+      `SELECT id, column_name, tag_color, priority, card_count
+       FROM kanban_columns ORDER BY priority ASC`,
+    );
 
-    const lists = [];
-    for (const board of kanbanTable) {
-      const boardData = await r.hGetAll(`Boards:${board.value}`);
-      lists.push({
-        id: board.value,
-        name: boardData.ColumnName,
-        pos: board.score,
-        color: boardData.tagColor,
-        cardCount: boardData.CardNumber,
-      });
-    }
+    const lists = columns.map((c: any) => ({
+      id: c.id,
+      name: c.column_name,
+      pos: c.priority,
+      color: c.tag_color,
+      cardCount: c.card_count,
+    }));
 
-    const cards = [];
-    for (const board of kanbanTable) {
-      const cardIds = await r.zRange(`SortedCards:${board.value}`, 0, -1);
-      for (const cardId of cardIds) {
-        const cardData = await r.hGetAll(`CardDetails:${cardId}`);
-        cards.push({
-          id: cardId,
-          name: cardData.ContactName,
-          company: cardData.BusinessName,
-          listId: board.value,
-          position: 0,
-          email: cardData.Email,
-          phone: cardData.PhoneNumber,
-        });
-      }
-    }
+    const allCards = await query(
+      `SELECT id, column_id, name, contact_name, business_name, sort_order,
+              phone_number, email
+       FROM kanban_cards ORDER BY sort_order ASC`,
+    );
+
+    const cards = allCards.map((c: any) => ({
+      id: c.id,
+      name: c.contact_name || c.name,
+      company: c.business_name,
+      listId: c.column_id,
+      position: c.sort_order,
+      email: c.email,
+      phone: c.phone_number,
+    }));
 
     res.json({ lists, cards });
   } catch (error) {
