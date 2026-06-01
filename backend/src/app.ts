@@ -58,7 +58,8 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/v1', apiV1Router);
 
 // ---------------------------------------------------------------------------
-// Legacy route aliases (backward compatibility)
+// Legacy route aliases (backward compatibility with frontend)
+// These will be removed once the frontend migrates to /api/v1 exclusively
 // ---------------------------------------------------------------------------
 
 import authRoutes from './domains/user/routes/authRoutes.js';
@@ -75,7 +76,10 @@ import reviewRoutes from './domains/review/routes/reviewRoutes.js';
 
 app.use('/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/user', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes);          // FE calls /admin/emails
+app.use('/api', adminRoutes);            // FE calls /api/stats, /api/stats/reset
 app.use('/api/email', emailRoutes);
 app.use('/inbox', emailRoutes);
 app.use('/sentmails', emailRoutes);
@@ -83,10 +87,9 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/kanban', kanbanRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/booking', bookingRoutes);
-app.use('/api', fileManagementRoutes);
-app.use('/api', progressRoutes);
+app.use('/api', fileManagementRoutes);   // FE calls /api/upload, /api/export
+app.use('/api', progressRoutes);         // FE calls /api/terminatedStatistics
 app.use('/api/reviews', reviewRoutes);
-app.use('/user', userRoutes);
 
 // ---------------------------------------------------------------------------
 // Analytics & IP blocking (applied AFTER routes, like the original)
