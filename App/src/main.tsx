@@ -89,6 +89,7 @@ import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
 import DesignPlayground from "./OuterApp/DesignPlayground.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
 import CalendarCallback from "./InnerApp/AdminPage/CalendarCallback.tsx";
+import AddReview from "./InnerApp/AddReview.tsx";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -266,6 +267,10 @@ const router = createBrowserRouter([
             <Statistics />
           </AdminRoute>
         ),
+      },
+      {
+        path: "add-review",
+        element: <AddReview />,
       },
       {
         path: "language-selection",

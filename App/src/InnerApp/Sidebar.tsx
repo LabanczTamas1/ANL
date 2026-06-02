@@ -151,10 +151,12 @@ const Sidebar: React.FC = () => {
       <div className="flex flex-col gap-3 mt-6">
         <div className="font-bold text-sm">{t('sidebar.settings')}</div>
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-            <GiSettingsKnobs className="text-lg" />
-            <span>{t('sidebar.addReview')}</span>
-          </div>
+          <Link to="/home/add-review">
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+              <GiSettingsKnobs className="text-lg" />
+              <span>{t('sidebar.addReview')}</span>
+            </div>
+          </Link>
         </div>
       </div>
 
