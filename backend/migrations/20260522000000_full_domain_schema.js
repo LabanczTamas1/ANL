@@ -213,7 +213,7 @@ export const up = (pgm) => {
     id: { type: 'uuid', primaryKey: true, default: pgm.func('uuid_generate_v4()') },
     column_id: { type: 'uuid', notNull: true, references: 'kanban_columns', onDelete: 'CASCADE' },
     name: { type: 'varchar(255)', default: "''" },
-    sort_order: { type: 'integer', notNull: true, default: 0 },
+    sort_order: { type: 'bigint', notNull: true, default: 0 },
     template_id: { type: 'uuid' },
     fields: { type: 'jsonb', default: pgm.func("'{}'::jsonb") },
     contact_name: { type: 'varchar(255)', default: "''" },
