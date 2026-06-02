@@ -7,6 +7,7 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
+import { performLogout } from "../utils/auth";
 
 interface NotificationContextType {
   unreadEmailCount: number;
@@ -49,6 +50,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
       if (response.ok) {
         const data = await response.json();
         setUnreadEmailCount(data.count);
+      } else if (response.status === 401) {
+        performLogout();
       }
     } catch (error) {
       console.error("Error fetching unread count:", error);

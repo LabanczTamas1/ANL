@@ -3,14 +3,15 @@ import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarChec
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 const lightLogo = "/light-logo.png";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import { useLogout } from '../../hooks/useLogout';
 
 interface MobileNavbarProps{
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
-  const navigate = useNavigate();
+  const logout = useLogout();
   const role = localStorage.getItem("superRole");
 
   // Lock scroll on html+body while open
@@ -24,10 +25,7 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('name');
-    localStorage.removeItem('superRole');
-    navigate('/login');
+    logout();
   };
 
   const closeMenu = () => {
