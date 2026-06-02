@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { performLogout } from '../../utils/auth';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
@@ -26,14 +27,14 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ── Response interceptor: normalise errors ───────────────────────────────────
+// ── Response interceptor: auto-logout on expired token ───────────────────────
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ error?: string; message?: string }>) => {
-    // If the server returned 401 the token is expired / invalid — signal the app
     if (error.response?.status === 401) {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      // Token expired or invalid — clear auth state and redirect to login
+      performLogout();
     }
 
     return Promise.reject(error);

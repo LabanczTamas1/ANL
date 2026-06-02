@@ -1,23 +1,8 @@
-import { useEffect } from "react";
 import Sidebar from "./Sidebar";
 import ProgressBar from "./ProgressBar";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 const Layout = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      const darkMode = localStorage.getItem('darkMode');
-      localStorage.clear();
-      sessionStorage.clear();
-      if (darkMode !== null) localStorage.setItem('darkMode', darkMode);
-      navigate('/login', { replace: true });
-    };
-    window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
-  }, [navigate]);
-
   return (
     <div className="flex flex-row h-screen bg-white dark:bg-[#121212] overflow-hidden overflow-hidden">
       {/* Sidebar */}

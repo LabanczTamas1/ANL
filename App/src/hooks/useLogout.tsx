@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { usePostHog } from "@posthog/react";
 
+/** Keys that survive a logout (non-auth, user-preference data). */
+const PRESERVED_KEYS = ["darkMode", "cookieConsent", "cookiePreferences"] as const;
+
 /**
- * A custom hook that provides a reusable logout function
- * Clears all authentication-related data from localStorage except darkMode
- * and redirects to login page
+ * A custom hook that provides a reusable logout function.
+ * Clears all authentication-related data from localStorage,
+ * resets PostHog, and redirects to the login page via React Router.
  */
 export const useLogout = () => {
   const navigate = useNavigate();
@@ -14,28 +17,30 @@ export const useLogout = () => {
     posthog.capture("user_logged_out");
     posthog.reset();
 
-    // Preserve values that should survive logout
-    const darkMode = localStorage.getItem("darkMode");
-    const cookieConsent = localStorage.getItem("cookieConsent");
-    const cookiePreferences = localStorage.getItem("cookiePreferences");
+    // 1. Preserve non-auth values
+    const preserved = PRESERVED_KEYS.reduce<Record<string, string | null>>(
+      (acc, key) => {
+        acc[key] = localStorage.getItem(key);
+        return acc;
+      },
+      {},
+    );
 
-    // Clear everything
+    // 2. Wipe everything
     localStorage.clear();
+    sessionStorage.clear();
 
-    // Restore preserved values
-    if (darkMode !== null) {
-      localStorage.setItem("darkMode", darkMode);
-    }
-    if (cookieConsent !== null) {
-      localStorage.setItem("cookieConsent", cookieConsent);
-    }
-    if (cookiePreferences !== null) {
-      localStorage.setItem("cookiePreferences", cookiePreferences);
+    // 3. Restore preserved values
+    for (const [key, value] of Object.entries(preserved)) {
+      if (value !== null) localStorage.setItem(key, value);
     }
 
-    // Re-apply PostHog opt state from preserved consent
+    // 4. Re-apply PostHog opt state from preserved consent
+    const cookieConsent = preserved.cookieConsent;
     if (cookieConsent === "true") {
-      const prefs = cookiePreferences ? JSON.parse(cookiePreferences) : null;
+      const prefs = preserved.cookiePreferences
+        ? JSON.parse(preserved.cookiePreferences)
+        : null;
       if (!prefs || prefs.analytics === true) {
         posthog.opt_in_capturing();
       } else {
@@ -43,7 +48,7 @@ export const useLogout = () => {
       }
     }
 
-    // Navigate to login page
+    // 5. Navigate to login page (React Router — no full reload)
     navigate("/login", { replace: true });
   };
 
