@@ -34,11 +34,11 @@ const RecipientInput: React.FC<Props> = ({
         autoComplete="off"
       />
       {showDropdown && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
           {filteredUsers.map((user, index) => (
             <div
               key={index}
-              className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer flex justify-between ${
+              className={`p-2 hover:bg-gray-100 dark:hover:bg-[#333] cursor-pointer flex justify-between ${
                 user.email === companyMail.email ? "bg-[#EDEBFA] dark:bg-[#65558F]/20 border-l-4 border-[#65558F]" : ""
               }`}
               onClick={() => onSelectUser(user)}
