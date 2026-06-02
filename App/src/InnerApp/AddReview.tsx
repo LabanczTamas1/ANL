@@ -5,7 +5,7 @@ import { useLanguage } from "../hooks/useLanguage";
 
 const AddReview: React.FC = () => {
   const { t } = useLanguage();
-  const username = localStorage.getItem("name") || "";
+  const username = localStorage.getItem("username") || localStorage.getItem("name") || "";
 
   const [score, setScore] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
