@@ -57,7 +57,7 @@ export async function authFetch(
   init?: RequestInit,
 ): Promise<Response> {
   const response = await fetch(input, init);
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     performLogout();
   }
   return response;

@@ -50,7 +50,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({
       if (response.ok) {
         const data = await response.json();
         setUnreadEmailCount(data.count);
-      } else if (response.status === 401) {
+      } else if (response.status === 401 || response.status === 403) {
         performLogout();
       }
     } catch (error) {
