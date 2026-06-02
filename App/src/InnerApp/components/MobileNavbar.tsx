@@ -157,10 +157,12 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
         <div className="flex flex-col gap-3 mt-6">
           <div className="font-bold text-sm">Settings</div>
           <div className="flex flex-col gap-3">
+          <Link to="/home/add-review" onClick={closeMenu}>
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
               <GiSettingsKnobs className="text-lg" />
               <span>Add a review</span>
             </div>
+          </Link>
           </div>
         </div>
 
