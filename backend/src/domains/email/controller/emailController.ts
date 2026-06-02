@@ -9,7 +9,7 @@ import { env } from '../../../config/env.js';
 import { JwtService } from '../../../utils/jwt.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 import { query, queryOne, execute } from '../../../utils/db.js';
-import * as userRepo from '../../user/repository/userRepository.js';
+import * as userRepo from '../../user/public.js';
 
 const logger = createLogger('email', 'controller');
 

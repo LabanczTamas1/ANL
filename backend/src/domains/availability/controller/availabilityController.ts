@@ -10,7 +10,7 @@ import {
   getDayNameFromDateString,
 } from '../../../utils/timeHelpers.js';
 import { checkCustomAvailability } from '../../../utils/availabilityHelpers.js';
-import { bookingRepository } from '../../booking/repository/bookingRepository.js';
+import { getBookedSlotsForDate, getBookingDetailsForDateRange } from '../../booking/public.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 import { query, queryOne, execute } from '../../../utils/db.js';
 
@@ -119,7 +119,7 @@ export async function getDeleteAvailability(
     const customTimes = await checkCustomAvailability(rawDate, standardTimes, 'both');
     const timesAfterCustom = customTimes.length > 0 ? customTimes : standardTimes;
 
-    const existingBookings = await bookingRepository.findByDate(rawDate);
+    const existingBookings = await getBookedSlotsForDate(rawDate);
     const bookedMinutes = new Set(existingBookings.map((b) => b.time));
     const availableTimes = timesAfterCustom
       .filter((t) => !bookedMinutes.has(t))
@@ -213,7 +213,7 @@ export async function showAvailableTimes(
     const customTimes = await checkCustomAvailability(rawDate, standardTimes, 'both');
     const timesAfterCustom = customTimes.length > 0 ? customTimes : standardTimes;
 
-    const existingBookings = await bookingRepository.findByDate(rawDate);
+    const existingBookings = await getBookedSlotsForDate(rawDate);
     const bookedMinutes = new Set(existingBookings.map((b) => b.time));
     const finalAvailableTimes = timesAfterCustom.filter((t) => !bookedMinutes.has(t));
 
@@ -264,7 +264,7 @@ export async function adminDayOverview(
       return;
     }
 
-    const allBookings = await bookingRepository.findByDateRange(startDate, endDate);
+    const allBookingsMap = await getBookingDetailsForDateRange(startDate, endDate);
 
     // Fetch all standard availability at once
     const stdRows = await query<{ day_name: string; opening_time: string; closing_time: string; is_day_off: boolean }>(
@@ -296,18 +296,7 @@ export async function adminDayOverview(
       const addedTimes = customRows.filter(r => r.date === dateStr && r.type === 'added').map(r => r.time_minutes);
       const deletedTimes = customRows.filter(r => r.date === dateStr && r.type === 'deleted').map(r => r.time_minutes);
 
-      const dayBookings = allBookings
-        .filter((b) => {
-          const bDate = typeof b.date === 'string' ? b.date.split('T')[0] : new Date(b.date).toISOString().split('T')[0];
-          return bDate === dateStr;
-        })
-        .map((b) => ({
-          id: b.id, time: b.time, fullName: b.full_name, company: b.company,
-          email: b.email, referralSource: b.referral_source,
-          referralSourceOther: b.referral_source_other ?? null, timezone: b.timezone,
-          meetLink: b.meet_link ?? null, status: b.status, notes: b.notes ?? null,
-          createdAt: b.created_at,
-        }));
+      const dayBookings = allBookingsMap.get(dateStr) ?? [];
       const bookedTimes = dayBookings.map((b) => b.time);
 
       const allSet = new Set([...standardTimes, ...addedTimes]);

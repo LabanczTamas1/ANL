@@ -49,7 +49,7 @@ import {
 } from './financeController.js';
 
 import { query, queryOne, execute } from '../../../utils/db.js';
-import * as userRepo from '../../user/repository/userRepository.js';
+import * as userRepo from '../../user/public.js';
 import {
   getExchangeRates,
   convertCurrency,
