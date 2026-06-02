@@ -8,10 +8,10 @@ import {
   getRequestStats,
   resetRequestStats,
 } from '../../../utils/admin/trackRequest.js';
-import { googleCalendarService } from '../../booking/service/googleCalendarService.js';
+import { calendarAuthService } from '../../calendar/service/calendarAuthService.js';
 import { createLogger, logError } from '../../../utils/logger.js';
 import { query, queryOne, execute } from '../../../utils/db.js';
-import * as userRepo from '../../user/repository/userRepository.js';
+import * as userRepo from '../../user/public.js';
 
 const logger = createLogger('admin', 'controller');
 
@@ -201,7 +201,7 @@ export async function removeMeetingHost(req: Request, res: Response): Promise<vo
  */
 export async function getCalendarStatus(_req: Request, res: Response): Promise<void> {
   try {
-    const status = await googleCalendarService.getConnectionStatus();
+    const status = await calendarAuthService.getConnectionStatus();
     res.json(status);
   } catch (err) {
     logError(err, { context: 'getCalendarStatus' });
@@ -215,7 +215,7 @@ export async function getCalendarStatus(_req: Request, res: Response): Promise<v
  */
 export async function getCalendarAuthUrl(_req: Request, res: Response): Promise<void> {
   try {
-    const url = googleCalendarService.getAuthUrl();
+    const url = calendarAuthService.getAuthUrl();
     res.json({ url });
   } catch (err) {
     logError(err, { context: 'getCalendarAuthUrl' });
@@ -236,7 +236,7 @@ export async function handleCalendarCallback(req: Request, res: Response): Promi
       return;
     }
 
-    const result = await googleCalendarService.handleAuthCallback(code);
+    const result = await calendarAuthService.handleAuthCallback(code);
     logger.info({ email: result.email, by: req.user?.email }, 'Google Calendar connected');
     res.json({ message: 'Google Calendar connected successfully', email: result.email });
   } catch (err: any) {
@@ -251,7 +251,7 @@ export async function handleCalendarCallback(req: Request, res: Response): Promi
  */
 export async function disconnectCalendar(req: Request, res: Response): Promise<void> {
   try {
-    await googleCalendarService.disconnect();
+    await calendarAuthService.disconnect();
     logger.info({ by: req.user?.email }, 'Google Calendar disconnected');
     res.json({ message: 'Google Calendar disconnected' });
   } catch (err) {

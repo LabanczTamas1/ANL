@@ -5,7 +5,7 @@
 import { Request, Response } from 'express';
 import { logError } from '../../../utils/logger.js';
 import { notifyProgressUpdated } from '../../../utils/systemNotifications.js';
-import * as userRepo from '../../user/repository/userRepository.js';
+import * as userRepo from '../../user/public.js';
 import { query } from '../../../utils/db.js';
 
 export async function changeUserProgress(

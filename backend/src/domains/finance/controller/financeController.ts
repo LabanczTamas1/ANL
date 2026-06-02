@@ -5,7 +5,7 @@
 import { Request, Response } from 'express';
 import { createLogger, logError } from '../../../utils/logger.js';
 import { query, queryOne, execute } from '../../../utils/db.js';
-import * as userRepo from '../../user/repository/userRepository.js';
+import * as userRepo from '../../user/public.js';
 import {
   getExchangeRates,
   convertCurrency,
