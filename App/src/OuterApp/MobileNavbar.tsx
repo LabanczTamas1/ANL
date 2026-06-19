@@ -202,6 +202,12 @@ const MobileNavbar = () => {
   // serialize the entire added/removed DOM batch on the main thread, which makes
   // open/close feel laggy on mobile. Keeping it mounted means toggling only
   // mutates a couple of style attributes.
+  //
+  // `ph-no-capture` (PostHog's default block class) tells session replay NOT to
+  // record this subtree. Without it, toggling visibility still triggers a large
+  // rrweb mutation that blocks the main thread for a second or two on mobile —
+  // which kept the overlay painted on screen after tapping close, making it feel
+  // like the menu took seconds to close.
   const overlay = createPortal(
       <div
         ref={dialogRef}
@@ -210,7 +216,7 @@ const MobileNavbar = () => {
         aria-hidden={!menuOpen}
         aria-label={t['nav.navigationMenu']}
         tabIndex={-1}
-        className="fixed inset-0 outline-none"
+        className="ph-no-capture fixed inset-0 outline-none"
         style={{
           zIndex: 9999,
           background: "linear-gradient(to left, #1a1a2e, #0D0D1A)",
