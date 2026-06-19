@@ -418,7 +418,7 @@ const SuccessfulBooking = () => {
         <div className={`mt-10 transition-all duration-700 delay-500 ${showActions ? "opacity-100" : "opacity-0"}`}>
           <ThemeIcon
             lightIcon={<img src={darkLogo} alt="Light Logo" className="h-8 w-8 opacity-40" />}
-            darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-8 w-8 opacity-40" />}
+            darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-8 w-8 object-contain opacity-40" />}
             size="m"
             ariaLabel="ANL logo"
           />

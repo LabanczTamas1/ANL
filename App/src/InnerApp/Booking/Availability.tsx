@@ -259,7 +259,7 @@ const Availability = () => {
                 <img src={darkLogo} alt="Light Logo" className="h-8 w-8" />
               }
               darkIcon={
-                <img src={lightLogo} alt="Dark Logo" className="h-8 w-8" />
+                <img src={lightLogo} alt="Dark Logo" className="h-8 w-8 object-contain" />
               }
               size="m"
               ariaLabel="ANL logo"

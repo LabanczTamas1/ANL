@@ -134,8 +134,8 @@ const DeleteAvailability = () => {
       {/* Left Panel - Info */}
       <div className="flex flex-col py-5 px-5 md:px-6 w-full lg:w-[280px] lg:min-w-[260px] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line-glass bg-gradient-to-br from-status-error/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar">
         <ThemeIcon
-          lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10" />}
-          darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-10 w-10" />}
+          lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10 object-contain" />}
+          darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-10 w-10 object-contain" />}
           size="l"
           ariaLabel="ANL logo"
         />
