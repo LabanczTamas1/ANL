@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiX, FiCalendar, FiInfo } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const CURRENCIES = ["RON", "EUR", "USD", "GBP", "HUF", "CHF"] as const;
 
@@ -18,6 +19,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
   userName,
   onSuccess,
 }) => {
+  const { t } = useLanguage();
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("RON");
   const [description, setDescription] = useState("");
@@ -77,17 +79,17 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
     e.preventDefault();
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      setError("Please enter a valid positive amount.");
+      setError(t("userMgmt.validPositiveAmount"));
       return;
     }
     if (!dueDate) {
-      setError("Please select a due date.");
+      setError(t("userMgmt.selectDueDate"));
       return;
     }
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Authentication required.");
+      setError(t("userMgmt.authRequired"));
       return;
     }
 
@@ -109,7 +111,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Failed to create expected payment");
+      if (!response.ok) throw new Error(result.error || t("userMgmt.failCreateExpected"));
 
       setAmount("");
       setDescription("");
@@ -119,7 +121,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || t("userMgmt.somethingWrong"));
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +137,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
       <div className="bg-white dark:bg-[#1e1e1e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            Expected Payment
+            {t("userMgmt.expectedPayment")}
           </h2>
           <button
             onClick={onClose}
@@ -148,12 +150,12 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
         {/* User info */}
         <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Creating expected payment for{" "}
+            {t("userMgmt.creatingExpectedFor")}{" "}
             <span className="font-medium text-gray-900 dark:text-white">{userName}</span>
           </p>
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
             <FiInfo className="w-3.5 h-3.5" />
-            This will not credit the account until an owner confirms it
+            {t("userMgmt.notCreditWarning")}
           </p>
         </div>
 
@@ -161,7 +163,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
           {/* Amount + Currency */}
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">
-              Expected Amount
+              {t("userMgmt.expectedAmount")}
             </label>
             <div className="flex gap-2">
               <input
@@ -198,7 +200,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
           <div>
             <label className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
               <FiCalendar className="w-3.5 h-3.5" />
-              Expected Payment Date
+              {t("userMgmt.expectedPaymentDate")}
             </label>
             <input
               type="date"
@@ -209,7 +211,7 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
             />
             {daysUntilDue !== null && daysUntilDue > 0 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {daysUntilDue} day{daysUntilDue !== 1 ? "s" : ""} from now
+                {daysUntilDue} {daysUntilDue !== 1 ? t("userMgmt.days") : t("userMgmt.day")} {t("userMgmt.fromNow")}
               </p>
             )}
           </div>
@@ -217,11 +219,11 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
           {/* Description */}
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">
-              Description
+              {t("userMgmt.description")}
             </label>
             <input
               type="text"
-              placeholder="e.g. Contract #123 monthly payment, Service fee…"
+              placeholder={t("userMgmt.descPlaceholderContract")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
@@ -236,14 +238,14 @@ const PendingPaymentModal: React.FC<PendingPaymentModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 text-sm font-medium transition-colors"
             >
-              Cancel
+              {t("userMgmt.cancel")}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
             >
-              {submitting ? "Creating…" : "Create Expected Payment"}
+              {submitting ? t("userMgmt.creating") : t("userMgmt.createExpectedPayment")}
             </button>
           </div>
         </form>

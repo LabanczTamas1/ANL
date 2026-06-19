@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import InboxRowItem from "./components/InboxRowItem";
 import ConfirmModal from "./components/ConfirmModal";
 import { useNotification } from "../contexts/NotificationContext";
+import { useLanguage } from "../hooks/useLanguage";
 
 export interface InboxItem {
   id: string;
@@ -17,6 +18,7 @@ export interface InboxItem {
 }
 
 const Inbox = () => {
+  const { t } = useLanguage();
   const [inboxData, setInboxData] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
@@ -71,7 +73,7 @@ const Inbox = () => {
   };
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return "No date available";
+    if (!timestamp) return t("msgDetail.noDate");
     const date = new Date(Number(timestamp));
     const today = new Date();
 
@@ -211,7 +213,7 @@ const Inbox = () => {
                 />
               </svg>
               <h2 className="font-bold text-xl md:text-2xl lg:text-4xl pl-2">
-                Inbox
+                {t("inbox.title")}
               </h2>
             </div>
 
@@ -234,7 +236,7 @@ const Inbox = () => {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Write Mail
+                {t("inbox.writeMail")}
               </button>
 
               {selectedEmails.length > 0 && (
@@ -255,7 +257,7 @@ const Inbox = () => {
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                     />
                   </svg>
-                  Delete ({selectedEmails.length})
+                  {t("inbox.deleteCount", { count: String(selectedEmails.length) })}
                 </button>
               )}
             </div>
@@ -265,7 +267,7 @@ const Inbox = () => {
           <div className="p-2 border border-[#E5E6E7] dark:border-gray-700 rounded-lg mt-2">
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-bold text-xl md:text-2xl lg:text-4xl pl-2">
-                Inbox
+                {t("inbox.title")}
               </h2>
 
               <div className="flex items-center">
@@ -281,7 +283,7 @@ const Inbox = () => {
                     className="mr-2"
                   />
                   <label htmlFor="selectAll" className="text-sm">
-                    Select All
+                    {t("inbox.selectAll")}
                   </label>
                 </div>
               </div>
@@ -289,9 +291,9 @@ const Inbox = () => {
 
             <div className="max-h-96 overflow-y-auto">
               {loading ? (
-                <div className="text-center py-4">Loading...</div>
+                <div className="text-center py-4">{t("inbox.loading")}</div>
               ) : !Array.isArray(inboxData) || inboxData.length === 0 ? (
-                <div className="text-center py-4">You don't have any emails yet.</div>
+                <div className="text-center py-4">{t("inbox.noEmails")}</div>
               ) : (
                 inboxData.map((item) => (
                   <InboxRowItem
@@ -314,9 +316,9 @@ const Inbox = () => {
         isOpen={bulkDeleteModal}
         onClose={() => setBulkDeleteModal(false)}
         onConfirm={handleDeleteSelected}
-        question={`Are you sure you want to delete ${selectedEmails.length} message(s)?`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        question={t("inbox.confirmBulkDelete", { count: String(selectedEmails.length) })}
+        confirmText={t("inbox.delete")}
+        cancelText={t("inbox.cancel")}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -14,9 +15,10 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onClose,
   onConfirm,
   question,
-  confirmText = "Yes",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -30,7 +32,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-lg"
           >
-            {cancelText}
+            {cancelText ?? t("confirmModal.cancel")}
           </button>
           <button
             onClick={() => {
@@ -39,7 +41,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             }}
             className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
           >
-            {confirmText}
+            {confirmText ?? t("confirmModal.yes")}
           </button>
         </div>
       </div>

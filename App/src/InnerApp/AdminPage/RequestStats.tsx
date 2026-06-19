@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import StatusCodeBarChart from './StatusCodeBarChart';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface RequestStats {
   totalRequests: string;
@@ -33,6 +34,7 @@ interface RequestStatsProps {
 }
 
 const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<RequestStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
     } catch (err: unknown) {
       setError(typeof err === 'object' && err !== null && 'message' in err 
         ? (err.message as string) 
-        : 'An error occurred while fetching statistics');
+        : t('admin.errorFetchingStats'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
         setResetSuccess(null);
       }, 3000);
     } catch (err: any) {
-      setError(err.message || 'An error occurred while resetting statistics');
+      setError(err.message || t('admin.errorResettingStats'));
     }
   };
 
@@ -110,13 +112,13 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold">API Request Statistics</h2>
+        <h2 className="text-2xl font-semibold">{t('admin.apiRequestStats')}</h2>
         <div>
           <button 
             onClick={fetchStats}
             className="px-4 py-2 bg-blue-500 text-white rounded mr-2 hover:bg-blue-600"
           >
-            Refresh Stats
+            {t('admin.refreshStats')}
           </button>
           
           {userRole === 'owner' || userRole === 'admin' && (
@@ -124,13 +126,13 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
               onClick={resetStats}
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
             >
-              Reset Stats
+              {t('admin.resetStats')}
             </button>
           )}
         </div>
       </div>
 
-      {loading && <p className="text-gray-500">Loading statistics...</p>}
+      {loading && <p className="text-gray-500">{t('admin.loadingStats')}</p>}
       {error && <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">{error}</div>}
       {resetSuccess && <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">{resetSuccess}</div>}
 
@@ -138,14 +140,14 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Overview Card */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">Overview</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.overview')}</h3>
             <p className="text-4xl font-bold text-blue-600 mb-2">{stats.totalRequests}</p>
-            <p className="text-gray-600">Total Requests</p>
+            <p className="text-gray-600">{t('admin.totalRequests')}</p>
           </div>
 
           {/* Method Distribution Card */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">HTTP Methods</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.httpMethods')}</h3>
             <div className="grid grid-cols-5 gap-2">
               {Object.entries(stats.methodCounts).map(([method, count]) => (
                 <div key={method} className="text-center">
@@ -167,7 +169,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
 
           {/* Role Distribution Card with Visual Bars */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">Request by Role</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.requestByRole')}</h3>
             <div className="space-y-4">
               {stats.roleCounts && Object.entries(stats.roleCounts).map(([role, count]) => {
                 const maxValue = getMaxValue(stats.roleCounts);
@@ -194,12 +196,12 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
 
           {/* Role + Method Matrix Card */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold mb-4">Role + Method Matrix</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.roleMethodMatrix')}</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white">
                 <thead>
                   <tr>
-                    <th className="py-2 px-3 text-left">Role</th>
+                    <th className="py-2 px-3 text-left">{t('admin.role')}</th>
                     <th className="py-2 px-3 text-center bg-green-50">GET</th>
                     <th className="py-2 px-3 text-center bg-blue-50">POST</th>
                     <th className="py-2 px-3 text-center bg-yellow-50">PUT</th>
@@ -225,7 +227,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
 
           {/* Method Visualization Card */}
           <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
-            <h3 className="text-xl font-semibold mb-4">Method Distribution</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.methodDistribution')}</h3>
             <div className="flex items-end h-40 space-x-6 mt-4">
               {Object.entries(stats.methodCounts).map(([method, count]) => {
                 const maxValue = getMaxValue(stats.methodCounts);
@@ -256,16 +258,16 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
 
           {/* Recent Requests Table */}
           <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
-            <h3 className="text-xl font-semibold mb-4">Recent Requests</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('admin.recentRequests')}</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white">
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="py-2 px-3 text-left">Time</th>
-                    <th className="py-2 px-3 text-left">Method</th>
-                    <th className="py-2 px-3 text-left">Path</th>
-                    <th className="py-2 px-3 text-left">Role</th>
-                    <th className="py-2 px-3 text-left">IP</th>
+                    <th className="py-2 px-3 text-left">{t('admin.time')}</th>
+                    <th className="py-2 px-3 text-left">{t('admin.method')}</th>
+                    <th className="py-2 px-3 text-left">{t('admin.path')}</th>
+                    <th className="py-2 px-3 text-left">{t('admin.role')}</th>
+                    <th className="py-2 px-3 text-left">{t('admin.ip')}</th>
                   </tr>
                 </thead>
                 <tbody>

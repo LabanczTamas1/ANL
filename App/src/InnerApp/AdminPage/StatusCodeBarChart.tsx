@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CalendarDays, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const StatusCodeBarChart = () => {
+  const { t } = useLanguage();
   // State
   const [timeRange, setTimeRange] = useState('7d');
   const [data, setData] = useState([]);
@@ -21,18 +23,18 @@ const StatusCodeBarChart = () => {
 
   // Status code category styling
   const statusConfig = {
-    '2xx': { color: '#4ade80', label: 'Success (2xx)' },
-    '3xx': { color: '#60a5fa', label: 'Redirect (3xx)' },
-    '4xx': { color: '#facc15', label: 'Client Error (4xx)' },
-    '5xx': { color: '#f87171', label: 'Server Error (5xx)' }
+    '2xx': { color: '#4ade80', label: t('admin.statusSuccess') },
+    '3xx': { color: '#60a5fa', label: t('admin.statusRedirect') },
+    '4xx': { color: '#facc15', label: t('admin.statusClientError') },
+    '5xx': { color: '#f87171', label: t('admin.statusServerError') }
   };
 
   // Time range options
   const timeRangeOptions = [
-    { value: '24h', label: '24 hours' },
-    { value: '7d', label: '7 days' },
-    { value: '30d', label: '30 days' },
-    { value: '90d', label: '90 days' }
+    { value: '24h', label: t('admin.range24h') },
+    { value: '7d', label: t('admin.range7d') },
+    { value: '30d', label: t('admin.range30d') },
+    { value: '90d', label: t('admin.range90d') }
   ];
 
   // Fetch stats from API
@@ -57,7 +59,7 @@ const StatusCodeBarChart = () => {
       processApiData(statsData, timeRange);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
-      setError(err.message || 'Failed to load statistics data');
+      setError(err.message || t('admin.failLoadStatsData'));
       setLoading(false);
     }
   };
@@ -223,7 +225,7 @@ const StatusCodeBarChart = () => {
       setLoading(false);
     } catch (err) {
       console.error('Error processing API data:', err);
-      setError('Failed to process data: ' + err.message);
+      setError(t('admin.failProcessData') + err.message);
       setLoading(false);
     }
   };
@@ -274,7 +276,7 @@ const StatusCodeBarChart = () => {
       return (
         <div className="w-full md:col-span-2 bg-white p-3 border border-gray-200 shadow-lg rounded-md">
           <p className="font-medium text-gray-800">{dataPoint.fullDate || label}</p>
-          <p className="text-sm font-semibold mt-1">Total: {total.toLocaleString()}</p>
+          <p className="text-sm font-semibold mt-1">{t('admin.totalColon')} {total.toLocaleString()}</p>
           <div className="mt-2">
             {sortedPayload.map((entry, index) => (
               <div key={index} className="flex items-center justify-between text-sm">
@@ -298,7 +300,7 @@ const StatusCodeBarChart = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h3 className="text-xl font-semibold mb-3 md:mb-0">Status Code Analytics</h3>
+        <h3 className="text-xl font-semibold mb-3 md:mb-0">{t('admin.statusCodeAnalytics')}</h3>
         
         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
           {/* Date Range Selector */}
@@ -353,7 +355,7 @@ const StatusCodeBarChart = () => {
             <button 
               onClick={fetchStats}
               className="ml-2 p-1.5 bg-white rounded-md text-gray-600 hover:text-gray-800 border border-gray-200"
-              title="Refresh data"
+              title={t('admin.refreshData')}
             >
               <RefreshCw size={16} />
             </button>
@@ -396,7 +398,7 @@ const StatusCodeBarChart = () => {
                 onClick={fetchStats}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                Try Again
+                {t('admin.tryAgain')}
               </button>
             </div>
           </div>
@@ -405,7 +407,7 @@ const StatusCodeBarChart = () => {
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Loading status code data...</div>
+          <div className="text-gray-500">{t('admin.loadingStatusData')}</div>
         </div>
       ) : (
         <div className="h-80">

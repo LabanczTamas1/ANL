@@ -1,12 +1,16 @@
 import React from 'react';
 import { TABS } from './constants';
+import { useLanguage } from '../../hooks/useLanguage';
+import type { TranslationKey } from '../../translations/english';
 
 interface Props {
   activeTab: string;
   onTabChange: (id: string) => void;
 }
 
-const AdminTabBar: React.FC<Props> = ({ activeTab, onTabChange }) => (
+const AdminTabBar: React.FC<Props> = ({ activeTab, onTabChange }) => {
+  const { t } = useLanguage();
+  return (
   <div className="border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
     <nav className="flex gap-1 min-w-max">
       {TABS.map(({ id, label, icon: Icon }) => (
@@ -21,11 +25,12 @@ const AdminTabBar: React.FC<Props> = ({ activeTab, onTabChange }) => (
           }`}
         >
           <Icon className="text-base" />
-          {label}
+          {t(label as TranslationKey)}
         </button>
       ))}
     </nav>
   </div>
-);
+  );
+};
 
 export default AdminTabBar;

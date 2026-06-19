@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ModalHeader from "./ModalHeader";
 import { getTemplates, createCard } from "../../services/api/kanbanApi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 export interface FieldDef {
   name: string;
@@ -29,6 +30,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
   columnId,
   onCardCreated,
 }) => {
+  const { t } = useLanguage();
   const [step, setStep] = useState<Step>("choose");
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -111,7 +113,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden">
         <ModalHeader
-          title={step === "choose" ? "Create New Card" : "New Card (From Scratch)"}
+          title={step === "choose" ? t("kanban.createNewCard") : t("kanban.newCardScratch")}
           onClose={onClose}
         />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
@@ -120,7 +122,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
           {step === "choose" && (
             <div className="space-y-4">
               <p className="text-gray-600 dark:text-gray-300 text-center">
-                How would you like to create this card?
+                {t("kanban.howCreate")}
               </p>
 
               <button
@@ -128,10 +130,10 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                 className="w-full p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#65558F] dark:hover:border-[#65558F] hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left"
               >
                 <div className="font-semibold text-gray-800 dark:text-white">
-                  Start from Scratch
+                  {t("kanban.startScratch")}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Create a blank card and add custom fields
+                  {t("kanban.startScratchDesc")}
                 </div>
               </button>
 
@@ -139,23 +141,23 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                 <>
                   <div className="flex items-center gap-2 my-2">
                     <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">or choose a template</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{t("kanban.orChooseTemplate")}</span>
                     <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600" />
                   </div>
 
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {templates.map((t) => (
+                    {templates.map((tpl) => (
                       <button
-                        key={t.id}
-                        onClick={() => handlePickTemplate(t)}
+                        key={tpl.id}
+                        onClick={() => handlePickTemplate(tpl)}
                         className="w-full p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-[#65558F] dark:hover:border-[#65558F] hover:bg-gray-50 dark:hover:bg-gray-700 transition text-left"
                       >
                         <div className="font-medium text-gray-800 dark:text-white">
-                          {t.name}
+                          {tpl.name}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {t.fields.length} field{t.fields.length !== 1 ? "s" : ""}:{" "}
-                          {t.fields.map((f) => f.name).join(", ")}
+                          {t("kanban.fieldsCountColon", { count: String(tpl.fields.length) })}{" "}
+                          {tpl.fields.map((f) => f.name).join(", ")}
                         </div>
                       </button>
                     ))}
@@ -171,11 +173,11 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
               {/* Card name (always required) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Card Name <span className="text-red-500">*</span>
+                  {t("kanban.cardName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter card name"
+                  placeholder={t("kanban.enterCardName")}
                   value={cardName}
                   onChange={(e) => setCardName(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:outline-none"
@@ -190,13 +192,13 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                       {field.name}
                       {field.type === "link" && (
                         <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                          link
+                          {t("kanban.linkBadge")}
                         </span>
                       )}
                     </label>
                     <input
                       type={field.type === "link" ? "url" : "text"}
-                      placeholder={field.type === "link" ? "https://..." : `Enter ${field.name.toLowerCase()}`}
+                      placeholder={field.type === "link" ? t("kanban.httpsPlaceholder") : t("kanban.enterFieldValue", { field: field.name.toLowerCase() })}
                       value={field.value}
                       onChange={(e) => handleFieldValueChange(idx, e.target.value)}
                       className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:outline-none"
@@ -207,7 +209,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                     <button
                       onClick={() => handleRemoveField(idx)}
                       className="mt-7 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-lg"
-                      title="Remove field"
+                      title={t("kanban.removeField")}
                     >
                       &times;
                     </button>
@@ -218,13 +220,13 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
               {/* Add new field controls (always available, even for template cards) */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Add a field
+                  {t("kanban.addField")}
                 </p>
                 <div className="flex gap-2 items-end">
                   <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="Field name"
+                      placeholder={t("kanban.fieldNamePh")}
                       value={newFieldName}
                       onChange={(e) => setNewFieldName(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddField()}
@@ -236,15 +238,15 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                     onChange={(e) => setNewFieldType(e.target.value as "text" | "link")}
                     className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#65558F] focus:outline-none"
                   >
-                    <option value="text">Text</option>
-                    <option value="link">Link</option>
+                    <option value="text">{t("kanban.typeText")}</option>
+                    <option value="link">{t("kanban.typeLink")}</option>
                   </select>
                   <button
                     type="button"
                     onClick={handleAddField}
                     className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition whitespace-nowrap"
                   >
-                    + Add
+                    {t("kanban.addBtn")}
                   </button>
                 </div>
               </div>
@@ -255,7 +257,7 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                   onClick={() => setStep("choose")}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
-                  ← Back
+                  {t("kanban.back")}
                 </button>
                 <div className="flex gap-2">
                   <button
@@ -263,14 +265,14 @@ const CardCreationModal: React.FC<CardCreationModalProps> = ({
                     onClick={onClose}
                     className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition"
                   >
-                    Cancel
+                    {t("kanban.cancel")}
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={!cardName.trim() || saving}
                     className="px-6 py-2 rounded-lg bg-[#65558F] text-white hover:bg-[#544a7a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {saving ? "Saving..." : "Create Card"}
+                    {saving ? t("kanban.saving") : t("kanban.createCard")}
                   </button>
                 </div>
               </div>

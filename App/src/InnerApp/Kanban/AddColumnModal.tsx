@@ -1,5 +1,6 @@
 import React from "react";
 import ModalHeader from "./ModalHeader";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface AddColumnModalProps {
   show: boolean;
@@ -20,17 +21,18 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
   setTagColor,
   onAddColumn,
 }) => {
+  const { t } = useLanguage();
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[400px] max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader title="Add column" onClose={onClose} />
+        <ModalHeader title={t("kanban.addColumnTitle")} onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
         <div className="mb-4">
-          <label className="block font-semibold mb-1 dark:text-gray-200">Column name</label>
+          <label className="block font-semibold mb-1 dark:text-gray-200">{t("kanban.columnName")}</label>
           <input
             type="text"
-            placeholder="Enter board name"
+            placeholder={t("kanban.enterBoardName")}
             value={newColumnName}
             onChange={(e) => setNewColumnName(e.target.value)}
             className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -38,7 +40,7 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
           />
         </div>
         <div className="mb-4">
-          <label className="block font-semibold mb-1 dark:text-gray-200">Tag color</label>
+          <label className="block font-semibold mb-1 dark:text-gray-200">{t("kanban.tagColor")}</label>
           <div className="flex items-center gap-2">
             <div className="relative">
               <input
@@ -56,7 +58,7 @@ const AddColumnModal: React.FC<AddColumnModalProps> = ({
             onClick={onAddColumn}
             className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 transition"
           >
-            + Add Board
+            {t("kanban.addBoard")}
           </button>
         </div>
         </div>

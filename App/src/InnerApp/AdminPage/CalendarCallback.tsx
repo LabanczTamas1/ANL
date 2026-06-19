@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../../hooks/useLanguage';
 
 /**
  * Handles the Google OAuth redirect for calendar connection.
@@ -7,6 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
  * where CalendarConnection will exchange it for tokens.
  */
 const CalendarCallback = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -32,7 +34,7 @@ const CalendarCallback = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-gray-500 text-sm">Connecting Google Calendar...</p>
+        <p className="text-gray-500 text-sm">{t('admin.connectingCalendar')}</p>
       </div>
     </div>
   );

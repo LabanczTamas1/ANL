@@ -7,6 +7,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface Transaction {
   id: string;
@@ -38,6 +39,7 @@ const TransactionHistoryModal = ({
   userId,
   userName,
 }: TransactionHistoryModalProps) => {
+  const { t } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -129,10 +131,10 @@ const TransactionHistoryModal = ({
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-                      Transaction History
+                      {t("userMgmt.titleTransactionHistory")}
                     </Dialog.Title>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      {userName} · {total} transaction{total !== 1 ? "s" : ""}
+                      {userName} · {total} {total !== 1 ? t("userMgmt.transactions") : t("userMgmt.transaction")}
                     </p>
                   </div>
                   <button
@@ -151,11 +153,11 @@ const TransactionHistoryModal = ({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
-                      Loading…
+                      {t("userMgmt.loading")}
                     </div>
                   ) : transactions.length === 0 ? (
                     <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-                      No transactions yet.
+                      {t("userMgmt.noTransactions")}
                     </p>
                   ) : (
                     <div className="space-y-2">
@@ -215,10 +217,10 @@ const TransactionHistoryModal = ({
 
                               <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                                 <span>
-                                  By: <span className="text-gray-700 dark:text-gray-300">{tx.performedByName}</span>
+                                  {t("userMgmt.by")} <span className="text-gray-700 dark:text-gray-300">{tx.performedByName}</span>
                                 </span>
                                 <span>
-                                  Balance: <span className="font-mono">{tx.balanceBefore.toFixed(2)}</span>
+                                  {t("userMgmt.balanceColon")} <span className="font-mono">{tx.balanceBefore.toFixed(2)}</span>
                                   {" → "}
                                   <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
                                     {tx.balanceAfter.toFixed(2)}
@@ -237,7 +239,7 @@ const TransactionHistoryModal = ({
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      Page {page} of {totalPages}
+                      {t("userMgmt.pageOf", { page: String(page), total: String(totalPages) })}
                     </span>
                     <div className="flex gap-1">
                       <button

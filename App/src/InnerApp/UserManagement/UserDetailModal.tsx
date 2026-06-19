@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FiX, FiDollarSign, FiClock, FiCalendar } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface User {
   id: string;
@@ -40,6 +41,7 @@ const UserDetailModal = ({
   onOpenHistory,
   onOpenPending,
 }: UserDetailModalProps) => {
+  const { t } = useLanguage();
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -70,7 +72,7 @@ const UserDetailModal = ({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                   <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-                    User Details
+                    {t("userMgmt.titleUserDetails")}
                   </Dialog.Title>
                   <button
                     onClick={onClose}
@@ -83,7 +85,7 @@ const UserDetailModal = ({
                 <div className="space-y-4">
                   {/* Name */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("userMgmt.name")}</h4>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white font-medium">
                       {user.firstName} {user.lastName}
                     </p>
@@ -91,51 +93,51 @@ const UserDetailModal = ({
 
                   {/* Email */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("userMgmt.email")}</h4>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">{user.email}</p>
                   </div>
 
                   {/* Company */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("userMgmt.company")}</h4>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">{user.company || "—"}</p>
                   </div>
 
                   {/* Status */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Status</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t("userMgmt.status")}</h4>
                     <select
                       value={user.progressionStatus}
                       onChange={(e) => onStatusChange(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#65558F] appearance-auto"
                     >
-                      <option value="pending">Pending</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="terminated">Terminated</option>
+                      <option value="pending">{t("userMgmt.statusPending")}</option>
+                      <option value="active">{t("userMgmt.statusActive")}</option>
+                      <option value="inactive">{t("userMgmt.statusInactive")}</option>
+                      <option value="terminated">{t("userMgmt.statusTerminated")}</option>
                     </select>
                   </div>
 
                   {/* Category */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Category</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t("userMgmt.category")}</h4>
                     <input
                       type="text"
                       value={user.progressionCategory}
                       onChange={(e) => onProgressUpdate({ progressionCategory: e.target.value })}
-                      placeholder="Enter category"
+                      placeholder={t("userMgmt.enterCategory")}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#65558F]"
                     />
                   </div>
 
                   {/* Timeline */}
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Timeline</h4>
+                    <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t("userMgmt.timeline")}</h4>
                     <input
                       type="text"
                       value={user.progressionTimeline}
                       onChange={(e) => onProgressUpdate({ progressionTimeline: e.target.value })}
-                      placeholder="Enter timeline"
+                      placeholder={t("userMgmt.enterTimeline")}
                       className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#65558F]"
                     />
                   </div>
@@ -144,7 +146,7 @@ const UserDetailModal = ({
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Balance</h4>
+                        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t("userMgmt.balance")}</h4>
                         <p className="mt-1 text-lg font-mono font-semibold text-gray-900 dark:text-white">
                           {(balance * displayRate).toFixed(2)} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">{displayCurrency}</span>
                         </p>
@@ -161,21 +163,21 @@ const UserDetailModal = ({
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
                       >
                         <FiDollarSign className="text-sm" />
-                        Add / Remove
+                        {t("userMgmt.addRemove")}
                       </button>
                       <button
                         onClick={onOpenPending}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-sm font-medium transition-colors"
                       >
                         <FiCalendar className="text-sm" />
-                        Expected
+                        {t("userMgmt.expected")}
                       </button>
                       <button
                         onClick={onOpenHistory}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 text-sm font-medium transition-colors"
                       >
                         <FiClock className="text-sm" />
-                        History
+                        {t("userMgmt.history")}
                       </button>
                     </div>
                   </div>

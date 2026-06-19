@@ -7,6 +7,7 @@ import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
 import Navbar from "./Navbar";
 import { usePostHog } from "@posthog/react";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface RegisterFormInputs {
   firstName: string;
@@ -22,6 +23,7 @@ const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
   const posthog = usePostHog();
+  const { t } = useLanguage();
 
   const {
     register,
@@ -72,19 +74,19 @@ const RegisterForm: React.FC = () => {
           username: payload.username,
         });
         setInfoMessage(
-          "Registration successful — please check your inbox to verify your email."
+          t("register.successMessage")
         );
         setTimeout(() => navigate("/check-email"), 1000);
       } else {
         const body = await res.json().catch(() => ({}));
         const err =
-          body?.error || body?.message || `Registration failed (status ${res.status})`;
+          body?.error || body?.message || t("register.failedStatus", { status: String(res.status) });
         setGlobalError(err);
       }
     } catch (err) {
       console.error("Registration error:", err);
       posthog.captureException(err instanceof Error ? err : new Error(String(err)));
-      setGlobalError("Network or server error. Please try again later.");
+      setGlobalError(t("register.networkError"));
     } finally {
       setLoading(false);
     }
@@ -136,7 +138,7 @@ const RegisterForm: React.FC = () => {
             WebkitBackdropFilter: "blur(16px)",
           }}
         >
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-white">Register</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-white">{t("register.title")}</h2>
 
           <SocialLoginButtons
             onGoogleLogin={handleGoogleLogin}
@@ -145,7 +147,7 @@ const RegisterForm: React.FC = () => {
 
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-line-glass" />
-            <span className="text-sm text-content-muted">or</span>
+            <span className="text-sm text-content-muted">{t("or")}</span>
             <div className="flex-1 h-px bg-line-glass" />
           </div>
 
@@ -155,11 +157,11 @@ const RegisterForm: React.FC = () => {
               <FormInput
                 id="firstName"
                 type="text"
-                placeholder="First Name"
+                placeholder={t("register.firstName")}
                 register={register("firstName", {
-                  required: "First name is required",
-                  minLength: { value: 2, message: "Too short" },
-                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: "Invalid name" },
+                  required: t("register.firstNameRequired"),
+                  minLength: { value: 2, message: t("register.tooShort") },
+                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: t("register.invalidName") },
                 })}
                 error={errors.firstName}
               />
@@ -169,11 +171,11 @@ const RegisterForm: React.FC = () => {
               <FormInput
                 id="lastName"
                 type="text"
-                placeholder="Last Name"
+                placeholder={t("register.lastName")}
                 register={register("lastName", {
-                  required: "Last name is required",
-                  minLength: { value: 2, message: "Too short" },
-                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: "Invalid name" },
+                  required: t("register.lastNameRequired"),
+                  minLength: { value: 2, message: t("register.tooShort") },
+                  pattern: { value: /^[\p{L}\p{M}'-]{2,}$/u, message: t("register.invalidName") },
                 })}
                 error={errors.lastName}
               />
@@ -185,11 +187,11 @@ const RegisterForm: React.FC = () => {
             <FormInput
               id="email"
               type="email"
-              placeholder="Email"
+              placeholder={t("register.email")}
               register={register("email", {
-                required: "Email is required",
-                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email" },
-                maxLength: { value: 254, message: "Email too long" },
+                required: t("register.emailRequired"),
+                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t("register.invalidEmail") },
+                maxLength: { value: 254, message: t("register.emailTooLong") },
               })}
               error={errors.email}
             />
@@ -200,12 +202,12 @@ const RegisterForm: React.FC = () => {
             <FormInput
               id="username"
               type="text"
-              placeholder="Username / Company Name"
+              placeholder={t("register.usernameCompany")}
               register={register("username", {
-                required: "Username is required",
-                minLength: { value: 3, message: "At least 3 characters" },
-                maxLength: { value: 50, message: "Too long" },
-                pattern: { value: /^[a-zA-Z0-9._-]{3,50}$/, message: "Invalid username" },
+                required: t("register.usernameRequired"),
+                minLength: { value: 3, message: t("register.usernameMin") },
+                maxLength: { value: 50, message: t("register.tooLong") },
+                pattern: { value: /^[a-zA-Z0-9._-]{3,50}$/, message: t("register.invalidUsername") },
               })}
               error={errors.username}
             />
@@ -216,16 +218,16 @@ const RegisterForm: React.FC = () => {
             <FormInput
               id="password"
               type="password"
-              placeholder="Password"
+              placeholder={t("register.password")}
               register={register("password", {
-                required: "Password is required",
-                minLength: { value: 12, message: "At least 12 characters" },
+                required: t("register.passwordRequired"),
+                minLength: { value: 12, message: t("register.passwordMin") },
                 validate: (v) => {
                   const checks = [
-                    /[A-Z]/.test(v) || "Add uppercase",
-                    /[a-z]/.test(v) || "Add lowercase",
-                    /[0-9]/.test(v) || "Add number",
-                    /[^A-Za-z0-9]/.test(v) || "Add symbol",
+                    /[A-Z]/.test(v) || t("register.addUppercase"),
+                    /[a-z]/.test(v) || t("register.addLowercase"),
+                    /[0-9]/.test(v) || t("register.addNumber"),
+                    /[^A-Za-z0-9]/.test(v) || t("register.addSymbol"),
                   ];
                   return checks.find((c) => typeof c === "string") || true;
                 },
@@ -235,7 +237,7 @@ const RegisterForm: React.FC = () => {
               onTogglePassword={togglePassword}
             />
             <div className="text-xs text-content-muted mt-1">
-              Use at least 12 characters — mix upper/lowercase letters, numbers and symbols.
+              {t("register.passwordHint")}
             </div>
           </div>
 
@@ -244,10 +246,10 @@ const RegisterForm: React.FC = () => {
             <FormInput
               id="confirmPassword"
               type="password"
-              placeholder="Confirm Password"
+              placeholder={t("register.confirmPassword")}
               register={register("confirmPassword", {
-                required: "Please confirm your password",
-                validate: (v) => v === watch("password") || "Passwords do not match",
+                required: t("register.confirmRequired"),
+                validate: (v) => v === watch("password") || t("register.passwordsNoMatch"),
               })}
               error={errors.confirmPassword}
               showPassword={showConfirmPassword}
@@ -258,14 +260,14 @@ const RegisterForm: React.FC = () => {
           {/* Terms */}
           <div className="mb-4">
             <CheckboxInput
-              register={register("terms", { required: "You must accept the terms" })}
+              register={register("terms", { required: t("register.mustAcceptTerms") })}
               error={errors.terms}
               label={
                 <div>
-                  Yes, I accept the{" "}
-                  <a href="/terms" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">Terms of Use</a>{" "}
-                  and{" "}
-                  <a href="/privacy" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">Privacy Policy</a>.
+                  {t("register.acceptThe")}{" "}
+                  <a href="/terms" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("register.termsOfUse")}</a>{" "}
+                  {t("register.and")}{" "}
+                  <a href="/privacy" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("privacyPolicy")}</a>.
                 </div>
               }
             />
@@ -274,13 +276,13 @@ const RegisterForm: React.FC = () => {
           {globalError && <p className="text-sm text-status-error mb-3">{globalError}</p>}
           {infoMessage && <p className="text-sm text-green-400 mb-3">{infoMessage}</p>}
 
-          <SubmitButton text={loading ? "Creating…" : "Register"} disabled={loading} />
+          <SubmitButton text={loading ? t("register.creating") : t("register.title")} disabled={loading} />
 
           <div className="text-sm text-content-muted mt-4">
-            Already have an account?{" "}
-            <button type="button" onClick={() => navigate("/login")} className="text-brand-hover underline hover:text-white transition">Sign in</button>
+            {t("register.alreadyHaveAccount")}{" "}
+            <button type="button" onClick={() => navigate("/login")} className="text-brand-hover underline hover:text-white transition">{t("register.signIn")}</button>
             {" — "}
-            <button type="button" onClick={() => navigate("/forgot-password")} className="text-brand-hover underline hover:text-white transition">Forgot password?</button>
+            <button type="button" onClick={() => navigate("/forgot-password")} className="text-brand-hover underline hover:text-white transition">{t("register.forgotPassword")}</button>
           </div>
         </form>
       </div>

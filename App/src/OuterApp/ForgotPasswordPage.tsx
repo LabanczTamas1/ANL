@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword, resetPassword } from "../services/api/authApi";
 import { usePostHog } from "@posthog/react";
+import { useLanguage } from "../hooks/useLanguage";
 
 type Step = "email" | "reset";
 
@@ -28,6 +29,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
   const posthog = usePostHog();
+  const { t } = useLanguage();
 
   const emailForm = useForm<EmailFormInputs>();
   const resetForm = useForm<ResetFormInputs>();
@@ -40,11 +42,11 @@ const ForgotPasswordPage: React.FC = () => {
       await forgotPassword({ email: data.email.trim().toLowerCase() });
       posthog.capture("forgot_password_requested");
       setEmail(data.email.trim().toLowerCase());
-      setMessage("If that email exists, a reset code has been sent. Check your inbox.");
+      setMessage(t("forgot.codeSent"));
       setStep("reset");
     } catch (err: any) {
       posthog.captureException(err instanceof Error ? err : new Error(String(err)));
-      setError(err?.response?.data?.error || "Something went wrong. Please try again.");
+      setError(err?.response?.data?.error || t("forgot.somethingWrong"));
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ const ForgotPasswordPage: React.FC = () => {
 
   const handleResetSubmit = async (data: ResetFormInputs) => {
     if (data.newPassword !== data.confirmPassword) {
-      resetForm.setError("confirmPassword", { message: "Passwords do not match" });
+      resetForm.setError("confirmPassword", { message: t("forgot.passwordsNoMatch") });
       return;
     }
     setLoading(true);
@@ -65,11 +67,11 @@ const ForgotPasswordPage: React.FC = () => {
         newPassword: data.newPassword,
       });
       posthog.capture("password_reset_completed");
-      setMessage("Password reset successfully! Redirecting to login...");
+      setMessage(t("forgot.resetSuccess"));
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
       posthog.captureException(err instanceof Error ? err : new Error(String(err)));
-      setError(err?.response?.data?.error || "Reset failed. Please try again.");
+      setError(err?.response?.data?.error || t("forgot.resetFailed"));
     } finally {
       setLoading(false);
     }
@@ -112,12 +114,12 @@ const ForgotPasswordPage: React.FC = () => {
           }}
         >
           <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-center text-white">
-            {step === "email" ? "Forgot Password" : "Reset Password"}
+            {step === "email" ? t("forgot.forgotTitle") : t("forgot.resetTitle")}
           </h2>
           <p className="text-content-muted text-center mb-8 text-sm">
             {step === "email"
-              ? "Enter your email and we'll send you a 6-digit reset code."
-              : `Enter the code sent to ${email} and choose a new password.`}
+              ? t("forgot.emailSubtitle")
+              : t("forgot.resetSubtitle", { email })}
           </p>
 
           {/* ── Messages ── */}
@@ -134,17 +136,17 @@ const ForgotPasswordPage: React.FC = () => {
               <div className="mb-6">
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("forgot.enterEmail")}
                   className={`w-full p-3 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition ${
                     emailForm.formState.errors.email
                       ? "border-status-error"
                       : "border-line-dark"
                   }`}
                   {...emailForm.register("email", {
-                    required: "Email is required",
+                    required: t("forgot.emailRequired"),
                     pattern: {
                       value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: "Invalid email address",
+                      message: t("forgot.invalidEmail"),
                     },
                   })}
                 />
@@ -160,7 +162,7 @@ const ForgotPasswordPage: React.FC = () => {
                 disabled={loading}
                 className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition shadow-lg shadow-brand/20"
               >
-                {loading ? "Sending..." : "Send Reset Code"}
+                {loading ? t("forgot.sending") : t("forgot.sendResetCode")}
               </button>
             </form>
           )}
@@ -172,7 +174,7 @@ const ForgotPasswordPage: React.FC = () => {
               <div className="mb-4 flex flex-col items-center">
                 <input
                   type="text"
-                  placeholder="123456"
+                  placeholder={t("forgot.codePlaceholder")}
                   maxLength={6}
                   className={`w-36 p-2 rounded-lg border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition text-center text-lg ${
                     resetForm.formState.errors.code
@@ -180,10 +182,10 @@ const ForgotPasswordPage: React.FC = () => {
                       : "border-line-dark"
                   }`}
                   {...resetForm.register("code", {
-                    required: "Reset code is required",
+                    required: t("forgot.codeRequired"),
                     pattern: {
                       value: /^\d{6}$/,
-                      message: "Code must be 6 digits",
+                      message: t("forgot.codeSixDigits"),
                     },
                   })}
                 />
@@ -198,17 +200,17 @@ const ForgotPasswordPage: React.FC = () => {
               <div className="mb-4 relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="New password"
+                  placeholder={t("forgot.newPassword")}
                   className={`w-full p-3 pr-12 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition ${
                     resetForm.formState.errors.newPassword
                       ? "border-status-error"
                       : "border-line-dark"
                   }`}
                   {...resetForm.register("newPassword", {
-                    required: "New password is required",
+                    required: t("forgot.newPasswordRequired"),
                     minLength: {
                       value: 6,
-                      message: "Password must be at least 6 characters",
+                      message: t("forgot.passwordMin6"),
                     },
                   })}
                 />
@@ -230,14 +232,14 @@ const ForgotPasswordPage: React.FC = () => {
               <div className="mb-6 relative">
                 <input
                   type={showConfirm ? "text" : "password"}
-                  placeholder="Confirm new password"
+                  placeholder={t("forgot.confirmNewPassword")}
                   className={`w-full p-3 pr-12 rounded-xl border bg-surface-overlay text-white placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand-focus transition ${
                     resetForm.formState.errors.confirmPassword
                       ? "border-status-error"
                       : "border-line-dark"
                   }`}
                   {...resetForm.register("confirmPassword", {
-                    required: "Please confirm your password",
+                    required: t("forgot.confirmRequired"),
                   })}
                 />
                 <button
@@ -259,7 +261,7 @@ const ForgotPasswordPage: React.FC = () => {
                 disabled={loading}
                 className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition shadow-lg shadow-brand/20"
               >
-                {loading ? "Resetting..." : "Reset Password"}
+                {loading ? t("forgot.resetting") : t("forgot.resetPassword")}
               </button>
 
               {/* Resend */}
@@ -273,20 +275,20 @@ const ForgotPasswordPage: React.FC = () => {
                 }}
                 className="w-full mt-3 text-sm text-content-muted hover:text-white transition text-center"
               >
-                Didn't receive a code? Go back
+                {t("forgot.didntReceive")}
               </button>
             </form>
           )}
 
           {/* ── Footer links ── */}
           <div className="text-sm text-content-muted mt-6 text-center space-x-1">
-            <span>Remember your password?</span>
+            <span>{t("forgot.rememberPassword")}</span>
             <button
               type="button"
               onClick={() => navigate("/login")}
               className="text-brand-hover underline hover:text-white transition"
             >
-              Sign in
+              {t("forgot.signIn")}
             </button>
           </div>
         </div>

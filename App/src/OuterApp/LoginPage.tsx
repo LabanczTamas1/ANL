@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
     } catch (error) {
       console.error("Error during login:", error);
       posthog.captureException(error instanceof Error ? error : new Error(String(error)));
-      alert(`An error occurred. Please try again later.\n${error}`);
+      alert(`${t("login.genericError")}\n${error}`);
     }
   };
 
@@ -253,7 +253,7 @@ const LoginPage: React.FC = () => {
               onClick={() => navigate("/forgot-password")}
               className="text-sm text-content-muted hover:text-white underline transition"
             >
-              Forgot password?
+              {t("login.forgotPassword")}
             </button>
           </div>
 
@@ -267,13 +267,13 @@ const LoginPage: React.FC = () => {
 
           {/* ── Footer links ── */}
           <div className="text-sm text-content-muted mt-6 text-center space-x-1">
-            <span>Don't have an account?</span>
+            <span>{t("login.noAccount")}</span>
             <button
               type="button"
               onClick={() => navigate("/register")}
               className="text-brand-hover underline hover:text-white transition"
             >
-              Sign up
+              {t("login.signUp")}
             </button>
           </div>
         </form>

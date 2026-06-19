@@ -204,7 +204,7 @@ const Contact = () => {
           {/* Map embed */}
           <div className="rounded-2xl border border-line-glass bg-glass backdrop-blur-md overflow-hidden h-64 lg:h-80">
             <iframe
-              title="Office location"
+              title={t["contact.officeLocation"]}
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d43893.06847818464!2d24.533262!3d46.545669!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x474bb663175f4531%3A0xc58032e47b99c5e7!2sT%C3%A2rgu%20Mure%C8%99!5e0!3m2!1sen!2sro!4v1700000000000!5m2!1sen!2sro"
               className="w-full h-full border-0 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-slow"
               loading="lazy"

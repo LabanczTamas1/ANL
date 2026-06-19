@@ -1,11 +1,14 @@
 import React from "react";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface TrashBinProps {
   provided: any;
   snapshot: any;
 }
 
-const TrashBin: React.FC<TrashBinProps> = ({ provided, snapshot }) => (
+const TrashBin: React.FC<TrashBinProps> = ({ provided, snapshot }) => {
+  const { t } = useLanguage();
+  return (
   <div
     ref={provided.innerRef}
     {...provided.droppableProps}
@@ -35,10 +38,11 @@ const TrashBin: React.FC<TrashBinProps> = ({ provided, snapshot }) => (
         <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
         <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
       </svg>
-      <p className="text-sm text-red-700">Drop column here to delete</p>
+      <p className="text-sm text-red-700">{t("kanban.dropColumnHere")}</p>
     </div>
     <div className="absolute inset-0">{provided.placeholder}</div>
   </div>
-);
+  );
+};
 
 export default TrashBin;

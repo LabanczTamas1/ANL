@@ -17,43 +17,41 @@ import CTASection from "./components/CTASection";
 import GradientDivider from "./components/GradientDivider";
 import FloatingParticles from "./components/FloatingParticles";
 
-// Founders data
-const founders = [
-  {
-    imageUrl: "/Picture1.png",
-    name: "Péterfi Szabolcs",
-    position: "Founder",
-    description: "Insipiring leader with a passion for innovation and a track record of driving growth through strategic vision and execution.",
-    socials: {
-      linkedin: "https://linkedin.com",
-      twitter: "https://twitter.com",
-      email: "peterfi@anl.com",
-    },
-  },
-  {
-    imageUrl: "/Picture1.png",
-    name: "Koszta Zsolt",
-    position: "Co-Founder",
-    description: "Strategic thinker specializing in growth marketing and data-driven decision making to help businesses reach their full potential.",
-    socials: {
-      linkedin: "https://linkedin.com",
-      twitter: "https://twitter.com",
-      email: "contact@anl.com",
-    },
-  },
-];
-
 const LandingPage = () => {
-  // Language hook available for future translations
-  useLanguage();
-  
+  const { t } = useLanguage();
+
+  const founders = [
+    {
+      imageUrl: "/Picture1.png",
+      name: "Péterfi Szabolcs",
+      position: t("about.founder"),
+      description: t("about.founder1Desc"),
+      socials: {
+        linkedin: "https://linkedin.com",
+        twitter: "https://twitter.com",
+        email: "peterfi@anl.com",
+      },
+    },
+    {
+      imageUrl: "/Picture1.png",
+      name: "Koszta Zsolt",
+      position: t("about.coFounder"),
+      description: t("about.founder2Desc"),
+      socials: {
+        linkedin: "https://linkedin.com",
+        twitter: "https://twitter.com",
+        email: "contact@anl.com",
+      },
+    },
+  ];
+
   return (
     <div className="bg-surface-overlay relative overflow-hidden">
       <Helmet>
-        <title>ANL | Watch Your Growth</title>
+        <title>{t("landing.metaTitle")}</title>
         <meta
           name="description"
-          content="Transform your business with ANL's innovative digital solutions. We help companies grow through data-driven strategies and cutting-edge technology."
+          content={t("landing.metaDescription")}
         />
       </Helmet>
 
@@ -71,11 +69,11 @@ const LandingPage = () => {
 
       {/* Hero Section - Unchanged as requested */}
       <CTASection 
-        title="Ready to Transform Your Business?"
-        subtitle="Let's discuss how we can help you achieve your goals. Book a free consultation today."
-        primaryButtonText="Book a Meeting"
+        title={t("cta.defaultTitle")}
+        subtitle={t("cta.defaultSubtitle")}
+        primaryButtonText={t("cta.bookMeeting")}
         primaryButtonLink="/booking"
-        secondaryButtonText="Learn More"
+        secondaryButtonText={t("cta.learnMore")}
         secondaryButtonLink="/about"
         fullHeight={true}
       />
@@ -86,8 +84,8 @@ const LandingPage = () => {
       {/* Modern Founders Section */}
       <ModernFoundersSection 
         founders={founders}
-        title="Meet the Founders"
-        subtitle="The visionaries behind your digital transformation journey"
+        title={t("landing.foundersTitle")}
+        subtitle={t("landing.foundersSubtitle")}
       />
 
       {/* YouTube Videos Section */}
@@ -101,14 +99,14 @@ const LandingPage = () => {
 
       {/* Feature Grid Section */}
       <FeatureGrid 
-        title="Why Choose ANL"
-        subtitle="Discover the tools and expertise that will transform your business"
+        title={t("landing.featureTitle")}
+        subtitle={t("landing.featureSubtitle")}
       />
 
       {/* Modern Timeline Section */}
       <ModernTimeline 
-        title="Your Journey With Us"
-        subtitle="A simple, transparent process designed for your success"
+        title={t("landing.timelineTitle")}
+        subtitle={t("landing.timelineSubtitle")}
       />
 
       {/* Gradient Divider */}
@@ -116,8 +114,8 @@ const LandingPage = () => {
 
       {/* Testimonials Section */}
       <TestimonialSection 
-        title="What Our Clients Say"
-        subtitle="Don't just take our word for it — hear from businesses we've helped grow"
+        title={t("landing.testimonialsTitle")}
+        subtitle={t("landing.testimonialsSubtitle")}
       />
 
       {/* Interactive Starfield with ANL Shape - Unchanged as requested */}

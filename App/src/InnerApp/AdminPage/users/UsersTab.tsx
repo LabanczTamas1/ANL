@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useUsers } from './useUsers';
 import UserToolbar from './UserToolbar';
 import UserTable from './UserTable';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 const UsersTab: React.FC = () => {
+  const { t } = useLanguage();
   const { users, loading, updateRole } = useUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -47,13 +49,13 @@ const UsersTab: React.FC = () => {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
-          Loading users…
+          {t('admin.loadingUsers')}
         </div>
       )}
 
       {!loading && filteredUsers.length === 0 && (
         <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-          No users match your search.
+          {t('admin.noUsersMatchSearch')}
         </p>
       )}
 

@@ -197,7 +197,7 @@ const MobileNavbar = () => {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Navigation menu"
+        aria-label={t['nav.navigationMenu']}
         className="fixed inset-0"
         style={{
           zIndex: 9999,
@@ -221,7 +221,7 @@ const MobileNavbar = () => {
             ref={closeButtonRef}
             className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
             onClick={closeMenu}
-            aria-label="Close menu"
+            aria-label={t['nav.closeMenu']}
           >
             <FaTimes />
           </button>
@@ -252,7 +252,7 @@ const MobileNavbar = () => {
         <div className="mx-4 mt-4 border-t border-white/10" />
 
         {/* Auth buttons — using Link styled as buttons (single tab stop each) */}
-        <div className="flex gap-3 px-8 mt-6" role="group" aria-label="Authentication">
+        <div className="flex gap-3 px-8 mt-6" role="group" aria-label={t['nav.authentication']}>
           <Link
             to="/login"
             onClick={closeMenu}
@@ -305,7 +305,7 @@ const MobileNavbar = () => {
             <ul
               id="lang-listbox"
               role="listbox"
-              aria-label="Select language"
+              aria-label={t['language.selectLanguage']}
               aria-activedescendant={activeDescendant >= 0 ? `lang-option-${LANGUAGES[activeDescendant]}` : undefined}
               className="mt-2 rounded-xl bg-white/5 border border-white/10 overflow-hidden list-none m-0 p-0"
               onKeyDown={handleLangListKeyDown}
@@ -364,7 +364,7 @@ const MobileNavbar = () => {
         <button
           className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
           onClick={() => setMenuOpen(true)}
-          aria-label="Open menu"
+          aria-label={t['nav.openMenu']}
           aria-expanded={menuOpen}
         >
           <FaBars />

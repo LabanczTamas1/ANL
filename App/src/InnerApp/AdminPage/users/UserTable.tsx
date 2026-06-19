@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, ROLE_BADGE } from '../types';
+import { useLanguage } from '../../../hooks/useLanguage';
 
 interface Props {
   users: User[];
@@ -12,16 +13,18 @@ function displayName(u: User) {
   return u.firstName ? `${u.firstName} ${u.lastName}`.trim() : u.username;
 }
 
-const UserTable: React.FC<Props> = ({ users, onRoleChange }) => (
+const UserTable: React.FC<Props> = ({ users, onRoleChange }) => {
+  const { t } = useLanguage();
+  return (
   <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
     <table className="min-w-full text-sm">
       <thead>
         <tr className="bg-gray-50 dark:bg-[#1a1a2e] text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wider">
-          <th className="px-4 py-3 text-left">Name</th>
-          <th className="px-4 py-3 text-left hidden md:table-cell">Email</th>
-          <th className="px-4 py-3 text-left hidden lg:table-cell">Company</th>
-          <th className="px-4 py-3 text-left">Role</th>
-          <th className="px-4 py-3 text-left hidden sm:table-cell">Joined</th>
+          <th className="px-4 py-3 text-left">{t('admin.colName')}</th>
+          <th className="px-4 py-3 text-left hidden md:table-cell">{t('admin.colEmail')}</th>
+          <th className="px-4 py-3 text-left hidden lg:table-cell">{t('admin.colCompany')}</th>
+          <th className="px-4 py-3 text-left">{t('admin.colRole')}</th>
+          <th className="px-4 py-3 text-left hidden sm:table-cell">{t('admin.colJoined')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -56,6 +59,7 @@ const UserTable: React.FC<Props> = ({ users, onRoleChange }) => (
       </tbody>
     </table>
   </div>
-);
+  );
+};
 
 export default UserTable;

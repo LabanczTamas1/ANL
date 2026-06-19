@@ -27,6 +27,7 @@ import {
 } from "../../services/api/availabilityApi";
 import { ToastContainer, Bounce, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useLanguage } from "../../hooks/useLanguage";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 // ─── Component ──────────────────────────────────────────────────────────────
 
 const AvailabilityOverview: React.FC = () => {
+  const { t } = useLanguage();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -106,7 +108,7 @@ const AvailabilityOverview: React.FC = () => {
       const res = await getAdminDayOverview(toDateString(start), toDateString(end));
       setDays(res.data as DayOverview[]);
     } catch {
-      toast.error("Failed to load availability data");
+      toast.error(t("availOverview.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -188,10 +190,10 @@ const AvailabilityOverview: React.FC = () => {
     setActionLoading(true);
     try {
       await removeAddedTime({ date, times: [time] });
-      toast.success(`Removed added time ${formatMinutes(time)}`);
+      toast.success(t("availOverview.removedAddedTime", { time: formatMinutes(time) }));
       await fetchData();
     } catch {
-      toast.error("Failed to remove added time");
+      toast.error(t("availOverview.removeAddedFailed"));
     } finally {
       setActionLoading(false);
     }
@@ -201,10 +203,10 @@ const AvailabilityOverview: React.FC = () => {
     setActionLoading(true);
     try {
       await removeDeletedTime({ date, times: [time] });
-      toast.success(`Restored deleted time ${formatMinutes(time)}`);
+      toast.success(t("availOverview.restoredDeletedTime", { time: formatMinutes(time) }));
       await fetchData();
     } catch {
-      toast.error("Failed to restore time");
+      toast.error(t("availOverview.restoreFailed"));
     } finally {
       setActionLoading(false);
     }
@@ -221,6 +223,9 @@ const AvailabilityOverview: React.FC = () => {
 
   // ─── Render ────────────────────────────────────────────────────────────
 
+  const removeCustomAddedLabel = t("availOverview.removeCustomAdded");
+  const restoreDeletedLabel = t("availOverview.restoreDeleted");
+
   return (
     <div className="h-full bg-surface-overlay flex flex-col lg:flex-row relative overflow-hidden">
       {/* Background orbs */}
@@ -234,7 +239,7 @@ const AvailabilityOverview: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl md:text-2xl font-bold text-content-inverse flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-brand" />
-              Availability Overview
+              {t("availOverview.title")}
             </h2>
             <div className="flex items-center gap-1">
               <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-brand/20 text-content-inverse transition-colors">
@@ -253,9 +258,9 @@ const AvailabilityOverview: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5 text-content-muted" />
             {([
-              { key: "both" as ViewFilter, label: "Both" },
-              { key: "availability" as ViewFilter, label: "Availability" },
-              { key: "bookings" as ViewFilter, label: "Bookings" },
+              { key: "both" as ViewFilter, label: t("availOverview.filterBoth") },
+              { key: "availability" as ViewFilter, label: t("availOverview.filterAvailability") },
+              { key: "bookings" as ViewFilter, label: t("availOverview.filterBookings") },
             ]).map(({ key, label }) => (
               <button
                 key={key}
@@ -343,7 +348,7 @@ const AvailabilityOverview: React.FC = () => {
                       <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-accent-teal" />
                     )}
                     {cell.isDayOff && !isSelected && (
-                      <span className="absolute bottom-0.5 left-1 text-[7px] text-status-error font-bold uppercase">OFF</span>
+                      <span className="absolute bottom-0.5 left-1 text-[7px] text-status-error font-bold uppercase">{t("availOverview.off")}</span>
                     )}
                   </button>
                 );
@@ -353,19 +358,19 @@ const AvailabilityOverview: React.FC = () => {
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-content-muted">
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-status-success" /> 7+ hours
+                <span className="w-2 h-2 rounded-full bg-status-success" /> {t("availOverview.legend7plus")}
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-status-warning" /> 5-6 hours
+                <span className="w-2 h-2 rounded-full bg-status-warning" /> {t("availOverview.legend5to6")}
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-status-error" /> 1-4 hours
+                <span className="w-2 h-2 rounded-full bg-status-error" /> {t("availOverview.legend1to4")}
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-accent-teal" /> Custom modified
+                <span className="w-2 h-2 rounded-full bg-accent-teal" /> {t("availOverview.legendCustom")}
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-accent-purple" /> Has bookings
+                <span className="w-2 h-2 rounded-full bg-accent-purple" /> {t("availOverview.legendBookings")}
               </span>
             </div>
           </>
@@ -396,11 +401,11 @@ const AvailabilityOverview: React.FC = () => {
               </h3>
               <div className="flex items-center gap-3 mt-1">
                 <span className={`text-sm font-semibold ${hourColor(selectedDay.totalHours)}`}>
-                  {selectedDay.totalHours} active hour{selectedDay.totalHours !== 1 ? "s" : ""}
+                  {t("availOverview.activeHours", { count: String(selectedDay.totalHours) })}
                 </span>
                 {selectedDay.isDayOff && (
                   <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-status-error/20 text-status-error">
-                    Day Off
+                    {t("availOverview.dayOff")}
                   </span>
                 )}
               </div>
@@ -409,7 +414,7 @@ const AvailabilityOverview: React.FC = () => {
             {/* Standard times */}
             {viewFilter !== "bookings" && selectedDay.standardTimes.length > 0 && (
               <Section
-                title="Standard Availability"
+                title={t("availOverview.standardAvailability")}
                 icon={<Clock className="w-3.5 h-3.5" />}
                 color="text-accent-teal"
               >
@@ -424,7 +429,7 @@ const AvailabilityOverview: React.FC = () => {
             {/* Custom-added times */}
             {viewFilter !== "bookings" && selectedDay.addedTimes.length > 0 && (
               <Section
-                title="Custom Added"
+                title={t("availOverview.customAdded")}
                 icon={<Plus className="w-3.5 h-3.5" />}
                 color="text-status-success"
               >
@@ -435,7 +440,7 @@ const AvailabilityOverview: React.FC = () => {
                       time={t}
                       variant="added"
                       actionIcon={<Trash2 className="w-3 h-3" />}
-                      actionLabel="Remove this custom-added time"
+                      actionLabel={removeCustomAddedLabel}
                       onAction={() => handleRemoveAdded(selectedDay.date, t)}
                       disabled={actionLoading}
                     />
@@ -447,7 +452,7 @@ const AvailabilityOverview: React.FC = () => {
             {/* Custom-deleted times */}
             {viewFilter !== "bookings" && selectedDay.deletedTimes.length > 0 && (
               <Section
-                title="Custom Removed"
+                title={t("availOverview.customRemoved")}
                 icon={<Minus className="w-3.5 h-3.5" />}
                 color="text-status-error"
               >
@@ -458,7 +463,7 @@ const AvailabilityOverview: React.FC = () => {
                       time={t}
                       variant="deleted"
                       actionIcon={<RotateCcw className="w-3 h-3" />}
-                      actionLabel="Restore this deleted time"
+                      actionLabel={restoreDeletedLabel}
                       onAction={() => handleRestoreDeleted(selectedDay.date, t)}
                       disabled={actionLoading}
                     />
@@ -470,7 +475,7 @@ const AvailabilityOverview: React.FC = () => {
             {/* Booked Meetings */}
             {viewFilter !== "availability" && selectedDay.bookedMeetings && selectedDay.bookedMeetings.length > 0 && (
               <Section
-                title="Booked Meetings"
+                title={t("availOverview.bookedMeetings")}
                 icon={<Users className="w-3.5 h-3.5" />}
                 color="text-accent-purple"
               >
@@ -505,7 +510,7 @@ const AvailabilityOverview: React.FC = () => {
             {/* Effective times */}
             {viewFilter !== "bookings" && (
               <Section
-                title="Effective Schedule"
+                title={t("availOverview.effectiveSchedule")}
                 icon={<CalendarIcon className="w-3.5 h-3.5" />}
                 color="text-brand"
               >
@@ -524,7 +529,7 @@ const AvailabilityOverview: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-content-muted italic">No active hours</p>
+                  <p className="text-xs text-content-muted italic">{t("availOverview.noActiveHours")}</p>
                 )}
               </Section>
             )}
@@ -533,14 +538,14 @@ const AvailabilityOverview: React.FC = () => {
             {viewFilter === "bookings" && (!selectedDay.bookedMeetings || selectedDay.bookedMeetings.length === 0) && (
               <div className="flex flex-col items-center justify-center py-8 text-content-muted">
                 <Users className="w-8 h-8 mb-2 opacity-30" />
-                <p className="text-sm font-medium">No bookings on this day</p>
+                <p className="text-sm font-medium">{t("availOverview.noBookingsDay")}</p>
               </div>
             )}
           </>
         ) : (
           <div className="hidden lg:flex flex-col items-center justify-center h-full text-content-muted">
             <CalendarIcon className="w-10 h-10 mb-3 opacity-30" />
-            <p className="text-sm font-medium">Select a day to see details</p>
+            <p className="text-sm font-medium">{t("availOverview.selectDayDetails")}</p>
           </div>
         )}
       </div>
@@ -669,6 +674,7 @@ const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: React.R
 );
 
 const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClose }) => {
+  const { t } = useLanguage();
   const formattedDate = (() => {
     const [y, m, d] = (booking.createdAt?.split("T")[0] ?? "").split("-").map(Number);
     if (!y) return "—";
@@ -700,13 +706,13 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         <div className="flex items-center justify-between p-4 border-b border-line-glass/30">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-accent-purple" />
-            <h3 className="text-base font-bold text-content-inverse">Booking Details</h3>
+            <h3 className="text-base font-bold text-content-inverse">{t("availOverview.bookingDetails")}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-brand/20 text-content-muted hover:text-content-inverse transition-colors"
-            aria-label="Close modal"
+            aria-label={t("availOverview.closeModal")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -726,12 +732,12 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
 
           <DetailRow
             icon={<Clock className="w-3.5 h-3.5" />}
-            label="Time"
+            label={t("availOverview.rowTime")}
             value={formatMinutes(booking.time)}
           />
           <DetailRow
             icon={<Mail className="w-3.5 h-3.5" />}
-            label="Email"
+            label={t("availOverview.rowEmail")}
             value={
               <a href={`mailto:${booking.email}`} className="text-brand hover:underline">
                 {booking.email}
@@ -741,18 +747,18 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           {booking.company && (
             <DetailRow
               icon={<Building2 className="w-3.5 h-3.5" />}
-              label="Company"
+              label={t("availOverview.rowCompany")}
               value={booking.company}
             />
           )}
           <DetailRow
             icon={<Globe className="w-3.5 h-3.5" />}
-            label="Timezone"
+            label={t("availOverview.rowTimezone")}
             value={booking.timezone}
           />
           <DetailRow
             icon={<Tag className="w-3.5 h-3.5" />}
-            label="Referral Source"
+            label={t("availOverview.rowReferral")}
             value={
               booking.referralSourceOther
                 ? `${booking.referralSource} — ${booking.referralSourceOther}`
@@ -762,7 +768,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           {booking.meetLink && (
             <DetailRow
               icon={<Video className="w-3.5 h-3.5" />}
-              label="Meet Link"
+              label={t("availOverview.rowMeetLink")}
               value={
                 <a
                   href={booking.meetLink}
@@ -778,13 +784,13 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           {booking.notes && (
             <DetailRow
               icon={<FileText className="w-3.5 h-3.5" />}
-              label="Notes"
+              label={t("availOverview.rowNotes")}
               value={booking.notes}
             />
           )}
           <DetailRow
             icon={<CalendarCheck className="w-3.5 h-3.5" />}
-            label="Booked On"
+            label={t("availOverview.rowBookedOn")}
             value={formattedDate}
           />
         </div>
@@ -796,7 +802,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
             onClick={onClose}
             className="w-full px-4 py-2 rounded-xl bg-brand/15 text-brand font-semibold text-sm hover:bg-brand/25 transition-colors"
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>

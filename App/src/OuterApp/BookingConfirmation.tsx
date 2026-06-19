@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePostHog } from "@posthog/react";
+import { useLanguage } from "../hooks/useLanguage";
 import {
   Calendar,
   Clock,
@@ -69,6 +70,7 @@ interface MeetingDetails {
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
 const BookingConfirmation: React.FC = () => {
+  const { t } = useLanguage();
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -84,7 +86,7 @@ const BookingConfirmation: React.FC = () => {
     date: "",
     time: "",
     link: "",
-    type: "Kick Off Meeting",
+    type: t("bookingConfirm.defaultType"),
     fullName: "",
     email: "",
     company: "",
@@ -196,7 +198,7 @@ const BookingConfirmation: React.FC = () => {
       setDetails((prev) => ({
         ...prev,
         loading: false,
-        error: "No booking token provided.",
+        error: t("bookingConfirm.noToken"),
       }));
       return;
     }
@@ -209,7 +211,7 @@ const BookingConfirmation: React.FC = () => {
           { method: "GET", headers: { "Content-Type": "application/json" } }
         );
 
-        if (!response.ok) throw new Error("Booking not found");
+        if (!response.ok) throw new Error(t("bookingConfirm.notFound"));
 
         const data = await response.json();
         const booking = data.booking || data;
@@ -222,7 +224,7 @@ const BookingConfirmation: React.FC = () => {
               ? formatTime(booking.time)
               : booking.time || ""),
           link: booking.meet_link || booking.meetLink || booking.link || "",
-          type: booking.meetingType || booking.type || "Kick Off Meeting",
+          type: booking.meetingType || booking.type || t("bookingConfirm.defaultType"),
           fullName: booking.full_name || booking.fullName || "",
           email: booking.email || "",
           company: booking.company || "",
@@ -235,7 +237,7 @@ const BookingConfirmation: React.FC = () => {
         setDetails((prev) => ({
           ...prev,
           loading: false,
-          error: "Unable to load booking details. The link may be invalid or expired.",
+          error: t("bookingConfirm.loadError"),
         }));
       }
     })();
@@ -328,12 +330,11 @@ const BookingConfirmation: React.FC = () => {
               }`}
             >
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-3 flex items-center justify-center gap-2">
-                Booking Confirmed!{" "}
+                {t("bookingConfirm.confirmed")}{" "}
                 <PartyPopper className="w-7 h-7 text-[#7AA49F] party-pop" />
               </h1>
               <p className="text-[#D1D5DB] text-sm md:text-base leading-relaxed max-w-md mx-auto">
-                Your appointment has been scheduled successfully. We look
-                forward to meeting you!
+                {t("bookingConfirm.subtitle")}
               </p>
             </div>
 
@@ -342,7 +343,7 @@ const BookingConfirmation: React.FC = () => {
               <div className="flex flex-col items-center py-8">
                 <div className="w-10 h-10 border-[3px] border-[#65558F] border-t-transparent rounded-full animate-spin mb-3" />
                 <p className="text-[#D1D5DB] text-sm">
-                  Loading booking details...
+                  {t("bookingConfirm.loading")}
                 </p>
               </div>
             )}
@@ -365,7 +366,7 @@ const BookingConfirmation: React.FC = () => {
               >
                 <div className="bg-white/[0.04] backdrop-blur-md border border-white/[0.06] rounded-2xl p-5 md:p-6 space-y-3 meeting-card-glow">
                   <h3 className="text-[10px] uppercase tracking-[0.2em] text-[#A5A5A5] font-semibold mb-3">
-                    Meeting Details
+                    {t("bookingConfirm.meetingDetails")}
                   </h3>
 
                   {/* Detail rows */}
@@ -420,7 +421,7 @@ const BookingConfirmation: React.FC = () => {
                           hover:shadow-lg hover:shadow-[#65558F]/40 hover:scale-[1.02] transition-all duration-200"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
-                        {isAppleDevice ? 'Add to Apple Calendar' : 'Add to Google Calendar'}
+                        {isAppleDevice ? t("bookingConfirm.addAppleCalendar") : t("bookingConfirm.addGoogleCalendar")}
                         <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                       </button>
                     </div>
@@ -437,7 +438,7 @@ const BookingConfirmation: React.FC = () => {
                         hover:border-[#3B82F6]/40 hover:text-white hover:scale-[1.02] transition-all duration-200"
                     >
                       <Video className="w-4 h-4" />
-                      Join Google Meet
+                      {t("bookingConfirm.joinMeet")}
                       <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                     </a>
                   )}
@@ -460,7 +461,7 @@ const BookingConfirmation: React.FC = () => {
                   hover:shadow-lg hover:shadow-[#65558F]/30 hover:scale-[1.02] transition-all duration-200
                   flex items-center justify-center gap-2"
               >
-                Book Another Meeting
+                {t("bookingConfirm.bookAnother")}
                 <ArrowRight className="w-4 h-4" />
               </button>
 
@@ -470,7 +471,7 @@ const BookingConfirmation: React.FC = () => {
                   bg-transparent border border-white/[0.08] text-[#D1D5DB]
                   hover:border-[#65558F]/40 hover:text-white transition-all duration-200"
               >
-                Back to Homepage
+                {t("bookingConfirm.backHome")}
               </button>
             </div>
           </div>
@@ -482,7 +483,7 @@ const BookingConfirmation: React.FC = () => {
             showActions ? "opacity-60" : "opacity-0"
           }`}
         >
-          This booking confirmation is private. Do not share the link.
+          {t("bookingConfirm.privateNote")}
         </p>
       </div>
 

@@ -11,11 +11,13 @@ import GlassInfoCard from "../components/GlassInfoCard";
 import GradientButton from "../components/GradientButton";
 import { ToastContainer, Bounce, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useLanguage } from "../../hooks/useLanguage";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const AddAvailability = () => {
+  const { t } = useLanguage();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [calendarValue, setCalendarValue] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +44,7 @@ const AddAvailability = () => {
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      toast.error("No authentication token found.");
+      toast.error(t("common.noAuthToken"));
       setIsLoading(false);
       return;
     }
@@ -65,14 +67,14 @@ const AddAvailability = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch availability.");
+        throw new Error(errorData.error || t("common.fetchAvailabilityFailed"));
       }
 
       const data = await response.json();
       setAddableTimes(data.unavailableTimes || []);
       if (data.message) toast.info(data.message);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast.error(err instanceof Error ? err.message : t("common.unknownError"));
     } finally {
       setIsLoading(false);
     }
@@ -86,14 +88,14 @@ const AddAvailability = () => {
 
   const handleSubmit = async () => {
     if (selectedValues.length === 0) {
-      toast.error("Please select at least one time slot before submitting.");
+      toast.error(t("common.selectAtLeastOneSlot"));
       return;
     }
 
     try {
       setIsLoading(true);
       const token = localStorage.getItem("authToken");
-      if (!token) throw new Error("Authentication token is missing.");
+      if (!token) throw new Error(t("common.authTokenMissing"));
 
       const localDate = currentDate.toLocaleDateString("en-CA");
 
@@ -111,14 +113,14 @@ const AddAvailability = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save availability.");
+        throw new Error(errorData.error || t("addAvail.saveFailed"));
       }
 
       const data = await response.json();
-      toast.success(data.message || "Availability added successfully!");
+      toast.success(data.message || t("addAvail.success"));
       setSelectedValues([]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast.error(err instanceof Error ? err.message : t("common.unknownError"));
     } finally {
       setIsLoading(false);
     }
@@ -137,10 +139,10 @@ const AddAvailability = () => {
 
         <div className="mt-4">
           <h3 className="font-bold text-xl md:text-2xl text-content-inverse mb-2">
-            Add Availability
+            {t("addAvail.title")}
           </h3>
           <p className="text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">
-            Add time slots that are not part of the current standard availability or were previously deleted.
+            {t("addAvail.description")}
           </p>
         </div>
 
@@ -149,15 +151,15 @@ const AddAvailability = () => {
             icon={<Clock className="w-4 h-4 text-white" />}
             gradient="from-accent-teal to-brand"
           >
-            Add 1 hour per selected entry
+            {t("addAvail.info1")}
           </GlassInfoCard>
           <GlassInfoCard
             icon={<Plus className="w-4 h-4 text-white" />}
             gradient="from-status-success to-accent-teal"
           >
             {selectedValues.length > 0
-              ? `${selectedValues.length} slot${selectedValues.length > 1 ? "s" : ""} selected`
-              : "Select slots to add"}
+              ? t("addAvail.slotsSelected", { count: String(selectedValues.length) })
+              : t("addAvail.selectToAdd")}
           </GlassInfoCard>
           {selectedDateFormatted && (
             <GlassInfoCard
@@ -196,8 +198,8 @@ const AddAvailability = () => {
           multiSelect
           onSelect={handleSelection}
           formatTime={formatTime}
-          emptyLabel="Pick a date to see addable slots"
-          title="Addable Time Slots"
+          emptyLabel={t("addAvail.emptyLabel")}
+          title={t("addAvail.listTitle")}
         />
 
         {addableTimes.length > 0 && (
@@ -205,11 +207,11 @@ const AddAvailability = () => {
             className="mt-3"
             fullWidth
             loading={isLoading}
-            loadingText="Adding..."
+            loadingText={t("addAvail.adding")}
             disabled={selectedValues.length === 0}
             onClick={handleSubmit}
           >
-            Add Selected ({selectedValues.length})
+            {t("addAvail.addSelected", { count: String(selectedValues.length) })}
           </GradientButton>
         )}
       </div>

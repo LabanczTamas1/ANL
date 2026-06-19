@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { InboxItem } from "../Inbox"; 
 import ConfirmModal from "./ConfirmModal";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface InboxRowItemProps {
   item: InboxItem;
@@ -19,6 +20,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
   onDelete,
   formatDate,
 }) => {
+  const { t } = useLanguage();
   const [hovered, setHovered] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -39,7 +41,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
           className={`absolute top-2 right-2 text-gray-400 hover:text-red-600 transition-opacity duration-200 ${
             hovered ? "opacity-100" : "opacity-0"
           }`}
-          aria-label="Delete message"
+          aria-label={t("inboxRow.deleteMessage")}
         >
           🗑️
         </button>
@@ -55,18 +57,18 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               type="checkbox"
               checked={isSelected}
               onChange={(e) => onCheckboxChange(e, item.id)}
-              aria-label="Select message"
+              aria-label={t("inboxRow.selectMessage")}
             />
           </div>
           <div className="flex-1 px-2 truncate">
-            {item.fromEmail || "No email available"}
+            {item.fromEmail || t("inboxRow.noEmail")}
           </div>
           <div className="flex-1 px-2 truncate">
             {item.isRead === "false" && (
               <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
             )}
             <span className={`${item.isRead === "false" ? "font-bold" : ""}`}>
-              {item.fromName || "No name available"}
+              {item.fromName || t("inboxRow.noName")}
             </span>
           </div>
           <div
@@ -74,7 +76,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               item.isRead === "false" ? "font-bold" : "font-medium"
             }`}
           >
-            {item.subject || "No subject"}
+            {item.subject || t("inboxRow.noSubject")}
           </div>
           <div
             className={`flex-1 px-2 truncate ${
@@ -86,7 +88,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
             {item.body
               ? item.body.replace(/#|```|\*\*/g, "").slice(0, 30) +
                 (item.body.length > 30 ? "..." : "")
-              : "No message available"}
+              : t("inboxRow.noMessage")}
           </div>
           <div className="flex-none ml-auto px-2 text-right whitespace-nowrap">
             {item.isRead === "false" && (
@@ -111,7 +113,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               {item.isRead === "false" && (
                 <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
               )}
-              {item.fromName || "No name available"}
+              {item.fromName || t("inboxRow.noName")}
             </div>
             <div className="text-xs text-gray-500 ml-2 flex items-center">
               {item.isRead === "false" && (
@@ -126,7 +128,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               item.isRead === "false" ? "font-bold" : "font-medium"
             }`}
           >
-            {item.subject || "No subject"}
+            {item.subject || t("inboxRow.noSubject")}
           </div>
 
           <div
@@ -139,11 +141,11 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
             {item.body
               ? item.body.replace(/#|```|\*\*/g, "").slice(0, 60) +
                 (item.body.length > 60 ? "..." : "")
-              : "No message available"}
+              : t("inboxRow.noMessage")}
           </div>
 
           <div className="text-xs text-gray-500 mt-1 truncate">
-            {item.fromEmail || "No email available"}
+            {item.fromEmail || t("inboxRow.noEmail")}
           </div>
         </div>
       </div>
@@ -153,9 +155,9 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onConfirm={() => onDelete(item.id)}
-        question="Are you sure you want to delete this message?"
-        confirmText="Delete"
-        cancelText="Cancel"
+        question={t("inboxRow.confirmDelete")}
+        confirmText={t("inboxRow.delete")}
+        cancelText={t("inboxRow.cancel")}
       />
     </>
   );

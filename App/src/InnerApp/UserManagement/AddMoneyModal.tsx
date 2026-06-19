@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiX, FiInfo } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 const CURRENCIES = ["RON", "EUR", "USD", "GBP", "HUF", "CHF"] as const;
 
@@ -24,6 +25,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
   displayRate,
   onSuccess,
 }) => {
+  const { t } = useLanguage();
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("RON");
   const [type, setType] = useState<"credit" | "debit">("credit");
@@ -81,13 +83,13 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
     e.preventDefault();
     const numericAmount = parseFloat(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      setError("Please enter a valid positive amount.");
+      setError(t("userMgmt.validPositiveAmount"));
       return;
     }
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Authentication required.");
+      setError(t("userMgmt.authRequired"));
       return;
     }
 
@@ -109,7 +111,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Transaction failed");
+      if (!response.ok) throw new Error(result.error || t("userMgmt.transactionFailed"));
 
       setAmount("");
       setDescription("");
@@ -119,7 +121,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || t("userMgmt.somethingWrong"));
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +132,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
       <div className="bg-white dark:bg-[#1e1e1e] rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            {type === "credit" ? "Add" : "Remove"} Money
+            {type === "credit" ? t("userMgmt.addMoneyTitle") : t("userMgmt.removeMoneyTitle")}
           </h2>
           <button
             onClick={onClose}
@@ -146,7 +148,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
             <span className="font-medium text-gray-900 dark:text-white">{userName}</span>
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Current balance:{" "}
+            {t("userMgmt.currentBalance")}{" "}
             <span className="font-mono font-medium">
               {displayEquivalent(currentBalance)}
             </span>
@@ -162,7 +164,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           {/* Type selector */}
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">
-              Type
+              {t("userMgmt.typeLabel")}
             </label>
             <div className="flex gap-2">
               <button
@@ -174,7 +176,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
                     : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                 }`}
               >
-                + Add Money
+                {t("userMgmt.addMoneyOption")}
               </button>
               <button
                 type="button"
@@ -185,7 +187,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
                     : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                 }`}
               >
-                − Remove Money
+                {t("userMgmt.removeMoneyOption")}
               </button>
             </div>
           </div>
@@ -193,11 +195,11 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           {/* Amount + Currency */}
           <div>
             <label className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-              Amount
+              {t("userMgmt.amountLabel")}
               <div className="relative group">
                 <FiInfo className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                 <div className="absolute left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg py-1.5 px-3 w-56 z-10 shadow-lg">
-                  Enter the amount in the selected currency. It will be auto-converted to RON at the live exchange rate.
+                  {t("userMgmt.amountTooltip")}
                 </div>
               </div>
             </label>
@@ -236,11 +238,11 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           {/* Description */}
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">
-              Description (optional)
+              {t("userMgmt.descriptionOptional")}
             </label>
             <input
               type="text"
-              placeholder="e.g. Payment for service, Refund, etc."
+              placeholder={t("userMgmt.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
@@ -253,7 +255,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
           {ronEquivalent !== null && (
             <div className="p-3 rounded-lg bg-gray-50 dark:bg-[#2a2a2a] border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-300">
               <div className="flex justify-between">
-                <span>Balance after:</span>
+                <span>{t("userMgmt.balanceAfter")}</span>
                 <span className="font-mono font-medium">
                   {(currentBalance + (type === "credit" ? ronEquivalent : -ronEquivalent)).toFixed(2)} RON
                 </span>
@@ -267,7 +269,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 text-sm font-medium transition-colors"
             >
-              Cancel
+              {t("userMgmt.cancel")}
             </button>
             <button
               type="submit"
@@ -278,7 +280,7 @@ const AddMoneyModal: React.FC<AddMoneyModalProps> = ({
                   : "bg-red-600 hover:bg-red-700"
               }`}
             >
-              {submitting ? "Processing…" : type === "credit" ? "Add Money" : "Remove Money"}
+              {submitting ? t("userMgmt.processing") : type === "credit" ? t("userMgmt.addMoneyTitle") : t("userMgmt.removeMoneyTitle")}
             </button>
           </div>
         </form>

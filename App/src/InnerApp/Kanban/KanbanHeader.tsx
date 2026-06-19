@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaTrash, FaRegClipboard } from "react-icons/fa";
 import { FiSearch, FiPlus } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface KanbanHeaderProps {
   isDeleteMode: boolean;
@@ -19,6 +20,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
   searchQuery,
   setSearchQuery,
 }) => {
+  const { t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleAction = (cb: () => void) => {
@@ -35,7 +37,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search cards..."
+            placeholder={t("kanban.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-8 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#65558F] dark:bg-[#1e1e1e] dark:text-white text-sm"
@@ -44,7 +46,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             <button
               onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              aria-label="Clear search"
+              aria-label={t("kanban.clearSearch")}
             >
               ✕
             </button>
@@ -57,13 +59,13 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             onClick={onAddColumn}
             className="text-white px-4 py-2 rounded bg-[#65558F] hover:bg-blue-600 text-sm whitespace-nowrap"
           >
-            Add Column
+            {t("kanban.addColumn")}
           </button>
           <button
             onClick={onOpenTemplateBuilder}
             className="text-white px-4 py-2 rounded bg-[#65558F] hover:bg-blue-600 text-sm whitespace-nowrap"
           >
-            Templates
+            {t("kanban.templates")}
           </button>
           <button
             onClick={onToggleDeleteMode}
@@ -73,14 +75,14 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
                 : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white"
             }`}
           >
-            {isDeleteMode ? "Exit Delete Mode" : "Delete Column"}
+            {isDeleteMode ? t("kanban.exitDeleteMode") : t("kanban.deleteColumn")}
           </button>
         </div>
 
         {/* Mobile menu toggle — hidden on desktop */}
         <button
           onClick={() => setMenuOpen((o) => !o)}
-          aria-label="Toggle actions menu"
+          aria-label={t("kanban.toggleMenu")}
           aria-expanded={menuOpen}
           className={`sm:hidden shrink-0 w-10 h-10 flex items-center justify-center rounded transition-colors text-lg ${
             menuOpen
@@ -104,14 +106,14 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
             <FiPlus className="text-xl" />
-            Add Column
+            {t("kanban.addColumn")}
           </button>
           <button
             onClick={() => handleAction(onOpenTemplateBuilder)}
             className="flex flex-col items-center gap-1 px-2 py-3 rounded bg-[#65558F] text-white text-xs font-medium active:scale-95 transition-transform"
           >
             <FaRegClipboard className="text-lg" />
-            Templates
+            {t("kanban.templates")}
           </button>
           <button
             onClick={() => handleAction(onToggleDeleteMode)}
@@ -122,7 +124,7 @@ const KanbanHeader: React.FC<KanbanHeaderProps> = ({
             }`}
           >
             {isDeleteMode ? <span className="text-base font-bold">✕</span> : <FaTrash className="text-base" />}
-            {isDeleteMode ? "Exit Delete" : "Delete Col"}
+            {isDeleteMode ? t("kanban.exitDelete") : t("kanban.deleteCol")}
           </button>
         </div>
       </div>

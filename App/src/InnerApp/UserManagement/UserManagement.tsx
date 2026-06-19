@@ -8,6 +8,7 @@ import TransactionHistoryModal from "./TransactionHistoryModal";
 import UserDetailModal from "./UserDetailModal";
 import PendingPaymentModal from "./PendingPaymentModal";
 import PendingPaymentsModal from "./PendingPaymentsModal";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface User {
   id: string;
@@ -27,16 +28,16 @@ const STATUS_BADGE: Record<string, string> = {
   terminated: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  active: "Active",
-  inactive: "Inactive",
-  terminated: "Terminated",
-};
-
 const DISPLAY_CURRENCIES = ["RON", "EUR", "USD", "GBP", "HUF", "CHF"] as const;
 
 const UserManagement = () => {
+  const { t } = useLanguage();
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t("userMgmt.statusPending"),
+    active: t("userMgmt.statusActive"),
+    inactive: t("userMgmt.statusInactive"),
+    terminated: t("userMgmt.statusTerminated"),
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [balances, setBalances] = useState<Record<string, number>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,7 +98,7 @@ const UserManagement = () => {
   const fetchUsers = useCallback(async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      toast.error("Authentication required. Please login again.");
+      toast.error(t("userMgmt.authRequiredLogin"));
       setLoading(false);
       return;
     }
@@ -124,7 +125,7 @@ const UserManagement = () => {
       }));
       setUsers(mapped);
     } catch (err: any) {
-      toast.error(err.message || "Failed to load users.");
+      toast.error(err.message || t("userMgmt.failLoadUsers"));
       setUsers([]);
     } finally {
       setLoading(false);
@@ -167,14 +168,14 @@ const UserManagement = () => {
   const handleAddUser = async () => {
     await fetchUsers();
     setIsModalOpen(false);
-    toast.success("User added successfully");
+    toast.success(t("userMgmt.userAddedSuccess"));
   };
 
   // Update progression status via v1 progress endpoint
   const handleStatusChange = async (userId: string, progressionStatus: string) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      toast.error("Authentication required.");
+      toast.error(t("userMgmt.authRequired"));
       return;
     }
 
@@ -202,7 +203,7 @@ const UserManagement = () => {
       if (!response.ok) throw new Error(`Failed to update status: ${response.status}`);
     } catch (err: any) {
       fetchUsers();
-      toast.error(err.message || "Failed to update status.");
+      toast.error(err.message || t("userMgmt.failUpdateStatus"));
     }
   };
 
@@ -213,7 +214,7 @@ const UserManagement = () => {
   ) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      toast.error("Authentication required.");
+      toast.error(t("userMgmt.authRequired"));
       return;
     }
 
@@ -240,7 +241,7 @@ const UserManagement = () => {
       if (!response.ok) throw new Error(`Failed to update progress: ${response.status}`);
     } catch (err: any) {
       fetchUsers();
-      toast.error(err.message || "Failed to update progress.");
+      toast.error(err.message || t("userMgmt.failUpdateProgress"));
     }
   };
 
@@ -264,13 +265,13 @@ const UserManagement = () => {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold">User Management</h1>
+        <h1 className="text-xl md:text-2xl font-bold">{t("userMgmt.title")}</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white text-sm font-medium transition-colors"
         >
           <FiPlus className="text-base" />
-          Add User
+          {t("userMgmt.addUser")}
         </button>
       </div>
 
@@ -281,7 +282,7 @@ const UserManagement = () => {
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by name, email, company…"
+            placeholder={t("userMgmt.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm"
@@ -294,11 +295,11 @@ const UserManagement = () => {
           onChange={(e) => setGroupBy(e.target.value)}
           className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
         >
-          <option value="all">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="terminated">Terminated</option>
+          <option value="all">{t("userMgmt.allStatuses")}</option>
+          <option value="pending">{t("userMgmt.statusPending")}</option>
+          <option value="active">{t("userMgmt.statusActive")}</option>
+          <option value="inactive">{t("userMgmt.statusInactive")}</option>
+          <option value="terminated">{t("userMgmt.statusTerminated")}</option>
         </select>
 
         {/* Display currency selector */}
@@ -306,7 +307,7 @@ const UserManagement = () => {
           value={displayCurrency}
           onChange={(e) => setDisplayCurrency(e.target.value)}
           className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#65558F] text-sm appearance-auto"
-          title="Display currency"
+          title={t("userMgmt.displayCurrencyTitle")}
         >
           {DISPLAY_CURRENCIES.map((c) => (
             <option key={c} value={c}>{c}</option>
@@ -317,14 +318,14 @@ const UserManagement = () => {
         <button
           onClick={() => { setSelectedUser(null); setIsPendingListOpen(true); }}
           className="flex items-center gap-1.5 px-3 py-2 rounded border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-sm font-medium transition-colors"
-          title="View all expected payments"
+          title={t("userMgmt.viewAllExpected")}
         >
           <FiCalendar className="text-sm" />
-          Expected
+          {t("userMgmt.expected")}
         </button>
 
         <span className="self-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-          {filteredUsers.length} / {users.length} users
+          {t("userMgmt.usersCount", { filtered: String(filteredUsers.length), total: String(users.length) })}
         </span>
       </div>
 
@@ -335,14 +336,14 @@ const UserManagement = () => {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
-          Loading users…
+          {t("userMgmt.loadingUsers")}
         </div>
       )}
 
       {/* Empty */}
       {!loading && filteredUsers.length === 0 && (
         <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-          No users match your filters.
+          {t("userMgmt.noUsersMatch")}
         </p>
       )}
 
@@ -354,12 +355,12 @@ const UserManagement = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-[#1a1a2e] text-gray-600 dark:text-gray-300 uppercase text-xs tracking-wider">
-                  <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Company</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-right">Balance ({displayCurrency})</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
+                  <th className="px-4 py-3 text-left">{t("userMgmt.colName")}</th>
+                  <th className="px-4 py-3 text-left">{t("userMgmt.colEmail")}</th>
+                  <th className="px-4 py-3 text-left">{t("userMgmt.colCompany")}</th>
+                  <th className="px-4 py-3 text-left">{t("userMgmt.colStatus")}</th>
+                  <th className="px-4 py-3 text-right">{t("userMgmt.colBalance", { currency: displayCurrency })}</th>
+                  <th className="px-4 py-3 text-left">{t("userMgmt.colActions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -376,10 +377,10 @@ const UserManagement = () => {
                         onChange={(e) => handleStatusChange(user.id, e.target.value)}
                         className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#65558F] appearance-auto"
                       >
-                        <option value="pending">Pending</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="terminated">Terminated</option>
+                        <option value="pending">{t("userMgmt.statusPending")}</option>
+                        <option value="active">{t("userMgmt.statusActive")}</option>
+                        <option value="inactive">{t("userMgmt.statusInactive")}</option>
+                        <option value="terminated">{t("userMgmt.statusTerminated")}</option>
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-gray-300">
@@ -390,28 +391,28 @@ const UserManagement = () => {
                         <button
                           onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
                           className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium bg-[#65558F] hover:bg-[#4e4070] text-white transition-colors"
-                          title="Add/Remove Money"
+                          title={t("userMgmt.titleAddRemoveMoney")}
                         >
                           <FiDollarSign className="text-sm" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openPendingModal(user); }}
                           className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
-                          title="Expected Payment"
+                          title={t("userMgmt.titleExpectedPayment")}
                         >
                           <FiCalendar className="text-sm" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openHistoryModal(user); }}
                           className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                          title="Transaction History"
+                          title={t("userMgmt.titleTransactionHistory")}
                         >
                           <FiClock className="text-sm" />
                         </button>
                         <button
                           onClick={() => openDetailModal(user)}
                           className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
-                          title="User Details"
+                          title={t("userMgmt.titleUserDetails")}
                         >
                           <FiInfo className="text-sm" />
                         </button>
@@ -452,7 +453,7 @@ const UserManagement = () => {
                       onClick={(e) => { e.stopPropagation(); openMoneyModal(user); }}
                     >
                       <FiDollarSign className="text-sm" />
-                      Money
+                      {t("userMgmt.money")}
                     </button>
                     <button
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
@@ -501,7 +502,7 @@ const UserManagement = () => {
             displayRate={displayRate}
             onSuccess={() => {
               fetchBalances();
-              toast.success("Transaction recorded successfully");
+              toast.success(t("userMgmt.transactionRecorded"));
             }}
           />
 
@@ -518,7 +519,7 @@ const UserManagement = () => {
             userId={selectedUser.id}
             userName={`${selectedUser.firstName} ${selectedUser.lastName}`.trim()}
             onSuccess={() => {
-              toast.success("Expected payment created");
+              toast.success(t("userMgmt.expectedPaymentCreated"));
             }}
           />
 

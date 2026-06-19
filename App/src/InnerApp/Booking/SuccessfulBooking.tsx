@@ -17,6 +17,7 @@ import ThemeIcon from "../components/Logo";
 import BookingPageLayout from "../components/BookingPageLayout";
 import GlassInfoCard from "../components/GlassInfoCard";
 import GradientButton from "../components/GradientButton";
+import { useLanguage } from "../../hooks/useLanguage";
 
 /* ─── Confetti particle type ─────────────────────────────────────────────── */
 interface Particle {
@@ -48,6 +49,7 @@ function generateConfetti(count = 60): Particle[] {
 const SuccessfulBooking = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [confetti] = useState<Particle[]>(() => generateConfetti());
@@ -68,7 +70,7 @@ const SuccessfulBooking = () => {
     date: "",
     time: "",
     link: "",
-    type: "Kick Off Meeting",
+    type: t("successBooking.kickOff"),
     rawDate: "",
     rawTime: 0,
     loading: true,
@@ -204,7 +206,7 @@ const SuccessfulBooking = () => {
         date: formatDate(booking.date),
         time: booking.formattedTime || formatTime(booking.time || booking.startTime || booking.at || 0),
         link: booking.meet_link || booking.meetLink || booking.link || "",
-        type: booking.meetingType || booking.type || "Kick Off Meeting",
+        type: booking.meetingType || booking.type || t("successBooking.kickOff"),
         rawDate: booking.date || "",
         rawTime: booking.time || booking.startTime || booking.at || 0,
         loading: false,
@@ -214,7 +216,7 @@ const SuccessfulBooking = () => {
       setMeetingDetails((prev) => ({
         ...prev,
         loading: false,
-        error: "Unable to load meeting details.",
+        error: t("successBooking.unableLoad"),
       }));
     }
   };
@@ -242,7 +244,7 @@ const SuccessfulBooking = () => {
           date: formatDate(booking.date),
           time: booking.formattedTime || formatTime(booking.time || booking.startTime || booking.at || 0),
           link: booking.meet_link || booking.meetLink || booking.link || "",
-          type: booking.meetingType || booking.type || "Kick Off Meeting",
+          type: booking.meetingType || booking.type || t("successBooking.kickOff"),
           rawDate: booking.date || "",
           rawTime: booking.time || booking.startTime || booking.at || 0,
           loading: false,
@@ -258,7 +260,7 @@ const SuccessfulBooking = () => {
         date: "",
         time: "",
         link: "",
-        type: "Kick Off Meeting",
+        type: t("successBooking.kickOff"),
         rawDate: "",
         rawTime: 0,
         loading: false,
@@ -304,10 +306,10 @@ const SuccessfulBooking = () => {
         {/* Title + subtitle */}
         <div className={`text-center mb-8 transition-all duration-700 delay-200 ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <h2 className="text-2xl md:text-4xl font-bold text-content-inverse mb-3 flex items-center justify-center gap-2">
-            Booking Confirmed! <PartyPopper className="w-7 h-7 md:w-8 md:h-8 text-accent-teal party-pop" />
+            {t("successBooking.confirmedTitle")} <PartyPopper className="w-7 h-7 md:w-8 md:h-8 text-accent-teal party-pop" />
           </h2>
           <p className="text-content-subtle-inverse text-sm md:text-base leading-relaxed max-w-md mx-auto">
-            Your appointment has been scheduled successfully. We look forward to meeting you!
+            {t("successBooking.subtitle")}
           </p>
         </div>
 
@@ -315,7 +317,7 @@ const SuccessfulBooking = () => {
         {meetingDetails.loading ? (
           <div className="flex flex-col items-center py-8">
             <div className="w-10 h-10 border-[3px] border-brand border-t-transparent rounded-full animate-spin mb-3" />
-            <p className="text-content-subtle-inverse text-sm">Loading meeting details...</p>
+            <p className="text-content-subtle-inverse text-sm">{t("successBooking.loadingDetails")}</p>
           </div>
         ) : meetingDetails.error && !meetingDetails.date ? (
           <div className={`w-full max-w-lg p-4 rounded-xl bg-status-error/10 border border-status-error/30 text-center transition-all duration-500 ${showDetails ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
@@ -325,7 +327,7 @@ const SuccessfulBooking = () => {
           <div className={`w-full max-w-lg transition-all duration-700 ${showDetails ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
             <div className="bg-surface-elevated/60 backdrop-blur-md border border-line-glass rounded-2xl p-5 md:p-6 space-y-3 meeting-card-glow">
               <h3 className="text-xs uppercase tracking-widest text-content-subtle-inverse font-semibold mb-2">
-                Meeting Details
+                {t("successBooking.meetingDetails")}
               </h3>
 
               {meetingDetails.date && (
@@ -366,7 +368,7 @@ const SuccessfulBooking = () => {
                       hover:shadow-lg hover:shadow-brand/40 hover:scale-[1.02] transition-all duration-200"
                   >
                     <CalendarPlus className="w-5 h-5" />
-                    {isAppleDevice ? 'Add to Apple Calendar' : 'Add to Google Calendar'}
+                    {isAppleDevice ? t("successBooking.addApple") : t("successBooking.addGoogle")}
                     <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                   </button>
                 </div>
@@ -382,7 +384,7 @@ const SuccessfulBooking = () => {
                     hover:border-blue-500/40 hover:scale-[1.02] transition-all duration-200"
                 >
                   <Video className="w-4 h-4" />
-                  Join Google Meet
+                  {t("successBooking.joinMeet")}
                   <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                 </a>
               )}
@@ -399,7 +401,7 @@ const SuccessfulBooking = () => {
           >
             <span className="flex items-center justify-center gap-1.5">
               <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              {t("successBooking.backToHome")}
             </span>
           </GradientButton>
 
@@ -408,7 +410,7 @@ const SuccessfulBooking = () => {
             fullWidth
             onClick={() => navigate("/home/booking")}
           >
-            Book Another Meeting
+            {t("bookAnotherMeeting")}
           </GradientButton>
         </div>
 

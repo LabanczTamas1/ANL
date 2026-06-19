@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 
 const CalendarConnection: React.FC = () => {
+  const { t } = useLanguage();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [status, setStatus] = useState<{
     connected: boolean;
@@ -29,8 +31,8 @@ const CalendarConnection: React.FC = () => {
 
   useEffect(() => {
     if (success || error) {
-      const t = setTimeout(() => { setSuccess(null); setError(null); }, 5000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => { setSuccess(null); setError(null); }, 5000);
+      return () => clearTimeout(timer);
     }
   }, [success, error]);
 
@@ -44,7 +46,7 @@ const CalendarConnection: React.FC = () => {
       const data = await res.json();
       setStatus(data);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || t('admin.failFetchStatus'));
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ const CalendarConnection: React.FC = () => {
       // Redirect to Google OAuth
       window.location.href = data.url;
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || t('admin.failGetAuthUrl'));
       setActionLoading(false);
     }
   };
@@ -79,17 +81,17 @@ const CalendarConnection: React.FC = () => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to connect');
-      setSuccess(`Connected as ${data.email}`);
+      setSuccess(t('admin.connectedAs', { email: data.email }));
       fetchStatus();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || t('admin.failConnect'));
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect Google Calendar? New bookings will not create Meet links.')) {
+    if (!confirm(t('admin.disconnectConfirm'))) {
       return;
     }
 
@@ -100,10 +102,10 @@ const CalendarConnection: React.FC = () => {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       if (!res.ok) throw new Error('Failed to disconnect');
-      setSuccess('Google Calendar disconnected');
+      setSuccess(t('admin.calendarDisconnected'));
       setStatus({ connected: false, email: null, connectedAt: null });
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || t('admin.failDisconnect'));
     } finally {
       setActionLoading(false);
     }
@@ -111,9 +113,9 @@ const CalendarConnection: React.FC = () => {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-semibold mb-2">Google Calendar</h2>
+      <h2 className="text-2xl font-semibold mb-2">{t('admin.googleCalendar')}</h2>
       <p className="text-gray-500 text-sm mb-6">
-        Connect a Google account to automatically create Calendar events with Google Meet links for every booking.
+        {t('admin.calendarDesc')}
       </p>
 
       {error && (
@@ -128,21 +130,21 @@ const CalendarConnection: React.FC = () => {
       )}
 
       {loading ? (
-        <p className="text-gray-500">Checking connection...</p>
+        <p className="text-gray-500">{t('admin.checkingConnection')}</p>
       ) : status.connected ? (
         <div className="border border-green-200 bg-green-50 rounded-lg p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-green-800 font-semibold">Connected</span>
+            <span className="text-green-800 font-semibold">{t('admin.connected')}</span>
           </div>
           <table className="text-sm text-gray-700 mb-4">
             <tbody>
               <tr>
-                <td className="pr-4 py-1 text-gray-500">Account:</td>
+                <td className="pr-4 py-1 text-gray-500">{t('admin.account')}</td>
                 <td className="py-1 font-medium">{status.email}</td>
               </tr>
               <tr>
-                <td className="pr-4 py-1 text-gray-500">Connected:</td>
+                <td className="pr-4 py-1 text-gray-500">{t('admin.connectedLabel')}</td>
                 <td className="py-1">
                   {status.connectedAt
                     ? new Date(status.connectedAt).toLocaleString()
@@ -152,25 +154,24 @@ const CalendarConnection: React.FC = () => {
             </tbody>
           </table>
           <p className="text-xs text-gray-500 mb-4">
-            New bookings will automatically create a Google Calendar event with a Meet link on this account's calendar.
+            {t('admin.connectedNote')}
           </p>
           <button
             onClick={handleDisconnect}
             disabled={actionLoading}
             className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors"
           >
-            {actionLoading ? 'Disconnecting...' : 'Disconnect'}
+            {actionLoading ? t('admin.disconnecting') : t('admin.disconnect')}
           </button>
         </div>
       ) : (
         <div className="border border-gray-200 bg-gray-50 rounded-lg p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-3 h-3 bg-gray-400 rounded-full" />
-            <span className="text-gray-600 font-semibold">Not Connected</span>
+            <span className="text-gray-600 font-semibold">{t('admin.notConnected')}</span>
           </div>
           <p className="text-sm text-gray-500 mb-4">
-            Connect your Google account to enable automatic Google Meet link creation for bookings.
-            Events will be created on your primary calendar and attendees will receive invites.
+            {t('admin.notConnectedDesc')}
           </p>
           <button
             onClick={handleConnect}
@@ -183,7 +184,7 @@ const CalendarConnection: React.FC = () => {
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {actionLoading ? 'Connecting...' : 'Connect Google Account'}
+            {actionLoading ? t('admin.connecting') : t('admin.connectGoogle')}
           </button>
         </div>
       )}

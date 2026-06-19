@@ -8,9 +8,9 @@ export interface Tab {
 }
 
 export const TABS: Tab[] = [
-  { id: 'users',         label: 'Users',        icon: FiUsers },
-  { id: 'stats',         label: 'API Stats',    icon: FiBarChart2 },
-  { id: 'ip_ban',        label: 'IP Bans',      icon: FiShield },
-  { id: 'meeting_hosts', label: 'Meeting Hosts', icon: FiWifi },
-  { id: 'calendar',      label: 'Calendar',     icon: FiCalendar },
+  { id: 'users',         label: 'admin.tabUsers',        icon: FiUsers },
+  { id: 'stats',         label: 'admin.tabStats',    icon: FiBarChart2 },
+  { id: 'ip_ban',        label: 'admin.tabIpBans',      icon: FiShield },
+  { id: 'meeting_hosts', label: 'admin.tabMeetingHosts', icon: FiWifi },
+  { id: 'calendar',      label: 'admin.tabCalendar',     icon: FiCalendar },
 ];

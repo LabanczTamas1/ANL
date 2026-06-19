@@ -8,8 +8,10 @@ import Breadcrumbs from "./components/Breadcrumbs";
 import MobileNavbar from "./components/MobileNavbar";
 import HamburgerMenu from "./components/HamburgerMenu";
 import { useLogout } from "./../hooks/useLogout";
+import { useLanguage } from "./../hooks/useLanguage";
 
 const ProgressBar = () => {
+  const { t } = useLanguage();
   const username = localStorage.getItem("firstName") || localStorage.getItem("fullName") || localStorage.getItem("username") || localStorage.getItem("role");
   const location = useLocation();
   const roles = ["user", "owner", "admin"];
@@ -124,9 +126,9 @@ const ProgressBar = () => {
             <label
               htmlFor="uploadInput"
               className="inline-flex items-center border border-gray-300 rounded-lg px-2 md:px-3 py-1 space-x-2 hover:bg-gray-100 cursor-pointer"
-              title="Import JSON"
+              title={t("progressBar.importJson")}
             >
-              <span className="hidden md:inline text-sm dark:text-white font-medium">Choose File</span>
+              <span className="hidden md:inline text-sm dark:text-white font-medium">{t("progressBar.chooseFile")}</span>
               <FiUpload className="text-base dark:text-white" />
             </label>
             <input
@@ -139,9 +141,9 @@ const ProgressBar = () => {
             <button
               onClick={handleExport}
               className="inline-flex items-center border border-gray-300 rounded-lg px-2 md:px-3 py-1 space-x-2 hover:bg-gray-100 flex-shrink-0"
-              title="Export JSON"
+              title={t("progressBar.exportJson")}
             >
-              <span className="hidden md:inline text-sm dark:text-white font-medium">Export</span>
+              <span className="hidden md:inline text-sm dark:text-white font-medium">{t("progressBar.export")}</span>
               <FiDownload className="text-base dark:text-white" />
             </button>
           </div>
@@ -149,7 +151,7 @@ const ProgressBar = () => {
 
         {/* Greeting / Role Selector */}
         {!isAdmin ? (
-          <div className="dark:text-white font-bold flex-shrink-0">Hello, {username}!</div>
+          <div className="dark:text-white font-bold flex-shrink-0">{t("progressBar.greeting", { name: username ?? "" })}</div>
         ) : (
           <select
             value={role}

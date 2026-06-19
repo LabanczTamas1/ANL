@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import posthog from 'posthog-js';
+import { useLanguage } from '../hooks/useLanguage';
 
 const OAuthCallback: React.FC = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ const OAuthCallback: React.FC = () => {
         console.log("Received token (first 10 chars):", token ? token.substring(0, 10) + "..." : "None");
         
         if (!token) {
-          throw new Error('No authentication token received');
+          throw new Error(t('oauth.noToken'));
         }
         
         // Store token in localStorage
@@ -30,7 +32,7 @@ const OAuthCallback: React.FC = () => {
         await fetchUserInfo(token);
       } catch (error) {
         console.error("Authentication error:", error);
-        setError(error instanceof Error ? error.message : 'Authentication failed');
+        setError(error instanceof Error ? error.message : t('oauth.authFailed'));
         setLoading(false);
         setTimeout(() => navigate('/login'), 3000);
       }
@@ -62,7 +64,7 @@ const OAuthCallback: React.FC = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Error response:', errorData);
-        throw new Error(errorData.error || `Server error: ${response.status}`);
+        throw new Error(errorData.error || t('oauth.serverError', { status: String(response.status) }));
       }
 
       const userData = await response.json();
@@ -110,7 +112,7 @@ const OAuthCallback: React.FC = () => {
       navigate('/home');
     } catch (error) {
       console.error('Error fetching user info:', error);
-      setError(error instanceof Error ? error.message : 'Unknown error');
+      setError(error instanceof Error ? error.message : t('oauth.unknownError'));
       setLoading(false);
       setTimeout(() => navigate('/login'), 3000);
     }
@@ -121,14 +123,14 @@ const OAuthCallback: React.FC = () => {
       <div className="text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-md">
         {loading ? (
           <>
-            <h2 className="text-2xl font-bold mb-4">Authenticating...</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('oauth.authenticating')}</h2>
             <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto"></div>
           </>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-4 text-red-500">Authentication Error</h2>
+            <h2 className="text-2xl font-bold mb-4 text-red-500">{t('oauth.authError')}</h2>
             <p className="mb-4">{error}</p>
-            <p>Redirecting to login page...</p>
+            <p>{t('oauth.redirecting')}</p>
           </>
         )}
       </div>

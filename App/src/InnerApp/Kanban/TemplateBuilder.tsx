@@ -5,6 +5,7 @@ import {
   createTemplate,
   deleteTemplate,
 } from "../../services/api/kanbanApi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface FieldDef {
   name: string;
@@ -23,6 +24,7 @@ interface TemplateBuilderProps {
 }
 
 const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
+  const { t } = useLanguage();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -100,7 +102,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[650px] max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader title="Template Builder" onClose={onClose} />
+        <ModalHeader title={t("kanban.templateBuilder")} onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
 
           {/* Existing templates list */}
@@ -108,24 +110,24 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
             <div className="space-y-3">
               {loading ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  Loading templates...
+                  {t("kanban.loadingTemplates")}
                 </p>
               ) : templates.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No templates yet. Create your first one!
+                  {t("kanban.noTemplates")}
                 </p>
               ) : (
-                templates.map((t) => (
+                templates.map((tpl) => (
                   <div
-                    key={t.id}
+                    key={tpl.id}
                     className="p-4 rounded-lg border border-gray-200 dark:border-gray-600 flex items-start justify-between"
                   >
                     <div>
                       <div className="font-semibold text-gray-800 dark:text-white">
-                        {t.name}
+                        {tpl.name}
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {t.fields.map((f, i) => (
+                        {tpl.fields.map((f, i) => (
                           <span
                             key={i}
                             className={`text-xs px-2 py-0.5 rounded-full ${
@@ -141,9 +143,9 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleDeleteTemplate(t.id)}
+                      onClick={() => handleDeleteTemplate(tpl.id)}
                       className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-3 flex-shrink-0"
-                      title="Delete template"
+                      title={t("kanban.deleteTemplate")}
                     >
                       🗑️
                     </button>
@@ -155,7 +157,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
                 onClick={() => setShowForm(true)}
                 className="w-full py-3 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#65558F] dark:hover:border-[#65558F] text-gray-600 dark:text-gray-300 hover:text-[#65558F] dark:hover:text-[#65558F] transition font-medium"
               >
-                + Create New Template
+                {t("kanban.createNewTemplate")}
               </button>
             </div>
           )}
@@ -165,11 +167,11 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Template Name <span className="text-red-500">*</span>
+                  {t("kanban.templateNameLabel")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Lead Contact, Business Partner"
+                  placeholder={t("kanban.templateNamePh")}
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:outline-none"
@@ -180,7 +182,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
               {fields.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Fields
+                    {t("kanban.fields")}
                   </p>
                   {fields.map((field, idx) => (
                     <div
@@ -214,11 +216,11 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Field name
+                    {t("kanban.fieldNamePh")}
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Phone Number"
+                    placeholder={t("kanban.fieldNamePh2")}
                     value={newFieldName}
                     onChange={(e) => setNewFieldName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddField()}
@@ -227,22 +229,22 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    Type
+                    {t("kanban.typeLabel")}
                   </label>
                   <select
                     value={newFieldType}
                     onChange={(e) => setNewFieldType(e.target.value as "text" | "link")}
                     className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#65558F] focus:outline-none"
                   >
-                    <option value="text">Text</option>
-                    <option value="link">Link</option>
+                    <option value="text">{t("kanban.typeText")}</option>
+                    <option value="link">{t("kanban.typeLink")}</option>
                   </select>
                 </div>
                 <button
                   onClick={handleAddField}
                   className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition whitespace-nowrap"
                 >
-                  + Add
+                  {t("kanban.addBtn")}
                 </button>
               </div>
 
@@ -252,14 +254,14 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({ show, onClose }) => {
                   onClick={resetForm}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
-                  ← Back to list
+                  {t("kanban.backToList")}
                 </button>
                 <button
                   onClick={handleSaveTemplate}
                   disabled={!templateName.trim() || fields.length === 0 || saving}
                   className="px-6 py-2 rounded-lg bg-[#65558F] text-white hover:bg-[#544a7a] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? "Saving..." : "Save Template"}
+                  {saving ? t("kanban.saving") : t("kanban.saveTemplate")}
                 </button>
               </div>
             </div>

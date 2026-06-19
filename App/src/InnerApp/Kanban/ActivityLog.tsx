@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { getCardActivity } from "../../services/api/kanbanApi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface Activity {
   action: string;
@@ -17,14 +18,6 @@ interface ActivityLogProps {
   cardId: string;
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  created: "Created",
-  updated: "Updated",
-  moved: "Moved",
-  commented: "Commented",
-  comment_deleted: "Deleted comment",
-};
-
 const ACTION_COLORS: Record<string, string> = {
   created: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
   updated: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -35,10 +28,19 @@ const ACTION_COLORS: Record<string, string> = {
 
 const ActivityLog = forwardRef<ActivityLogHandle, ActivityLogProps>(
   ({ cardId }, ref) => {
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(false);
     const [fetched, setFetched] = useState(false);
+
+    const ACTION_LABELS: Record<string, string> = {
+      created: t("kanban.actionCreated"),
+      updated: t("kanban.actionUpdated"),
+      moved: t("kanban.actionMoved"),
+      commented: t("kanban.actionCommented"),
+      comment_deleted: t("kanban.actionCommentDeleted"),
+    };
 
     // Expose addLocal so parent can optimistically push activity entries
     useImperativeHandle(ref, () => ({
@@ -46,7 +48,7 @@ const ActivityLog = forwardRef<ActivityLogHandle, ActivityLogProps>(
         const firstName = localStorage.getItem("firstName") || "";
         const lastName = localStorage.getItem("lastName") || "";
         const userName =
-          firstName && lastName ? `${firstName} ${lastName}` : "You";
+          firstName && lastName ? `${firstName} ${lastName}` : t("kanban.you");
 
         setActivities((prev) => [
           { action, userName, details, timestamp: Date.now() },
@@ -88,12 +90,12 @@ const ActivityLog = forwardRef<ActivityLogHandle, ActivityLogProps>(
       const now = new Date();
       const diffMs = now.getTime() - d.getTime();
       const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1) return "just now";
-      if (diffMin < 60) return `${diffMin}m ago`;
+      if (diffMin < 1) return t("kanban.justNow");
+      if (diffMin < 60) return t("kanban.minutesAgo", { count: String(diffMin) });
       const diffH = Math.floor(diffMin / 60);
-      if (diffH < 24) return `${diffH}h ago`;
+      if (diffH < 24) return t("kanban.hoursAgo", { count: String(diffH) });
       const diffD = Math.floor(diffH / 24);
-      if (diffD < 7) return `${diffD}d ago`;
+      if (diffD < 7) return t("kanban.daysAgo", { count: String(diffD) });
       return d.toLocaleDateString();
     };
 
@@ -103,7 +105,7 @@ const ActivityLog = forwardRef<ActivityLogHandle, ActivityLogProps>(
           onClick={handleToggle}
           className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition"
         >
-          <span>Activity History</span>
+          <span>{t("kanban.activityHistory")}</span>
           <svg
             className={`w-4 h-4 transform transition-transform ${open ? "rotate-180" : ""}`}
             fill="none"
@@ -118,11 +120,11 @@ const ActivityLog = forwardRef<ActivityLogHandle, ActivityLogProps>(
           <div className="mt-2 max-h-60 overflow-y-auto">
             {loading ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                Loading activity...
+                {t("kanban.loadingActivity")}
               </p>
             ) : activities.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
-                No activity recorded yet.
+                {t("kanban.noActivity")}
               </p>
             ) : (
               <div className="space-y-2">

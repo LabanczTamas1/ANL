@@ -1,5 +1,6 @@
 import React from "react";
 import ModalHeader from "./ModalHeader";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface AddCardModalProps {
   show: boolean;
@@ -16,11 +17,12 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
   setCardData,
   onAddCard,
 }) => {
+  const { t } = useLanguage();
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div className="bg-white dark:bg-[#1e1e1e] dark:text-white rounded-lg border-4 border-[#E5E6E7] shadow-lg w-full max-w-[723px] max-h-[90vh] flex flex-col overflow-hidden">
-        <ModalHeader title="Add Card" onClose={onClose} />
+        <ModalHeader title={t("kanban.addCard")} onClose={onClose} />
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
         <form
           onSubmit={(e) => {
@@ -29,88 +31,88 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
           }}
         >
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="card-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Card Name:</label>
+            <label htmlFor="card-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.cardName")}:</label>
             <input
               id="card-name"
               type="text"
-              placeholder="Card Name"
+              placeholder={t("kanban.cardName")}
               value={cardData.name}
               onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white hover:border-gray-300 dark:placeholder-gray-400 rounded-lg px-3 py-2"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="contact-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Contact Name:</label>
+            <label htmlFor="contact-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldContactName")}:</label>
             <input
               id="contact-name"
               type="text"
-              placeholder="Contact Name"
+              placeholder={t("kanban.fieldContactName")}
               value={cardData.contactName}
               onChange={(e) => setCardData({ ...cardData, contactName: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="business-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Business Name:</label>
+            <label htmlFor="business-name" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldBusinessName")}:</label>
             <input
               id="business-name"
               type="text"
-              placeholder="Business Name"
+              placeholder={t("kanban.fieldBusinessName")}
               value={cardData.businessName}
               onChange={(e) => setCardData({ ...cardData, businessName: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="phone-number" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Phone number:</label>
+            <label htmlFor="phone-number" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldPhone")}:</label>
             <input
               id="phone-number"
               type="text"
-              placeholder="Phone number"
+              placeholder={t("kanban.fieldPhone")}
               value={cardData.phoneNumber}
               onChange={(e) => setCardData({ ...cardData, phoneNumber: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="email" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Email:</label>
+            <label htmlFor="email" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldEmail")}:</label>
             <input
               id="email"
               type="text"
-              placeholder="Email"
+              placeholder={t("kanban.fieldEmail")}
               value={cardData.email}
               onChange={(e) => setCardData({ ...cardData, email: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="website" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Website:</label>
+            <label htmlFor="website" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldWebsite")}:</label>
             <input
               id="website"
               type="text"
-              placeholder="Website"
+              placeholder={t("kanban.fieldWebsite")}
               value={cardData.website}
               onChange={(e) => setCardData({ ...cardData, website: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="instagram" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Instagram:</label>
+            <label htmlFor="instagram" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldInstagram")}:</label>
             <input
               id="instagram"
               type="text"
-              placeholder="Instagram"
+              placeholder={t("kanban.fieldInstagram")}
               value={cardData.instagram}
               onChange={(e) => setCardData({ ...cardData, instagram: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
             />
           </div>
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center">
-            <label htmlFor="facebook" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">Facebook:</label>
+            <label htmlFor="facebook" className="font-medium text-black dark:text-white sm:w-28 mb-1 sm:mb-0">{t("kanban.fieldFacebook")}:</label>
             <input
               id="facebook"
               type="text"
-              placeholder="Facebook"
+              placeholder={t("kanban.fieldFacebook")}
               value={cardData.facebook}
               onChange={(e) => setCardData({ ...cardData, facebook: e.target.value })}
               className="flex-1 border border-transparent dark:bg-[#2a2a2a] dark:text-white dark:placeholder-gray-400 hover:border-gray-300 rounded-lg px-3 py-2 focus:border-[#65558F]"
@@ -124,13 +126,13 @@ const AddCardModal: React.FC<AddCardModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-600 transition"
             >
-              Cancel
+              {t("kanban.cancel")}
             </button>
             <button
               type="submit"
               className="px-6 py-2 rounded bg-[#65558F] text-white hover:bg-blue-600 transition"
             >
-              Add Card
+              {t("kanban.addCard")}
             </button>
           </div>
         </form>

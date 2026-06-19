@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { FaPaperPlane } from "react-icons/fa";
 import { usePostHog } from "@posthog/react";
+import { useLanguage } from "../hooks/useLanguage";
 
 const ContactForm: React.FC = () => {
   const posthog = usePostHog();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -35,7 +37,7 @@ const ContactForm: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to send the message. Please try again later.");
+        throw new Error(t("contactForm.failed"));
       }
 
       posthog.capture("contact_form_submitted");
@@ -44,7 +46,7 @@ const ContactForm: React.FC = () => {
     } catch (err) {
       posthog.captureException(err instanceof Error ? err : new Error(String(err)));
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred."
+        err instanceof Error ? err.message : t("contactForm.unknownError")
       );
     } finally {
       setIsLoading(false);
@@ -57,10 +59,9 @@ const ContactForm: React.FC = () => {
   return (
     <div className="rounded-2xl border border-line-glass bg-glass backdrop-blur-md p-8 md:p-10">
       {/* Form header */}
-      <h2 className="text-2xl font-bold text-white mb-2">Send Us a Message</h2>
+      <h2 className="text-2xl font-bold text-white mb-2">{t("contactForm.title")}</h2>
       <p className="text-content-muted text-sm mb-8">
-        Fill out the form below and we&apos;ll get back to you as soon as
-        possible.
+        {t("contactForm.subtitle")}
       </p>
 
       {/* Status messages */}
@@ -73,7 +74,7 @@ const ContactForm: React.FC = () => {
       {success && (
         <div className="flex items-center gap-2 px-4 py-3 mb-6 rounded-xl bg-status-success/10 border border-status-success/30 text-status-success text-sm">
           <span className="shrink-0">&#x2714;</span>
-          Message sent successfully! We&apos;ll be in touch soon.
+          {t("contactForm.success")}
         </div>
       )}
 
@@ -84,13 +85,13 @@ const ContactForm: React.FC = () => {
             htmlFor="fullName"
             className="block text-sm font-medium text-content-subtle-inverse mb-2"
           >
-            Full Name
+            {t("contactForm.fullName")}
           </label>
           <input
             type="text"
             id="fullName"
             name="fullName"
-            placeholder="John Doe"
+            placeholder={t("contactForm.namePlaceholder")}
             value={formData.fullName}
             onChange={handleChange}
             className={inputClasses}
@@ -104,7 +105,7 @@ const ContactForm: React.FC = () => {
             htmlFor="email"
             className="block text-sm font-medium text-content-subtle-inverse mb-2"
           >
-            Email Address
+            {t("contactForm.emailAddress")}
           </label>
           <input
             type="email"
@@ -124,12 +125,12 @@ const ContactForm: React.FC = () => {
             htmlFor="message"
             className="block text-sm font-medium text-content-subtle-inverse mb-2"
           >
-            Your Message
+            {t("contactForm.yourMessage")}
           </label>
           <textarea
             id="message"
             name="message"
-            placeholder="Tell us about your project or question..."
+            placeholder={t("contactForm.messagePlaceholder")}
             value={formData.message}
             onChange={handleChange}
             rows={5}
@@ -147,7 +148,7 @@ const ContactForm: React.FC = () => {
           {/* Shine effect */}
           <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <FaPaperPlane className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-          <span>{isLoading ? "Sending..." : "Send Message"}</span>
+          <span>{isLoading ? t("contactForm.sending") : t("contactForm.send")}</span>
         </button>
       </form>
     </div>

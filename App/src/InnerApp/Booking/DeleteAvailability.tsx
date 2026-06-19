@@ -11,11 +11,13 @@ import GlassInfoCard from "../components/GlassInfoCard";
 import GradientButton from "../components/GradientButton";
 import { ToastContainer, Bounce, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useLanguage } from "../../hooks/useLanguage";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const DeleteAvailability = () => {
+  const { t } = useLanguage();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [calendarValue, setCalendarValue] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +44,7 @@ const DeleteAvailability = () => {
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      toast.error("No authentication token found.");
+      toast.error(t("common.noAuthToken"));
       setIsLoading(false);
       return;
     }
@@ -65,14 +67,14 @@ const DeleteAvailability = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch availability.");
+        throw new Error(errorData.error || t("common.fetchAvailabilityFailed"));
       }
 
       const data = await response.json();
       setAddableTimes(data.availableTimes || []);
       if (data.message) toast.info(data.message);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast.error(err instanceof Error ? err.message : t("common.unknownError"));
     } finally {
       setIsLoading(false);
     }
@@ -86,14 +88,14 @@ const DeleteAvailability = () => {
 
   const handleSubmit = async () => {
     if (selectedValues.length === 0) {
-      toast.error("Please select at least one time slot before submitting.");
+      toast.error(t("common.selectAtLeastOneSlot"));
       return;
     }
 
     try {
       setIsLoading(true);
       const token = localStorage.getItem("authToken");
-      if (!token) throw new Error("Authentication token is missing.");
+      if (!token) throw new Error(t("common.authTokenMissing"));
 
       const localDate = currentDate.toLocaleDateString("en-CA");
 
@@ -111,17 +113,17 @@ const DeleteAvailability = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete availability.");
+        throw new Error(errorData.error || t("delAvail.deleteFailed"));
       }
 
       const data = await response.json();
-      toast.success(data.message || "Availability deleted successfully!");
+      toast.success(data.message || t("delAvail.success"));
       setSelectedValues([]);
 
       // Refresh available times after deletion
       getAvailableTimeByDate(currentDate);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred.");
+      toast.error(err instanceof Error ? err.message : t("common.unknownError"));
     } finally {
       setIsLoading(false);
     }
@@ -140,10 +142,10 @@ const DeleteAvailability = () => {
 
         <div className="mt-4">
           <h3 className="font-bold text-xl md:text-2xl text-content-inverse mb-2">
-            Delete Availability
+            {t("delAvail.title")}
           </h3>
           <p className="text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">
-            Remove existing availability slots that you no longer want to offer.
+            {t("delAvail.description")}
           </p>
         </div>
 
@@ -152,15 +154,15 @@ const DeleteAvailability = () => {
             icon={<Clock className="w-4 h-4 text-white" />}
             gradient="from-status-error to-red-600"
           >
-            Remove selected time slots
+            {t("delAvail.info1")}
           </GlassInfoCard>
           <GlassInfoCard
             icon={<Trash2 className="w-4 h-4 text-white" />}
             gradient="from-red-500 to-status-error"
           >
             {selectedValues.length > 0
-              ? `${selectedValues.length} slot${selectedValues.length > 1 ? "s" : ""} to remove`
-              : "Select slots to delete"}
+              ? t("delAvail.slotsToRemove", { count: String(selectedValues.length) })
+              : t("delAvail.selectToDelete")}
           </GlassInfoCard>
           {selectedDateFormatted && (
             <GlassInfoCard
@@ -199,8 +201,8 @@ const DeleteAvailability = () => {
           multiSelect
           onSelect={handleSelection}
           formatTime={formatTime}
-          emptyLabel="Pick a date to see deletable slots"
-          title="Deletable Time Slots"
+          emptyLabel={t("delAvail.emptyLabel")}
+          title={t("delAvail.listTitle")}
         />
 
         {addableTimes.length > 0 && (
@@ -209,13 +211,13 @@ const DeleteAvailability = () => {
             className="mt-3"
             fullWidth
             loading={isLoading}
-            loadingText="Deleting..."
+            loadingText={t("delAvail.deleting")}
             disabled={selectedValues.length === 0}
             onClick={handleSubmit}
           >
             <span className="flex items-center justify-center gap-1.5">
               <Trash2 className="w-4 h-4" />
-              Delete Selected ({selectedValues.length})
+              {t("delAvail.deleteSelected", { count: String(selectedValues.length) })}
             </span>
           </GradientButton>
         )}

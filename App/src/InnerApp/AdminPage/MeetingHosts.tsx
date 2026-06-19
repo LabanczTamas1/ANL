@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface MeetingHostsProps {
   userRole?: string;
 }
 
 const MeetingHosts: React.FC<MeetingHostsProps> = () => {
+  const { t } = useLanguage();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [hosts, setHosts] = useState<string[]>([]);
   const [newEmail, setNewEmail] = useState('');
@@ -23,8 +25,8 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
   // Auto-clear messages
   useEffect(() => {
     if (success || error) {
-      const t = setTimeout(() => { setSuccess(null); setError(null); }, 4000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => { setSuccess(null); setError(null); }, 4000);
+      return () => clearTimeout(timer);
     }
   }, [success, error]);
 
@@ -41,7 +43,7 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
       const data = await res.json();
       setHosts(data.hosts || []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load meeting hosts');
+      setError(err.message || t('admin.failLoadHosts'));
     } finally {
       setLoading(false);
     }
@@ -54,12 +56,12 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
+      setError(t('admin.validEmail'));
       return;
     }
 
     if (hosts.includes(email)) {
-      setError('This email is already in the list');
+      setError(t('admin.emailAlreadyInList'));
       return;
     }
 
@@ -80,9 +82,9 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
       const data = await res.json();
       setHosts(data.hosts || []);
       setNewEmail('');
-      setSuccess(`Added ${email}`);
+      setSuccess(t('admin.addedEmail', { email }));
     } catch (err: any) {
-      setError(err.message || 'Failed to add host');
+      setError(err.message || t('admin.failAddHost'));
     } finally {
       setSaving(false);
     }
@@ -105,9 +107,9 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
       }
       const data = await res.json();
       setHosts(data.hosts || []);
-      setSuccess(`Removed ${email}`);
+      setSuccess(t('admin.removedEmail', { email }));
     } catch (err: any) {
-      setError(err.message || 'Failed to remove host');
+      setError(err.message || t('admin.failRemoveHost'));
     } finally {
       setSaving(false);
     }
@@ -115,9 +117,9 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">Meeting Hosts</h2>
+      <h2 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{t('admin.meetingHostsTitle')}</h2>
       <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-        These people will be automatically invited to every booking meeting with a Google Meet link.
+        {t('admin.meetingHostsDesc')}
       </p>
 
       {/* Messages */}
@@ -136,7 +138,7 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
         <input
           type="email"
-          placeholder="Enter email address..."
+          placeholder={t('admin.enterEmailPlaceholder')}
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:border-[#65558F] outline-none"
@@ -147,20 +149,20 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
           disabled={saving || !newEmail.trim()}
           className="px-4 py-2 bg-[#65558F] text-white rounded-lg font-medium hover:bg-[#4e4070] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {saving ? 'Adding...' : 'Add Host'}
+          {saving ? t('admin.adding') : t('admin.addHost')}
         </button>
       </form>
 
       {/* Hosts list */}
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading meeting hosts...</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('admin.loadingHosts')}</p>
       ) : hosts.length === 0 ? (
         <div className="p-6 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg text-center">
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            No meeting hosts configured yet. Add email addresses above.
+            {t('admin.noHostsConfigured')}
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-            The system will fall back to the ANL_TEAM_EMAILS environment variable if no hosts are configured here.
+            {t('admin.hostsFallbackNote')}
           </p>
         </div>
       ) : (
@@ -169,10 +171,10 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
             <thead>
               <tr className="bg-gray-50 dark:bg-[#1a1a2e]">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Email Address
+                  {t('admin.emailAddress')}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                  Actions
+                  {t('admin.actions')}
                 </th>
               </tr>
             </thead>
@@ -186,7 +188,7 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
                       disabled={saving}
                       className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50"
                     >
-                      Remove
+                      {t('admin.remove')}
                     </button>
                   </td>
                 </tr>
@@ -197,7 +199,7 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
       )}
 
       <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-        {hosts.length} host{hosts.length !== 1 ? 's' : ''} configured
+        {hosts.length} {hosts.length !== 1 ? t('admin.hosts') : t('admin.host')} {t('admin.configured')}
       </p>
     </div>
   );

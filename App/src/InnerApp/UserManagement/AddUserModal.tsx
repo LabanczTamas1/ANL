@@ -1,6 +1,7 @@
 import React from 'react';
 import { FiX } from 'react-icons/fi';
 import { useForm } from 'react-hook-form';
+import { useLanguage } from '../../hooks/useLanguage';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface NewUserInputs {
 }
 
 const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  const { t } = useLanguage();
   const {
     register,
     handleSubmit,
@@ -28,7 +30,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
   const submitForm = async (data: NewUserInputs) => {
     try {
       const token = localStorage.getItem("authToken");
-      if (!token) throw new Error("No auth token found");
+      if (!token) throw new Error(t("userMgmt.noAuthToken"));
 
       const response = await fetch(`${API_BASE_URL}/api/v1/user/add-user`, {
         method: 'POST',
@@ -40,7 +42,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to add user');
+      if (!response.ok) throw new Error(result.error || t("userMgmt.failAddUser"));
 
       onSubmit(result);
       reset();
@@ -62,7 +64,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="relative bg-white dark:bg-[#1e1e1e] rounded-xl w-full max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add New User</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t("userMgmt.addNewUser")}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
             <FiX className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
@@ -73,18 +75,18 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="First Name"
+                placeholder={t("userMgmt.firstName")}
                 className={inputClass(!!errors.firstName)}
-                {...register('firstName', { required: 'First name is required' })}
+                {...register('firstName', { required: t("userMgmt.firstNameRequired") })}
               />
               {errors.firstName && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.firstName.message}</p>}
             </div>
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Last Name"
+                placeholder={t("userMgmt.lastName")}
                 className={inputClass(!!errors.lastName)}
-                {...register('lastName', { required: 'Last name is required' })}
+                {...register('lastName', { required: t("userMgmt.lastNameRequired") })}
               />
               {errors.lastName && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.lastName.message}</p>}
             </div>
@@ -93,9 +95,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
           <div>
             <input
               type="email"
-              placeholder="Email"
+              placeholder={t("userMgmt.email")}
               className={inputClass(!!errors.email)}
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', { required: t("userMgmt.emailRequired") })}
             />
             {errors.email && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.email.message}</p>}
           </div>
@@ -103,9 +105,9 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
           <div>
             <input
               type="text"
-              placeholder="Username"
+              placeholder={t("userMgmt.username")}
               className={inputClass(!!errors.username)}
-              {...register('username', { required: 'Username is required' })}
+              {...register('username', { required: t("userMgmt.usernameRequired") })}
             />
             {errors.username && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.username.message}</p>}
           </div>
@@ -113,7 +115,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
           <div>
             <input
               type="text"
-              placeholder="Company Name (optional)"
+              placeholder={t("userMgmt.companyOptional")}
               className={inputClass(false)}
               {...register('company')}
             />
@@ -123,7 +125,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
             type="submit"
             className="w-full py-2.5 rounded-lg bg-[#65558F] hover:bg-[#4e4070] text-white font-semibold text-sm transition-colors"
           >
-            Add User
+            {t("userMgmt.addUser")}
           </button>
         </form>
       </div>

@@ -14,19 +14,20 @@ import type { BookingFormData } from "./useBooking";
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-const REFERRAL_OPTIONS = [
-  "Google Search",
-  "LinkedIn",
-  "Facebook",
-  "Instagram",
-  "Referral / Word of mouth",
-  "Conference / Event",
-  "Blog / Article",
-  "Other",
-];
-
 const Booking = () => {
   const { t } = useLanguage();
+
+  const REFERRAL_OPTIONS = [
+    { value: "Google Search", label: t("booking.referralGoogle") },
+    { value: "LinkedIn", label: t("booking.referralLinkedin") },
+    { value: "Facebook", label: t("booking.referralFacebook") },
+    { value: "Instagram", label: t("booking.referralInstagram") },
+    { value: "Referral / Word of mouth", label: t("booking.referralWordOfMouth") },
+    { value: "Conference / Event", label: t("booking.referralConference") },
+    { value: "Blog / Article", label: t("booking.referralBlog") },
+    { value: "Other", label: t("booking.referralOther") },
+  ];
+
   const {
     currentDate,
     setCurrentDate,
@@ -60,9 +61,9 @@ const Booking = () => {
     const afternoon = addableTimes.filter(m => m >= 720 && m < 1020); // 12:00–17:00
     const evening   = addableTimes.filter(m => m >= 1020);         // 17:00+
     return [
-      { label: "Morning",   icon: Sunrise, times: morning,   color: "from-amber-400 to-orange-400" },
-      { label: "Afternoon", icon: Sun,     times: afternoon, color: "from-yellow-400 to-amber-500" },
-      { label: "Evening",   icon: Sunset,  times: evening,   color: "from-indigo-400 to-purple-500" },
+      { label: t("booking.dayMorning"),   icon: Sunrise, times: morning,   color: "from-amber-400 to-orange-400" },
+      { label: t("booking.dayAfternoon"), icon: Sun,     times: afternoon, color: "from-yellow-400 to-amber-500" },
+      { label: t("booking.dayEvening"),  icon: Sunset,  times: evening,   color: "from-indigo-400 to-purple-500" },
     ].filter(g => g.times.length > 0);
   }, [addableTimes]);
 
@@ -83,12 +84,12 @@ const Booking = () => {
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
-    if (!fullName.trim()) errors.fullName = "Full name is required.";
-    if (!email.trim()) errors.email = "Email is required.";
-    if (!company.trim()) errors.company = "Company name is required.";
-    if (!referralSource) errors.referralSource = "Please select an option.";
+    if (!fullName.trim()) errors.fullName = t("booking.errFullName");
+    if (!email.trim()) errors.email = t("booking.errEmail");
+    if (!company.trim()) errors.company = t("booking.errCompany");
+    if (!referralSource) errors.referralSource = t("booking.errSelectOption");
     if (referralSource === "Other" && !referralSourceOther.trim())
-      errors.referralSourceOther = "Please specify where you heard about us.";
+      errors.referralSourceOther = t("booking.errSpecify");
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -146,7 +147,7 @@ const Booking = () => {
               <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
                 {/* Left sub-column: meeting details */}
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">Meeting</p>
+                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">{t("booking.meeting")}</p>
                   <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
                     <div className="w-7 h-7 rounded-md bg-gradient-to-br from-accent-teal to-brand flex items-center justify-center shrink-0">
                       <Clock className="w-3.5 h-3.5 text-white" />
@@ -163,7 +164,7 @@ const Booking = () => {
 
                 {/* Right sub-column: your details preview */}
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">Your Details</p>
+                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">{t("booking.yourDetails")}</p>
                   {fullName ? (
                     <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
                       <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center shrink-0">
@@ -176,7 +177,7 @@ const Booking = () => {
                       <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
                         <User className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
                       </div>
-                      <span className="text-content-disabled text-xs italic">Full name</span>
+                      <span className="text-content-disabled text-xs italic">{t("booking.phName")}</span>
                     </div>
                   )}
                   {company ? (
@@ -191,7 +192,7 @@ const Booking = () => {
                       <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
                         <Building2 className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
                       </div>
-                      <span className="text-content-disabled text-xs italic">Company</span>
+                      <span className="text-content-disabled text-xs italic">{t("booking.phCompany")}</span>
                     </div>
                   )}
                   {email ? (
@@ -206,7 +207,7 @@ const Booking = () => {
                       <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
                         <Mail className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
                       </div>
-                      <span className="text-content-disabled text-xs italic">Email</span>
+                      <span className="text-content-disabled text-xs italic">{t("booking.phEmail")}</span>
                     </div>
                   )}
                 </div>
@@ -249,7 +250,7 @@ const Booking = () => {
               {/* User Info Preview */}
               {(fullName || company || email) && (
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold mb-1">Your Details</h4>
+                  <h4 className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold mb-1">{t("booking.yourDetails")}</h4>
                   {fullName && (
                     <div className="flex items-center gap-2 p-1.5 bg-surface-elevated/50 rounded-lg border border-line-glass">
                       <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center shrink-0">
@@ -295,7 +296,7 @@ const Booking = () => {
                 `}
                 tileContent={({ date }) =>
                   date.toDateString() === new Date().toDateString()
-                    ? <span className="booking-today-label">Today</span>
+                    ? <span className="booking-today-label">{t("booking.today")}</span>
                     : null
                 }
                 onChange={(value: Value) => {
@@ -330,7 +331,7 @@ const Booking = () => {
           {!showForm && (
             <>
               <h4 className="text-base font-semibold text-content-inverse mb-3">
-                {selectedDateFormated ? "Available Times" : "Select a Date"}
+                {selectedDateFormated ? t("booking.availableTimes") : t("booking.selectADate")}
               </h4>
               <div className="space-y-4 px-1 lg:overflow-y-auto lg:flex-1 lg:min-h-0 lg:pr-2 custom-scrollbar">
                 {addableTimes.length > 0 ? (
@@ -391,8 +392,8 @@ const Booking = () => {
             <div className="form-slide-in">
               {/* Step indicator */}
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase tracking-widest text-content-subtle-inverse font-semibold">Step 2 of 2</span>
-                <span className="text-[10px] text-content-subtle-inverse">{filledCount}/4 fields</span>
+                <span className="text-[10px] uppercase tracking-widest text-content-subtle-inverse font-semibold">{t("booking.stepIndicator")}</span>
+                <span className="text-[10px] text-content-subtle-inverse">{t("booking.fieldsProgress", { count: String(filledCount) })}</span>
               </div>
 
               {/* Animated completion progress bar */}
@@ -404,19 +405,19 @@ const Booking = () => {
               </div>
 
               <h4 className="text-lg font-bold text-content-inverse mb-0.5">
-                {allFilled ? "🎉 Ready to confirm!" : "Almost there!"}
+                {allFilled ? t("booking.readyToConfirm") : t("booking.almostThere")}
               </h4>
               <p className="text-xs text-content-subtle-inverse mb-4 leading-relaxed">
                 {allFilled
-                  ? "Everything looks great — hit the button below to lock in your slot."
-                  : "Just a few details and your meeting slot is secured."}
+                  ? t("booking.readyDesc")
+                  : t("booking.almostDesc")}
               </p>
 
               <div className="space-y-3">
                 {/* Full Name */}
                 <div>
                   <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
-                    Full Name <span className="text-red-400">*</span>
+                    {t("booking.fullNameLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -426,7 +427,7 @@ const Booking = () => {
                       value={fullName}
                       onChange={(e) => { setFullName(e.target.value); setFormErrors((p) => ({ ...p, fullName: "" })); }}
                       type="text"
-                      placeholder="John Doe"
+                      placeholder={t("booking.namePlaceholder")}
                     />
                     {fullName.trim() && !formErrors.fullName && (
                       <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-teal pointer-events-none" />
@@ -440,8 +441,8 @@ const Booking = () => {
                 {/* Email */}
                 <div>
                   <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
-                    Email <span className="text-red-400">*</span>{" "}
-                    <span className="text-content-disabled text-[10px]">(company email)</span>
+                    {t("booking.emailLabel")} <span className="text-red-400">*</span>{" "}
+                    <span className="text-content-disabled text-[10px]">{t("booking.companyEmailHint")}</span>
                   </label>
                   <div className="relative">
                     <input
@@ -451,7 +452,7 @@ const Booking = () => {
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setFormErrors((p) => ({ ...p, email: "" })); }}
                       type="email"
-                      placeholder="john@company.com"
+                      placeholder={t("booking.emailPlaceholder")}
                     />
                     {email.trim() && !formErrors.email && (
                       <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-teal pointer-events-none" />
@@ -465,7 +466,7 @@ const Booking = () => {
                 {/* Company Name */}
                 <div>
                   <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
-                    Company Name <span className="text-red-400">*</span>
+                    {t("booking.companyNameLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -475,7 +476,7 @@ const Booking = () => {
                       value={company}
                       onChange={(e) => { setCompany(e.target.value); setFormErrors((p) => ({ ...p, company: "" })); }}
                       type="text"
-                      placeholder="Acme Inc."
+                      placeholder={t("booking.companyPlaceholder")}
                     />
                     {company.trim() && !formErrors.company && (
                       <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-teal pointer-events-none" />
@@ -489,7 +490,7 @@ const Booking = () => {
                 {/* Where did you hear about us? */}
                 <div>
                   <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
-                    Where did you hear about us? <span className="text-red-400">*</span>
+                    {t("booking.referralLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <select
@@ -504,10 +505,10 @@ const Booking = () => {
                         setFormErrors((p) => ({ ...p, referralSource: "", referralSourceOther: "" }));
                       }}
                     >
-                      <option value="" disabled>Select an option...</option>
+                      <option value="" disabled>{t("booking.selectOption")}</option>
                       {REFERRAL_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt} className="bg-gray-800 text-white">
-                          {opt}
+                        <option key={opt.value} value={opt.value} className="bg-gray-800 text-white">
+                          {opt.label}
                         </option>
                       ))}
                     </select>
@@ -524,7 +525,7 @@ const Booking = () => {
                 {referralSource === "Other" && (
                   <div>
                     <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
-                      Please specify <span className="text-red-400">*</span>
+                      {t("booking.specifyLabel")} <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -534,7 +535,7 @@ const Booking = () => {
                         value={referralSourceOther}
                         onChange={(e) => { setReferralSourceOther(e.target.value); setFormErrors((p) => ({ ...p, referralSourceOther: "" })); }}
                         type="text"
-                        placeholder="How did you find us?"
+                        placeholder={t("booking.specifyPlaceholder")}
                       />
                       {referralSourceOther.trim() && !formErrors.referralSourceOther && (
                         <CheckCircle2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-teal pointer-events-none" />
@@ -582,10 +583,10 @@ const Booking = () => {
                 {/* Reassurance strip */}
                 <div className="flex items-center justify-center gap-3 pt-1">
                   <span className="flex items-center gap-1 text-[10px] text-content-subtle-inverse/70">
-                    <Lock className="w-2.5 h-2.5" /> Secure
+                    <Lock className="w-2.5 h-2.5" /> {t("booking.secure")}
                   </span>
                   <span className="text-content-subtle-inverse/30 text-[10px]">·</span>
-                  <span className="text-[10px] text-content-subtle-inverse/70">No commitment</span>
+                  <span className="text-[10px] text-content-subtle-inverse/70">{t("booking.noCommitment")}</span>
 
                 </div>
               </div>

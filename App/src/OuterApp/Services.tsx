@@ -9,15 +9,17 @@ import ServicesComparison from "./components/ServicesComparison";
 import GradientDivider from "./components/GradientDivider";
 import CTASection from "./components/CTASection";
 import FloatingParticles from "./components/FloatingParticles";
+import { useLanguage } from "../hooks/useLanguage";
 
 const Services = () => {
+  const { t } = useLanguage();
   return (
     <div className="bg-surface-black min-h-screen overflow-x-hidden">
       <Helmet>
-        <title>ANL | Services — Marketing That Actually Works</title>
+        <title>{t("servicesPage.metaTitle")}</title>
         <meta
           name="description"
-          content="Explore ANL's full suite of advertising, lead generation, SEO, and social media services designed to maximize your ROI."
+          content={t("servicesPage.metaDescription")}
         />
       </Helmet>
 
@@ -47,11 +49,11 @@ const Services = () => {
       <section className="relative bg-surface-black">
         <FloatingParticles particleCount={30} />
         <CTASection
-          title="Ready to Grow Your Business?"
-          subtitle="Book a free strategy call. We'll show you exactly what we'd do for your business — no strings attached."
-          primaryButtonText="Book a Free Call"
+          title={t("servicesPage.ctaTitle")}
+          subtitle={t("servicesPage.ctaSubtitle")}
+          primaryButtonText={t("servicesPage.ctaPrimary")}
           primaryButtonLink="/booking"
-          secondaryButtonText="Contact Us"
+          secondaryButtonText={t("servicesPage.ctaSecondary")}
           secondaryButtonLink="/contact"
         />
       </section>

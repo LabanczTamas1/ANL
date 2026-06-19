@@ -6,6 +6,7 @@ import ActivityLog, { ActivityLogHandle } from "./ActivityLog";
 import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
 import timeAgo from "./../../utils/calculateTimeAgo";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface CardProps {
   card: {
@@ -33,6 +34,7 @@ interface CardProps {
 type CardKey = keyof CardProps["card"];
 
 const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
+  const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cardData, setCardData] = useState(card);
@@ -143,7 +145,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       setIsEditing(null);
 
       // Show instant activity update
-      activityRef.current?.addLocal('updated', `Updated field "${key}"`);
+      activityRef.current?.addLocal('updated', t("kanban.activityUpdatedField", { field: key }));
     } catch (error) {
       console.error("Error updating field:", error);
     }
@@ -164,7 +166,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       await updateCard(card.id, { name: 'Fields', updatedValue: updatedFields });
       setCardData((prev: any) => ({ ...prev, Fields: JSON.stringify(updatedFields) }));
       setEditingFieldIdx(null);
-      activityRef.current?.addLocal('updated', `Updated field "${parsedFields[idx].name}"`);
+      activityRef.current?.addLocal('updated', t("kanban.activityUpdatedField", { field: parsedFields[idx].name }));
     } catch (error) {
       console.error('Error updating field:', error);
     }
@@ -208,7 +210,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         ...(trimmedName ? { Name: trimmedName } : {}),
       }));
       setIsEditMode(false);
-      activityRef.current?.addLocal('updated', 'Edited card fields');
+      activityRef.current?.addLocal('updated', t("kanban.activityEditedFields"));
     } catch (error) {
       console.error('Error saving card edits:', error);
     }
@@ -224,7 +226,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
   };
 
   const formatDate = (timestamp: string | null | boolean): string => {
-    if (!timestamp) return "No date available";
+    if (!timestamp) return t("kanban.noDateAvailable");
     const date = new Date(Number(timestamp));
     const today = new Date();
     const isToday =
@@ -255,20 +257,20 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[30vw] max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">Confirm Deletion</h2>
-        <p className="text-center mb-6 dark:text-gray-300">Are you really want to delete this card?</p>
+        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">{t("kanban.confirmDeletion")}</h2>
+        <p className="text-center mb-6 dark:text-gray-300">{t("kanban.reallyDeleteCard")}</p>
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleConfirmDelete}
             className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 transition"
           >
-            Delete
+            {t("kanban.delete")}
           </button>
           <button
             onClick={handleCloseDeleteModal}
             className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition"
           >
-            Cancel
+            {t("kanban.cancel")}
           </button>
         </div>
       </div>
@@ -284,20 +286,20 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         className="relative bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-lg p-6 w-[min(90vw,480px)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">Discard Changes?</h2>
-        <p className="text-center mb-6 dark:text-gray-300">You have unsaved edits. Are you sure you want to discard them?</p>
+        <h2 className="text-xl font-bold mb-4 text-center dark:text-white">{t("kanban.discardChanges")}</h2>
+        <p className="text-center mb-6 dark:text-gray-300">{t("kanban.unsavedEdits")}</p>
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleConfirmDiscard}
             className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 transition"
           >
-            Discard
+            {t("kanban.discard")}
           </button>
           <button
             onClick={() => setIsDiscardConfirmOpen(false)}
             className="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 transition"
           >
-            Keep Editing
+            {t("kanban.keepEditing")}
           </button>
         </div>
       </div>
@@ -317,8 +319,8 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-200 dark:border-gray-700 rounded-t-lg flex-shrink-0">
           <h2 className="text-lg md:text-xl font-bold dark:text-white truncate pr-4">
             {isEditMode
-              ? (editedCardName || 'Card Details')
-              : ((cardData as any).Name || cardData.BusinessName || cardData.name || 'Card Details')}
+              ? (editedCardName || t("kanban.cardDetails"))
+              : ((cardData as any).Name || cardData.BusinessName || cardData.name || t("kanban.cardDetails"))}
           </h2>
           <button
             onClick={handleCloseModal}
@@ -338,7 +340,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                 {/* Card name — visually separated */}
                 <div className="mb-2 p-3 rounded-lg bg-[#65558F]/10 dark:bg-[#65558F]/20 border border-[#65558F]/30">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-[#65558F] dark:text-[#a594d4] mb-1.5">
-                    Card Name <span className="text-red-500">*</span>
+                    {t("kanban.cardName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -353,12 +355,12 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {field.name}
                       {field.type === "link" && (
-                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">link</span>
+                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">{t("kanban.linkBadge")}</span>
                       )}
                     </label>
                     <input
                       type={field.type === "link" ? "url" : "text"}
-                      placeholder={field.type === "link" ? "https://..." : `Enter ${field.name.toLowerCase()}`}
+                      placeholder={field.type === "link" ? t("kanban.httpsPlaceholder") : t("kanban.enterFieldValue", { field: field.name.toLowerCase() })}
                       value={field.value}
                       onChange={(e) => setEditedFields(editedFields.map((f, i) => i === idx ? { ...f, value: e.target.value } : f))}
                       className="p-2 block w-full border border-gray-300 dark:border-gray-600 rounded-md hover:border-gray-400 dark:hover:border-gray-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 dark:bg-gray-700 dark:text-white"
@@ -367,11 +369,11 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                 ))}
                 {/* Add new field */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add a field</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t("kanban.addField")}</p>
                   <div className="flex gap-2 items-end">
                     <input
                       type="text"
-                      placeholder="Field name"
+                      placeholder={t("kanban.fieldNamePh")}
                       value={newEditFieldName}
                       onChange={(e) => setNewEditFieldName(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddEditField()}
@@ -382,15 +384,15 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                       onChange={(e) => setNewEditFieldType(e.target.value as "text" | "link")}
                       className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#65558F] focus:outline-none"
                     >
-                      <option value="text">Text</option>
-                      <option value="link">Link</option>
+                      <option value="text">{t("kanban.typeText")}</option>
+                      <option value="link">{t("kanban.typeLink")}</option>
                     </select>
                     <button
                       type="button"
                       onClick={handleAddEditField}
                       className="px-3 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition whitespace-nowrap"
                     >
-                      + Add
+                      {t("kanban.addBtn")}
                     </button>
                   </div>
                 </div>
@@ -403,7 +405,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-0 sm:mr-2 sm:w-1/4">
                       {field.name}
                       {field.type === "link" && (
-                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"> link</span>
+                        <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"> {t("kanban.linkBadge")}</span>
                       )}
                     </label>
                     <div className="relative flex-1">
@@ -427,8 +429,8 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                   </div>
                   {editingFieldIdx === idx && (
                     <div className="mt-2 flex flex-row space-x-2">
-                      <button onClick={() => handleSaveField(idx)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">Save</button>
-                      <button onClick={() => setEditingFieldIdx(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700">Cancel</button>
+                      <button onClick={() => handleSaveField(idx)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">{t("kanban.save")}</button>
+                      <button onClick={() => setEditingFieldIdx(null)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700">{t("kanban.cancel")}</button>
                     </div>
                   )}
                 </div>
@@ -503,13 +505,13 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                           onClick={() => handleSave(cardKey)}
                           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                         >
-                          Save
+                          {t("kanban.save")}
                         </button>
                         <button
                           onClick={handleCancel}
                           className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700"
                         >
-                          Cancel
+                          {t("kanban.cancel")}
                         </button>
                       </div>
                     )}
@@ -539,13 +541,13 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                           onClick={() => handleSave(cardKey)}
                           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                         >
-                          Save
+                          {t("kanban.save")}
                         </button>
                         <button
                           onClick={handleCancel}
                           className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700"
                         >
-                          Cancel
+                          {t("kanban.cancel")}
                         </button>
                       </div>
                     )}
@@ -574,13 +576,13 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                         onClick={() => handleSave(cardKey)}
                         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
                       >
-                        Save
+                        {t("kanban.save")}
                       </button>
                       <button
                         onClick={handleCancel}
                         className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700"
                       >
-                        Cancel
+                        {t("kanban.cancel")}
                       </button>
                     </div>
                   )}
@@ -595,7 +597,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
             onClick={handleOpenDeleteModal}
             className="bg-red-500 text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition"
           >
-            Delete
+            {t("kanban.delete")}
           </button>
           {parsedFields.length > 0 && (
             isEditMode ? (
@@ -604,13 +606,13 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                   onClick={handleSaveEditMode}
                   className="bg-[#65558F] text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-[#544a7a] transition"
                 >
-                  Save Changes
+                  {t("kanban.saveChanges")}
                 </button>
                 <button
                   onClick={handleCancelEditMode}
                   className="bg-gray-500 text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-gray-600 transition"
                 >
-                  Cancel
+                  {t("kanban.cancel")}
                 </button>
               </div>
             ) : (
@@ -618,7 +620,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                 onClick={handleEnterEditMode}
                 className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white px-3 py-1 md:px-4 md:py-2 rounded text-sm md:text-base hover:bg-gray-300 dark:hover:bg-gray-500 transition"
               >
-                Edit Card
+                {t("kanban.editCard")}
               </button>
             )
           )}

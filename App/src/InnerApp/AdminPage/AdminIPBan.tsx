@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useLanguage } from "../../hooks/useLanguage";
 
 
 const API_BASE = "http://localhost:3001"; // change this to your backend base URL
 
 const AdminIPBan = () => {
+  const { t } = useLanguage();
   const [bannedIPs, setBannedIPs] = useState<string[]>([]);
   const [newIP, setNewIP] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ const AdminIPBan = () => {
       });
 
       const data = await res.json();
-      setMessage(data.message || "IP banned.");
+      setMessage(data.message || t("admin.ipBanned"));
       setNewIP("");
       fetchBannedIPs();
     } catch (err) {
@@ -64,7 +66,7 @@ const AdminIPBan = () => {
       });
 
       const data = await res.json();
-      setMessage(data.message || "IP unbanned.");
+      setMessage(data.message || t("admin.ipUnbanned"));
       fetchBannedIPs();
     } catch (err) {
       console.error("Unban failed:", err);
@@ -79,12 +81,12 @@ const AdminIPBan = () => {
 
   return (
     <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">🔒 IP Ban Management</h2>
+      <h2 className="text-xl font-bold mb-4">🔒 {t("admin.ipBanTitle")}</h2>
 
       <div className="flex gap-2 mb-4">
         <input
           type="text"
-          placeholder="Enter IP to ban"
+          placeholder={t("admin.enterIpToBan")}
           value={newIP}
           onChange={(e) => setNewIP(e.target.value)}
           className="border px-2 py-1 flex-1 rounded"
@@ -94,15 +96,15 @@ const AdminIPBan = () => {
           disabled={loading}
           className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
         >
-          Ban IP
+          {t("admin.banIp")}
         </button>
       </div>
 
       {message && <p className="mb-2 text-green-600">{message}</p>}
 
-      <h3 className="font-semibold mb-2">🚫 Banned IPs:</h3>
+      <h3 className="font-semibold mb-2">🚫 {t("admin.bannedIpsHeading")}</h3>
       <ul className="space-y-1">
-        {bannedIPs.length === 0 && <p className="text-sm text-gray-500">No IPs banned.</p>}
+        {bannedIPs.length === 0 && <p className="text-sm text-gray-500">{t("admin.noIpsBanned")}</p>}
         {bannedIPs.map((ip) => (
           <li
             key={ip}
@@ -114,7 +116,7 @@ const AdminIPBan = () => {
               disabled={loading}
               className="text-sm text-blue-600 hover:underline"
             >
-              Unban
+              {t("admin.unban")}
             </button>
           </li>
         ))}

@@ -1,5 +1,6 @@
 import React from "react";
 import { User } from "../../Types/types";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface Props {
   isOwner: boolean;
@@ -22,6 +23,7 @@ const RecipientInput: React.FC<Props> = ({
   onSelectUser,
   onFocus,
 }) => {
+  const { t } = useLanguage();
   return isOwner ? (
     <div className="relative w-full">
       <input
@@ -30,7 +32,7 @@ const RecipientInput: React.FC<Props> = ({
         onChange={onChange}
         onFocus={onFocus}
         className="w-full pl-1 rounded-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="Search by email or username"
+        placeholder={t("recipient.searchPlaceholder")}
         autoComplete="off"
       />
       {showDropdown && (
@@ -60,7 +62,7 @@ const RecipientInput: React.FC<Props> = ({
       value={recipientInput}
       onChange={onChange}
       className="w-full pl-1 rounded-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      placeholder="Enter recipient's email"
+      placeholder={t("recipient.emailPlaceholder")}
       required
     />
   );

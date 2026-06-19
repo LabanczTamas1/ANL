@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { InboxItem } from "../Inbox";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface MessageDetailProps {
   messageId?: string;
@@ -20,6 +21,7 @@ interface EmailMessage {
 
 
 const MessageDetail = ({ messageId }: MessageDetailProps) => {
+  const { t } = useLanguage();
   const [message, setMessage] = useState<InboxItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -58,7 +60,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   }, [id]);
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return "No date available";
+    if (!timestamp) return t("msgDetail.noDate");
 
     const date = new Date(Number(timestamp));
     return date.toLocaleString("en-US", {
@@ -78,7 +80,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-white dark:bg-[#121212]">
-        <div className="text-black dark:text-white text-xl">Loading message...</div>
+        <div className="text-black dark:text-white text-xl">{t("msgDetail.loading")}</div>
       </div>
     );
   }
@@ -86,7 +88,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   if (!message) {
     return (
       <div className="flex justify-center items-center h-screen bg-white dark:bg-[#121212]">
-        <div className="text-black dark:text-white text-xl">Message not found</div>
+        <div className="text-black dark:text-white text-xl">{t("msgDetail.notFound")}</div>
       </div>
     );
   }
@@ -99,7 +101,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
           <button 
             onClick={handleGoBack}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-            aria-label="Close message"
+            aria-label={t("msgDetail.closeMessage")}
           >
             <svg 
               width="24" 
@@ -119,15 +121,15 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
         
         <div className="border-b border-gray-300 dark:border-gray-700 pb-4 mb-4">
           <div className="flex items-center mb-2">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">From:</span>
+            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.from")}</span>
             <span className="text-black dark:text-white">{message.fromName} &lt;{message.fromEmail}&gt;</span>
           </div>
           <div className="flex items-center mb-2">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">To:</span>
+            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.to")}</span>
             <span className="text-black dark:text-white">{message.recipient}</span>
           </div>
           <div className="flex items-center">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">Date:</span>
+            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.date")}</span>
             <span className="text-black dark:text-white">{formatDate(message.timeSended)}</span>
           </div>
         </div>
@@ -149,7 +151,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
                 <img 
                   {...props} 
                   className="max-w-full h-auto rounded my-4" 
-                  alt={props.alt || "Image"} 
+                  alt={props.alt || t("msgDetail.imageAlt")} 
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.onerror = null;
@@ -168,14 +170,14 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
             onClick={handleGoBack}
             className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition"
           >
-            Back to Inbox
+            {t("msgDetail.backToInbox")}
           </button>
           <div>
             <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition mr-2">
-              Reply
+              {t("msgDetail.reply")}
             </button>
             <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-              Forward
+              {t("msgDetail.forward")}
             </button>
           </div>
         </div>

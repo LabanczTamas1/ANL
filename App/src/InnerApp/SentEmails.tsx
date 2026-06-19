@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { InboxItem } from "./Inbox";
 import SentRowItem from "./components/SentRowItem";
+import { useLanguage } from "../hooks/useLanguage";
 
 const SentEmails = () => {
+  const { t } = useLanguage();
   const [inboxData, setInboxData] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -39,7 +41,7 @@ const SentEmails = () => {
   }, [token]);
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return "No date available";
+    if (!timestamp) return t("msgDetail.noDate");
 
     const date = new Date(Number(timestamp));
     const today = new Date();
@@ -64,11 +66,11 @@ const SentEmails = () => {
 
   return (
     <div className="p-2 border-[1px] border-[#E5E6E7] dark:border-gray-700 rounded-lg">
-      <h2 className="font-[800] text-[2.375em] pl-2 mb-2">Last outgoing</h2>
+      <h2 className="font-[800] text-[2.375em] pl-2 mb-2">{t("sentEmails.title")}</h2>
       {loading ? (
-        <div className="text-center py-4">Loading...</div>
+        <div className="text-center py-4">{t("sentEmails.loading")}</div>
       ) : !Array.isArray(inboxData) || inboxData.length === 0 ? (
-        <div className="text-center py-4">No data available</div>
+        <div className="text-center py-4">{t("sentEmails.noData")}</div>
       ) : (
         inboxData.map((item, index) => (
           <SentRowItem key={index} item={item} formatDate={formatDate} />

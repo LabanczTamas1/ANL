@@ -8,6 +8,7 @@ import {
   FiAlertCircle,
   FiCheckCircle,
 } from "react-icons/fi";
+import { useLanguage } from "../../hooks/useLanguage";
 
 interface PendingPayment {
   id: string;
@@ -49,6 +50,18 @@ const PendingPaymentsModal = ({
   userName,
   onUpdate,
 }: PendingPaymentsModalProps) => {
+  const { t } = useLanguage();
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t("userMgmt.filterPending"),
+    confirmed: t("userMgmt.filterConfirmed"),
+    rejected: t("userMgmt.filterRejected"),
+  };
+  const FILTER_LABELS: Record<string, string> = {
+    all: t("userMgmt.filterAll"),
+    pending: t("userMgmt.filterPending"),
+    confirmed: t("userMgmt.filterConfirmed"),
+    rejected: t("userMgmt.filterRejected"),
+  };
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "rejected">("all");
@@ -105,7 +118,7 @@ const PendingPaymentsModal = ({
       );
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Failed to confirm");
+        throw new Error(err.error || t("userMgmt.failConfirm"));
       }
       await fetchPayments();
       onUpdate();
@@ -135,7 +148,7 @@ const PendingPaymentsModal = ({
       );
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Failed to reject");
+        throw new Error(err.error || t("userMgmt.failReject"));
       }
       setRejectReason("");
       setRejectingId(null);
@@ -196,10 +209,10 @@ const PendingPaymentsModal = ({
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-                      Expected Payments
+                      {t("userMgmt.expectedPayments")}
                     </Dialog.Title>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      {userName ? `${userName} · ` : ""}{pendingCount} pending
+                      {userName ? `${userName} · ` : ""}{t("userMgmt.pendingCount", { count: String(pendingCount) })}
                     </p>
                   </div>
                   <button
@@ -222,7 +235,7 @@ const PendingPaymentsModal = ({
                           : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                       }`}
                     >
-                      {f} {f === "pending" && pendingCount > 0 ? `(${pendingCount})` : ""}
+                      {FILTER_LABELS[f]} {f === "pending" && pendingCount > 0 ? `(${pendingCount})` : ""}
                     </button>
                   ))}
                 </div>
@@ -235,11 +248,13 @@ const PendingPaymentsModal = ({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
-                      Loading…
+                      {t("userMgmt.loading")}
                     </div>
                   ) : filteredPayments.length === 0 ? (
                     <p className="text-center text-gray-500 dark:text-gray-400 py-12">
-                      No {filter !== "all" ? filter : ""} expected payments.
+                      {filter !== "all"
+                        ? t("userMgmt.noExpectedPaymentsFiltered", { filter: FILTER_LABELS[filter] })
+                        : t("userMgmt.noExpectedPaymentsAll")}
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -271,12 +286,12 @@ const PendingPaymentsModal = ({
                                   )}
                                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
                                     <StatusIcon className="w-3 h-3" />
-                                    {p.status}
+                                    {STATUS_LABELS[p.status] ?? p.status}
                                   </span>
                                   {p.status === "pending" && due && (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
                                       <FiAlertCircle className="w-3 h-3" />
-                                      Due
+                                      {t("userMgmt.due")}
                                     </span>
                                   )}
                                 </div>
@@ -295,20 +310,20 @@ const PendingPaymentsModal = ({
 
                                 {/* Meta */}
                                 <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                  <span>Due: <span className="font-medium text-gray-700 dark:text-gray-300">{formatDate(p.dueDate)}</span></span>
-                                  <span>Created: {formatDate(p.createdAt)} by {p.createdByName}</span>
+                                  <span>{t("userMgmt.dueColon")} <span className="font-medium text-gray-700 dark:text-gray-300">{formatDate(p.dueDate)}</span></span>
+                                  <span>{t("userMgmt.createdByLine", { date: formatDate(p.createdAt), name: p.createdByName })}</span>
                                   {p.notified === "true" && (
-                                    <span className="text-amber-600 dark:text-amber-400">Email sent</span>
+                                    <span className="text-amber-600 dark:text-amber-400">{t("userMgmt.emailSent")}</span>
                                   )}
                                   {p.resolvedAt && (
-                                    <span>Resolved: {formatDate(p.resolvedAt)} by {p.resolvedByName}</span>
+                                    <span>{t("userMgmt.resolvedByLine", { date: formatDate(p.resolvedAt), name: p.resolvedByName })}</span>
                                   )}
                                 </div>
 
                                 {/* Rejection reason */}
                                 {p.status === "rejected" && p.rejectionReason && (
                                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                    Reason: {p.rejectionReason}
+                                    {t("userMgmt.reasonColon")} {p.rejectionReason}
                                   </p>
                                 )}
 
@@ -317,7 +332,7 @@ const PendingPaymentsModal = ({
                                   <div className="mt-3 flex gap-2">
                                     <input
                                       type="text"
-                                      placeholder="Reason for rejection (optional)"
+                                      placeholder={t("userMgmt.rejectReasonPlaceholder")}
                                       value={rejectReason}
                                       onChange={(e) => setRejectReason(e.target.value)}
                                       className="flex-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
@@ -327,13 +342,13 @@ const PendingPaymentsModal = ({
                                       onClick={() => handleReject(p.id)}
                                       className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium"
                                     >
-                                      Confirm Reject
+                                      {t("userMgmt.confirmReject")}
                                     </button>
                                     <button
                                       onClick={() => { setRejectingId(null); setRejectReason(""); }}
                                       className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm"
                                     >
-                                      Cancel
+                                      {t("userMgmt.cancel")}
                                     </button>
                                   </div>
                                 )}
@@ -346,18 +361,18 @@ const PendingPaymentsModal = ({
                                     onClick={() => handleConfirm(p.id)}
                                     disabled={confirmingId === p.id}
                                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors disabled:opacity-50"
-                                    title="Confirm payment received"
+                                    title={t("userMgmt.confirmPaymentReceived")}
                                   >
                                     <FiCheck className="w-3.5 h-3.5" />
-                                    {confirmingId === p.id ? "…" : "Confirm"}
+                                    {confirmingId === p.id ? "…" : t("userMgmt.confirm")}
                                   </button>
                                   <button
                                     onClick={() => setRejectingId(p.id)}
                                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
-                                    title="Reject — payment not received"
+                                    title={t("userMgmt.rejectNotReceived")}
                                   >
                                     <FiXCircle className="w-3.5 h-3.5" />
-                                    Reject
+                                    {t("userMgmt.reject")}
                                   </button>
                                 </div>
                               )}
