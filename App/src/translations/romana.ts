@@ -150,6 +150,8 @@ export const romana: Record<TranslationKey, string> = {
 
     'notFound.title': '404 Pagină Negăsită',
     'notFound.subtitle': 'Ai descoperit o parte neexplorată a acestei pagini!',
+    'notFound.description': 'Pagina pe care o cauți nu există, este posibil să fi fost mutată sau linkul să fie greșit.',
+    'notFound.requestedPath': 'Pagina solicitată',
     'notFound.goBack': 'Înapoi',
     'notFound.goHome': 'Pagina principală',
 

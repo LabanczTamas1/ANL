@@ -148,6 +148,8 @@ export const english = {
 
     'notFound.title': '404 Not Found',
     'notFound.subtitle': 'Found an unexplored side of this page!',
+    'notFound.description': "The page you're looking for doesn't exist, may have been moved, or the link could be broken.",
+    'notFound.requestedPath': 'Requested page',
     'notFound.goBack': 'Go back',
     'notFound.goHome': 'Go to Home',
 

@@ -148,6 +148,8 @@ export const magyar: Record<TranslationKey, string> = {
 
     'notFound.title': '404 Nem Található',
     'notFound.subtitle': 'Az oldal felfedezetlen részére tévedtél!',
+    'notFound.description': 'A keresett oldal nem létezik, áthelyezték, vagy a hivatkozás hibás lehet.',
+    'notFound.requestedPath': 'Keresett oldal',
     'notFound.goBack': 'Vissza',
     'notFound.goHome': 'Kezdőlap',
 

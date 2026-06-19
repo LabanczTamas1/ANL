@@ -1,12 +1,15 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FiArrowLeft, FiHome } from "react-icons/fi";
 import { useLanguage } from "./../hooks/useLanguage";
+import "./NotFoundPage.css";
 
 export default function NotFoundPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const glitchesRef = useRef<{ x: number; y: number; size: number }[]>([]);
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const img = new Image();
@@ -48,26 +51,56 @@ export default function NotFoundPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center bg-surface-light dark:bg-surface-dark">
-      <h1 className="text-4xl font-bold text-status-error">{t("notFound.title")}</h1>
-      <p className="text-xl py-2 text-content-subtle dark:text-content-subtle-inverse">{t("notFound.subtitle")}</p>
-      <div className="glitch-wrapper">
-        <canvas ref={canvasRef} className="w-[70vh] h-auto" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-light px-4 py-10 text-center dark:bg-surface-dark sm:px-6">
+      <div className="flex w-full max-w-2xl flex-col items-center">
+        {/* Illustration */}
+        <div className="glitch-wrapper w-full max-w-[260px] sm:max-w-[340px] md:max-w-[420px]">
+          <canvas ref={canvasRef} className="h-auto w-full" />
+        </div>
+
+        {/* Title */}
+        <h1 className="mt-6 text-3xl font-bold text-status-error sm:text-4xl md:text-5xl">
+          {t("notFound.title")}
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-3 text-lg font-medium text-content dark:text-content-inverse sm:text-xl">
+          {t("notFound.subtitle")}
+        </p>
+
+        {/* Description */}
+        <p className="mt-2 max-w-md text-sm text-content-subtle dark:text-content-subtle-inverse sm:text-base">
+          {t("notFound.description")}
+        </p>
+
+        {/* Requested path */}
+        <div className="mt-5 w-full max-w-md break-all rounded-lg border border-gray-200 bg-gray-100 px-4 py-2.5 dark:border-white/10 dark:bg-white/5">
+          <span className="mr-2 text-xs uppercase tracking-wide text-content-subtle dark:text-content-subtle-inverse">
+            {t("notFound.requestedPath")}:
+          </span>
+          <code className="text-sm font-medium text-content dark:text-content-inverse">
+            {location.pathname}
+          </code>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-7 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-gray-100 px-5 py-3 font-semibold text-content transition-colors hover:bg-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-content-inverse dark:hover:bg-white/10"
+          >
+            <FiArrowLeft className="h-5 w-5" aria-hidden="true" />
+            {t("notFound.goBack")}
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 font-semibold text-content-inverse transition-colors hover:bg-brand-hover"
+          >
+            <FiHome className="h-5 w-5" aria-hidden="true" />
+            {t("notFound.goHome")}
+          </button>
+        </div>
       </div>
-      <p className="mt-4 text-lg flex gap-4 justify-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-content-inverse hover:underline bg-brand hover:bg-brand-hover px-4 py-2 rounded-xl transition-colors"
-        >
-          {t("notFound.goBack")}
-        </button>
-        <button
-          onClick={() => navigate("/")}
-          className="text-content-inverse hover:underline bg-brand hover:bg-brand-hover px-4 py-2 rounded-xl transition-colors"
-        >
-          {t("notFound.goHome")}
-        </button>
-      </p>
     </div>
   );
 }
