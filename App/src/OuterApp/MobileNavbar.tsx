@@ -191,18 +191,29 @@ const MobileNavbar = () => {
   // The fullscreen overlay is rendered via a portal directly into document.body
   // so it is NOT a child of any parent that might clip it, apply blend-modes,
   // or have a semi-transparent background.
-  const overlay =
-    menuOpen &&
-    createPortal(
+  //
+  // It is ALWAYS mounted (visibility toggled via CSS) instead of conditionally
+  // mounted/unmounted. Mounting/unmounting the whole subtree on every toggle is
+  // cheap locally, but in production PostHog session replay (rrweb) has to
+  // serialize the entire added/removed DOM batch on the main thread, which makes
+  // open/close feel laggy on mobile. Keeping it mounted means toggling only
+  // mutates a couple of style attributes.
+  const overlay = createPortal(
       <div
         role="dialog"
         aria-modal="true"
+        aria-hidden={!menuOpen}
         aria-label={t['nav.navigationMenu']}
         className="fixed inset-0"
         style={{
           zIndex: 9999,
           background: "linear-gradient(to left, #1a1a2e, #0D0D1A)",
           isolation: "isolate",
+          opacity: menuOpen ? 1 : 0,
+          visibility: menuOpen ? "visible" : "hidden",
+          pointerEvents: menuOpen ? "auto" : "none",
+          transition: "opacity 180ms ease, visibility 180ms ease",
+          willChange: "opacity",
         }}
       >
         {/* Top bar inside overlay (mirrors the main bar) */}
