@@ -47,6 +47,14 @@ const Sidebar: React.FC = () => {
             </div>
           </Link>
           {(role === "admin" || role === "owner") ?
+            <Link to="/home/progress-management">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaStar className="text-lg" />
+                <span>{t('sidebar.progressManagement')}</span>
+              </div>
+            </Link>
+          : ""}
+          {(role === "admin" || role === "owner") ?
             <Link to="/home/booking/availability">
               <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
                 <FaEnvelope className="text-lg" />

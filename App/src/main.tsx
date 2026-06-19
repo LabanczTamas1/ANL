@@ -69,6 +69,7 @@ import AddAvailability from "./InnerApp/Booking/AddAvailability.tsx";
 import DeleteAvailability from "./InnerApp/Booking/DeleteAvailability.tsx";
 import EmptyPage from "./HelperPages/EmptyPage.tsx";
 import ProgressTracker from "./InnerApp/ProgressTracker/ProgressTracker.tsx";
+import ProgressAdmin from "./InnerApp/ProgressTracker/ProgressAdmin.tsx";
 import { HelmetProvider } from "react-helmet-async";
 import Onboarding from "./InnerApp/Onboarding/Onboarding.tsx";
 import UserManagement from "./InnerApp/UserManagement/UserManagement.tsx";
@@ -98,6 +99,16 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
 
   if (!isAdmin) {
     // Redirect to home page if not admin
+    return <Navigate to="/home" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Allows admins and owners (based on superRole) to access management views
+const ManagerRoute = ({ children }: { children: ReactNode }) => {
+  const role = localStorage.getItem("superRole");
+  if (role !== "admin" && role !== "owner") {
     return <Navigate to="/home" replace />;
   }
 
@@ -230,6 +241,14 @@ const router = createBrowserRouter([
       { path: "booking", element: <Booking /> },
       { path: "successful-booking", element: <SuccessfulBooking /> },
       { path: "progress-tracker", element: <ProgressTracker /> },
+      {
+        path: "progress-management",
+        element: (
+          <ManagerRoute>
+            <ProgressAdmin />
+          </ManagerRoute>
+        ),
+      },
       {
         path: "booking/availability",
         element: <Availability />,
