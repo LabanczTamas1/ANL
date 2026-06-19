@@ -56,6 +56,7 @@ const MobileNavbar = () => {
   const t = translations[language];
   const location = useLocation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const langTriggerRef = useRef<HTMLButtonElement>(null);
   const langOptionRefs = useRef<(HTMLLIElement | null)[]>([]);
 
@@ -70,7 +71,10 @@ const MobileNavbar = () => {
     if (menuOpen) {
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
-      setTimeout(() => closeButtonRef.current?.focus(), 100);
+      // Focus the dialog container (not the close button): on iOS, tapping a
+      // button that was just programmatically focused can be swallowed,
+      // contributing to the "needs two taps" feel.
+      setTimeout(() => dialogRef.current?.focus(), 100);
     } else {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
@@ -200,11 +204,13 @@ const MobileNavbar = () => {
   // mutates a couple of style attributes.
   const overlay = createPortal(
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-hidden={!menuOpen}
         aria-label={t['nav.navigationMenu']}
-        className="fixed inset-0"
+        tabIndex={-1}
+        className="fixed inset-0 outline-none"
         style={{
           zIndex: 9999,
           background: "linear-gradient(to left, #1a1a2e, #0D0D1A)",
@@ -212,7 +218,13 @@ const MobileNavbar = () => {
           opacity: menuOpen ? 1 : 0,
           visibility: menuOpen ? "visible" : "hidden",
           pointerEvents: menuOpen ? "auto" : "none",
-          transition: "opacity 180ms ease, visibility 180ms ease",
+          // Fade IN smoothly, but close INSTANTLY. A fade-out would leave a
+          // semi-transparent, non-interactive overlay (pointer-events: none) on
+          // screen for the transition duration; a tap during that window leaks
+          // through to the hamburger button underneath (same top-right
+          // position) and re-opens the menu — which felt like "needs two taps
+          // to close" on mobile.
+          transition: menuOpen ? "opacity 180ms ease" : "none",
           willChange: "opacity",
         }}
       >
@@ -231,6 +243,7 @@ const MobileNavbar = () => {
           <button
             ref={closeButtonRef}
             className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
+            style={{ touchAction: "manipulation" }}
             onClick={closeMenu}
             aria-label={t['nav.closeMenu']}
           >
@@ -374,6 +387,7 @@ const MobileNavbar = () => {
         </Link>
         <button
           className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
+          style={{ touchAction: "manipulation" }}
           onClick={() => setMenuOpen(true)}
           aria-label={t['nav.openMenu']}
           aria-expanded={menuOpen}
