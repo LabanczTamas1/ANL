@@ -1078,6 +1078,12 @@ export const romana: Record<TranslationKey, string> = {
   'progressAdmin.newTitle': "Titlul etapei",
   'progressAdmin.newDescription': "Descriere (opţional)",
   'progressAdmin.add': "Adaugă",
+  'progressAdmin.overallProgress': "Progres general",
+  'progressAdmin.completedCount': "{{completed}} din {{total}} finalizate",
+  'progressAdmin.advance': "Marchează următoarea etapă ca finalizată",
+  'progressAdmin.allComplete': "Toate etapele finalizate",
+  'progressAdmin.saving': "Se salvează",
+  'progressAdmin.saved': "Salvat",
 
   // OAuth callback
   'oauth.authenticating': "Se autentifică...",

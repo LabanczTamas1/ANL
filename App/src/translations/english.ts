@@ -1076,6 +1076,12 @@ export const english = {
   'progressAdmin.newTitle': "Milestone title",
   'progressAdmin.newDescription': "Description (optional)",
   'progressAdmin.add': "Add",
+  'progressAdmin.overallProgress': "Overall progress",
+  'progressAdmin.completedCount': "{{completed}} of {{total}} completed",
+  'progressAdmin.advance': "Mark next milestone complete",
+  'progressAdmin.allComplete': "All milestones completed",
+  'progressAdmin.saving': "Saving",
+  'progressAdmin.saved': "Saved",
 
   // OAuth callback
   'oauth.authenticating': "Authenticating...",

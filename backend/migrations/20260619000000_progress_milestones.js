@@ -24,12 +24,12 @@ export const up = (pgm) => {
         onDelete: 'CASCADE',
       },
       title: { type: 'varchar(255)', notNull: true },
-      description: { type: 'text', notNull: true, default: "''" },
+      description: { type: 'text', notNull: true, default: '' },
       // pending | in_progress | completed
-      status: { type: 'varchar(20)', notNull: true, default: "'pending'" },
+      status: { type: 'varchar(20)', notNull: true, default: 'pending' },
       position: { type: 'integer', notNull: true, default: 0 },
       // Optional note maintained by admins/owners (visible to the user)
-      note: { type: 'text', notNull: true, default: "''" },
+      note: { type: 'text', notNull: true, default: '' },
       completed_at: { type: 'timestamptz' },
       created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },
       updated_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') },

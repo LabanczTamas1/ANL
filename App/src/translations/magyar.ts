@@ -1076,6 +1076,12 @@ export const magyar: Record<TranslationKey, string> = {
   'progressAdmin.newTitle': "Mérföldkő címe",
   'progressAdmin.newDescription': "Leírás (opcionális)",
   'progressAdmin.add': "Hozzáadás",
+  'progressAdmin.overallProgress': "Összesített haladás",
+  'progressAdmin.completedCount': "{{completed}} / {{total}} befejezve",
+  'progressAdmin.advance': "Következő mérföldkő befejezése",
+  'progressAdmin.allComplete': "Minden mérföldkő befejezve",
+  'progressAdmin.saving': "Mentés",
+  'progressAdmin.saved': "Mentve",
 
   // OAuth callback
   'oauth.authenticating': "Hitelesítés...",

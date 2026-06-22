@@ -99,13 +99,16 @@ class ProgressRepository {
     const values: string[] = [];
     const params: unknown[] = [];
     DEFAULT_MILESTONES.forEach((m, i) => {
-      const base = i * 4;
-      values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4})`);
-      params.push(userId, m.title, m.description, i);
+      const base = i * 5;
+      values.push(
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`,
+      );
+      // Explicit status + note so we never depend on column defaults.
+      params.push(userId, m.title, m.description, i, 'pending');
     });
 
     const rows = await query<MilestoneRow>(
-      `INSERT INTO progress_milestones (user_id, title, description, position)
+      `INSERT INTO progress_milestones (user_id, title, description, position, status)
        VALUES ${values.join(', ')}
        RETURNING *`,
       params,

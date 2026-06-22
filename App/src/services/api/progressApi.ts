@@ -31,6 +31,27 @@ export interface ProgressUserSummary {
   inProgress: number;
 }
 
+/**
+ * Defensive cleanup for legacy rows whose string columns captured literal
+ * dollar-quoted defaults (e.g. note stored as the two characters `''`, or
+ * status stored as `'pending'` including the quotes). Safe for clean data.
+ */
+const stripQuoteArtifact = (value: string): string => {
+  if (!value) return '';
+  if (value === "''") return '';
+  if (value.length >= 2 && value.startsWith("'") && value.endsWith("'")) {
+    return value.slice(1, -1);
+  }
+  return value;
+};
+
+export const normalizeMilestone = (m: Milestone): Milestone => ({
+  ...m,
+  status: stripQuoteArtifact(m.status) as MilestoneStatus,
+  note: stripQuoteArtifact(m.note),
+  description: stripQuoteArtifact(m.description),
+});
+
 /** GET /api/v1/progress/me — current user's milestone journey. */
 export const getMyProgress = () =>
   apiClient.get<{ milestones: Milestone[] }>('/progress/me');

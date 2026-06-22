@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, Circle, Loader2, Clock } from 'lucide-react';
-import { getMyProgress, Milestone } from '../../services/api/progressApi';
+import { getMyProgress, Milestone, normalizeMilestone } from '../../services/api/progressApi';
 import { useLanguage } from '../../hooks/useLanguage';
 
 const ProgressTracker = () => {
@@ -14,7 +14,7 @@ const ProgressTracker = () => {
     const load = async () => {
       try {
         const res = await getMyProgress();
-        if (active) setMilestones(res.data.milestones ?? []);
+        if (active) setMilestones((res.data.milestones ?? []).map(normalizeMilestone));
       } catch {
         if (active) setError(true);
       } finally {
