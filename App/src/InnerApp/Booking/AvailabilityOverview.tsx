@@ -227,7 +227,7 @@ const AvailabilityOverview: React.FC = () => {
   const restoreDeletedLabel = t("availOverview.restoreDeleted");
 
   return (
-    <div className="h-full bg-surface-overlay flex flex-col lg:flex-row relative overflow-hidden">
+    <div className="h-full bg-[#F4F4F8] dark:bg-surface-overlay flex flex-col lg:flex-row relative overflow-hidden">
       {/* Background orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
@@ -237,18 +237,18 @@ const AvailabilityOverview: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col gap-3 mb-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl md:text-2xl font-bold text-content-inverse flex items-center gap-2">
+            <h2 className="text-xl md:text-2xl font-bold text-content dark:text-content-inverse flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-brand" />
               {t("availOverview.title")}
             </h2>
             <div className="flex items-center gap-1">
-              <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-brand/20 text-content-inverse transition-colors">
+              <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-brand/20 text-content dark:text-content-inverse transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <span className="text-sm font-semibold text-content-inverse min-w-[140px] text-center">
+              <span className="text-sm font-semibold text-content dark:text-content-inverse min-w-[140px] text-center">
                 {monthLabel}
               </span>
-              <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-brand/20 text-content-inverse transition-colors">
+              <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-brand/20 text-content dark:text-content-inverse transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -270,7 +270,7 @@ const AvailabilityOverview: React.FC = () => {
                   "px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200",
                   viewFilter === key
                     ? "bg-brand text-white shadow-md shadow-brand/30"
-                    : "bg-surface-elevated/50 text-content-muted hover:bg-brand/20 hover:text-content-inverse",
+                    : "bg-black/[0.03] dark:bg-surface-elevated/50 text-content-muted hover:bg-brand/20 hover:text-content dark:hover:text-content-inverse",
                 ].join(" ")}
               >
                 {label}
@@ -320,10 +320,10 @@ const AvailabilityOverview: React.FC = () => {
                       isSelected
                         ? "bg-brand text-white shadow-lg shadow-brand/30 scale-105"
                         : isToday
-                          ? "bg-brand/15 text-content-inverse border border-brand/30"
+                          ? "bg-brand/15 text-content dark:text-content-inverse border border-brand/30"
                           : cell.isDayOff
-                            ? "bg-surface-elevated/30 text-content-muted hover:bg-surface-elevated/50"
-                            : "bg-surface-elevated/50 text-content-inverse hover:bg-brand/20",
+                            ? "bg-black/[0.02] dark:bg-surface-elevated/30 text-content-muted hover:bg-black/[0.03] dark:hover:bg-surface-elevated/50"
+                            : "bg-black/[0.03] dark:bg-surface-elevated/50 text-content dark:text-content-inverse hover:bg-brand/20",
                     ].join(" ")}
                   >
                     <span className="text-xs md:text-sm">{dayNum}</span>
@@ -380,9 +380,9 @@ const AvailabilityOverview: React.FC = () => {
       {/* ── Detail panel (right side / bottom on mobile) ────────────────── */}
       <div
         className={[
-          "relative z-10 border-t lg:border-t-0 lg:border-l border-line-glass",
+          "relative z-10 border-t lg:border-t-0 lg:border-l border-line dark:border-line-glass",
           "w-full lg:w-[360px] lg:min-w-[320px] lg:shrink-0",
-          "bg-surface-elevated/60 backdrop-blur-xl",
+          "bg-black/[0.04] dark:bg-surface-elevated/60 backdrop-blur-xl",
           "overflow-y-auto custom-scrollbar",
           "transition-all duration-300",
           selectedDay ? "max-h-[50vh] lg:max-h-none p-4 md:p-5" : "max-h-0 lg:max-h-none p-0 lg:p-5",
@@ -392,7 +392,7 @@ const AvailabilityOverview: React.FC = () => {
           <>
             {/* Day header */}
             <div className="mb-4">
-              <h3 className="text-lg font-bold text-content-inverse">
+              <h3 className="text-lg font-bold text-content dark:text-content-inverse">
                 {new Date(selectedDay.date + "T12:00:00").toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "short",
@@ -489,7 +489,7 @@ const AvailabilityOverview: React.FC = () => {
                     >
                       <TimePill time={mtg.time} variant="booked" />
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-semibold text-content-inverse truncate">
+                        <span className="text-xs font-semibold text-content dark:text-content-inverse truncate">
                           {mtg.fullName}
                         </span>
                         {mtg.company && (
@@ -553,9 +553,11 @@ const AvailabilityOverview: React.FC = () => {
       {/* ─── Scrollbar + toast styles ──────────────────────────────────── */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(101,85,143,0.5); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(101,85,143,0.4); border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(101,85,143,0.7); }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(101,85,143,0.5); }
       `}</style>
 
       {/* ─── Booking Detail Modal ──────────────────────────────────── */}
@@ -576,7 +578,7 @@ const AvailabilityOverview: React.FC = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark"
+        theme="colored"
         transition={Bounce}
       />
     </div>
@@ -599,7 +601,7 @@ const Section: React.FC<SectionProps> = ({ title, icon, color, children }) => (
     <div className="flex items-center gap-1.5 mb-2">
       <span className={color}>{icon}</span>
       <span className={`text-xs uppercase tracking-wider font-semibold ${color}`}>{title}</span>
-      <div className="flex-1 h-px bg-line-glass/50" />
+      <div className="flex-1 h-px bg-line/60 dark:bg-line-glass/50" />
     </div>
     {children}
   </div>
@@ -615,10 +617,10 @@ interface TimePillProps {
 }
 
 const VARIANT_STYLES: Record<TimePillProps["variant"], string> = {
-  standard: "bg-surface-elevated/80 text-content-inverse border-line-glass",
+  standard: "bg-white/90 dark:bg-surface-elevated/80 text-content dark:text-content-inverse border-line dark:border-line-glass",
   added: "bg-status-success/15 text-status-success border-status-success/30",
   deleted: "bg-status-error/15 text-status-error border-status-error/30 line-through",
-  effective: "bg-brand/15 text-content-inverse border-brand/30",
+  effective: "bg-brand/15 text-content dark:text-content-inverse border-brand/30",
   "effective-custom": "bg-accent-teal/15 text-accent-teal border-accent-teal/30",
   booked: "bg-accent-purple/15 text-accent-purple border-accent-purple/30",
 };
@@ -664,11 +666,11 @@ const DetailRow: React.FC<{ icon: React.ReactNode; label: string; value: React.R
   label,
   value,
 }) => (
-  <div className="flex items-start gap-3 py-2.5 border-b border-line-glass/30 last:border-b-0">
+  <div className="flex items-start gap-3 py-2.5 border-b border-line/40 dark:border-line-glass/30 last:border-b-0">
     <span className="text-content-muted mt-0.5 shrink-0">{icon}</span>
     <div className="flex flex-col min-w-0">
       <span className="text-[10px] uppercase tracking-wider text-content-muted font-semibold">{label}</span>
-      <span className="text-sm text-content-inverse break-words">{value}</span>
+      <span className="text-sm text-content dark:text-content-inverse break-words">{value}</span>
     </div>
   </div>
 );
@@ -699,19 +701,19 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
       onClick={onClose}
     >
       <div
-        className="bg-surface-elevated border border-line-glass/30 rounded-2xl shadow-2xl w-[420px] max-w-[92vw] max-h-[85vh] overflow-y-auto custom-scrollbar"
+        className="bg-white dark:bg-surface-elevated border border-line/40 dark:border-line-glass/30 rounded-2xl shadow-2xl w-[420px] max-w-[92vw] max-h-[85vh] overflow-y-auto custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-line-glass/30">
+        <div className="flex items-center justify-between p-4 border-b border-line/40 dark:border-line-glass/30">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-accent-purple" />
-            <h3 className="text-base font-bold text-content-inverse">{t("availOverview.bookingDetails")}</h3>
+            <h3 className="text-base font-bold text-content dark:text-content-inverse">{t("availOverview.bookingDetails")}</h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-brand/20 text-content-muted hover:text-content-inverse transition-colors"
+            className="p-1.5 rounded-lg hover:bg-brand/20 text-content-muted hover:text-content dark:hover:text-content-inverse transition-colors"
             aria-label={t("availOverview.closeModal")}
           >
             <X className="w-4 h-4" />
@@ -722,7 +724,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         <div className="p-4 flex flex-col gap-0">
           {/* Name + status badge */}
           <div className="flex items-center justify-between mb-3">
-            <span className="text-lg font-bold text-content-inverse truncate mr-2">
+            <span className="text-lg font-bold text-content dark:text-content-inverse truncate mr-2">
               {booking.fullName}
             </span>
             <span className={`shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${statusColor}`}>
@@ -796,7 +798,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-line-glass/30">
+        <div className="p-4 border-t border-line/40 dark:border-line-glass/30">
           <button
             type="button"
             onClick={onClose}

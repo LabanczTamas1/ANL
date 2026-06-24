@@ -5,7 +5,9 @@ const darkLogo = "/dark-logo.png";
 const lightLogo = "/light-logo.png";
 import { Calendar as CalendarIcon, Clock, Video, User, Building2, Mail, CheckCircle2, Lock, ArrowLeft, Sunrise, Sun, Sunset } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useThemePreference } from "../../hooks/useThemePreference";
 import ThemeIcon from "../components/Logo";
+import ThemeToggle from "../components/ThemeToggle";
 import { ToastContainer, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useBooking } from "./useBooking";
@@ -16,6 +18,7 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 
 const Booking = () => {
   const { t } = useLanguage();
+  const { darkMode, toggleTheme } = useThemePreference();
 
   const REFERRAL_OPTIONS = [
     { value: "Google Search", label: t("booking.referralGoogle") },
@@ -107,36 +110,44 @@ const Booking = () => {
   };
 
   return (
-    <div className="h-full bg-surface-overlay flex justify-center items-start lg:items-stretch p-3 md:p-4 lg:p-5 relative overflow-x-hidden overflow-y-auto lg:overflow-hidden custom-scrollbar">
+    <div className="h-full bg-[#F4F4F8] dark:bg-surface-overlay flex justify-center items-start lg:items-stretch p-3 md:p-4 lg:p-5 relative overflow-x-hidden overflow-y-auto lg:overflow-hidden custom-scrollbar">
       {/* Background gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
       
-      <div className={`relative z-10 flex flex-col lg:flex-row w-full h-auto lg:h-full bg-surface-elevated/80 backdrop-blur-xl border border-line-glass rounded-2xl md:rounded-3xl shadow-glass overflow-visible lg:overflow-hidden${showForm ? " lg:justify-center" : ""}`}>
+      <div className={`relative z-10 flex flex-col lg:flex-row w-full h-auto lg:h-full bg-white/90 dark:bg-surface-elevated/80 backdrop-blur-xl border border-line dark:border-line-glass rounded-2xl md:rounded-3xl shadow-glass overflow-visible lg:overflow-hidden${showForm ? " lg:justify-center" : ""}`}>
         {/* Left Panel - Meeting Info */}
-        <div className={`flex flex-col py-5 px-5 md:px-6 w-full lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line-glass bg-gradient-to-br from-brand/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar${showForm ? " hidden lg:flex lg:w-[440px] lg:min-w-[380px]" : " lg:w-[280px] lg:min-w-[260px]"}`}>
-          <ThemeIcon
-            lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10 object-contain" />}
-            darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-10 w-10 object-contain" />}
-            size="l"
-            ariaLabel="ANL logo"
-          />
+        <div className={`flex flex-col py-5 px-5 md:px-6 w-full lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass bg-gradient-to-br from-brand/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar${showForm ? " hidden lg:flex lg:w-[440px] lg:min-w-[380px]" : " lg:w-[280px] lg:min-w-[260px]"}`}>
+          <div className="flex items-center justify-between gap-2">
+            <ThemeIcon
+              lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10 object-contain" />}
+              darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-10 w-10 object-contain" />}
+              size="l"
+              ariaLabel="ANL logo"
+            />
+            <ThemeToggle
+              darkMode={darkMode}
+              onToggle={toggleTheme}
+              labelLight={t("booking.themeLight")}
+              labelDark={t("booking.themeDark")}
+            />
+          </div>
           
           {showForm ? (
             /* ── Form mode: 2-column compact layout ── */
             <div className="mt-3 flex flex-col gap-3 flex-1 min-h-0">
               {/* Title + description – full width */}
               <div>
-                <h3 className="font-bold text-xl text-content-inverse mb-1">{t("meetWithTitle")}</h3>
-                <p className="text-content-subtle-inverse text-xs leading-relaxed">{t("bookingDescription")}</p>
+                <h3 className="font-bold text-xl text-content dark:text-content-inverse mb-1">{t("meetWithTitle")}</h3>
+                <p className="text-content-subtle dark:text-content-subtle-inverse text-xs leading-relaxed">{t("bookingDescription")}</p>
               </div>
 
               {/* Date/time – full width above the grid */}
-              <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+              <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                 <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-accent-teal flex items-center justify-center shrink-0">
                   <CalendarIcon className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="text-content-inverse text-xs truncate leading-tight font-medium">
+                <span className="text-content dark:text-content-inverse text-xs truncate leading-tight font-medium">
                   {selectedDateFormated
                     ? `${selectedDateFormated}${selectedTime ? ` · ${selectedTime}` : ""}`
                     : t("selectDate") || "Select a date"}
@@ -147,65 +158,65 @@ const Booking = () => {
               <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
                 {/* Left sub-column: meeting details */}
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">{t("booking.meeting")}</p>
-                  <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                  <p className="text-[10px] uppercase tracking-wider text-content-subtle dark:text-content-subtle-inverse font-semibold">{t("booking.meeting")}</p>
+                  <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                     <div className="w-7 h-7 rounded-md bg-gradient-to-br from-accent-teal to-brand flex items-center justify-center shrink-0">
                       <Clock className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-content-inverse text-xs">{t("meetingDuration")}</span>
+                    <span className="text-content dark:text-content-inverse text-xs">{t("meetingDuration")}</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                  <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                     <div className="w-7 h-7 rounded-md bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0">
                       <Video className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className="text-content-inverse text-xs">{t("googleMeet")}</span>
+                    <span className="text-content dark:text-content-inverse text-xs">{t("googleMeet")}</span>
                   </div>
                 </div>
 
                 {/* Right sub-column: your details preview */}
                 <div className="space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold">{t("booking.yourDetails")}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-content-subtle dark:text-content-subtle-inverse font-semibold">{t("booking.yourDetails")}</p>
                   {fullName ? (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center shrink-0">
                         <User className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{fullName}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{fullName}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/20 rounded-lg border border-dashed border-line-glass/50">
-                      <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
-                        <User className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.02] dark:bg-surface-elevated/20 rounded-lg border border-dashed border-line/70 dark:border-line-glass/50">
+                      <div className="w-7 h-7 rounded-md bg-black/[0.04] dark:bg-surface-elevated/40 flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5 text-content-subtle/40 dark:text-content-subtle-inverse/40" />
                       </div>
                       <span className="text-content-disabled text-xs italic">{t("booking.phName")}</span>
                     </div>
                   )}
                   {company ? (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-7 h-7 rounded-md bg-gradient-to-br from-accent-teal to-brand flex items-center justify-center shrink-0">
                         <Building2 className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{company}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{company}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/20 rounded-lg border border-dashed border-line-glass/50">
-                      <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
-                        <Building2 className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.02] dark:bg-surface-elevated/20 rounded-lg border border-dashed border-line/70 dark:border-line-glass/50">
+                      <div className="w-7 h-7 rounded-md bg-black/[0.04] dark:bg-surface-elevated/40 flex items-center justify-center shrink-0">
+                        <Building2 className="w-3.5 h-3.5 text-content-subtle/40 dark:text-content-subtle-inverse/40" />
                       </div>
                       <span className="text-content-disabled text-xs italic">{t("booking.phCompany")}</span>
                     </div>
                   )}
                   {email ? (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-7 h-7 rounded-md bg-gradient-to-br from-brand-hover to-accent-teal flex items-center justify-center shrink-0">
                         <Mail className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{email}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{email}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 p-2 bg-surface-elevated/20 rounded-lg border border-dashed border-line-glass/50">
-                      <div className="w-7 h-7 rounded-md bg-surface-elevated/40 flex items-center justify-center shrink-0">
-                        <Mail className="w-3.5 h-3.5 text-content-subtle-inverse/40" />
+                    <div className="flex items-center gap-2 p-2 bg-black/[0.02] dark:bg-surface-elevated/20 rounded-lg border border-dashed border-line/70 dark:border-line-glass/50">
+                      <div className="w-7 h-7 rounded-md bg-black/[0.04] dark:bg-surface-elevated/40 flex items-center justify-center shrink-0">
+                        <Mail className="w-3.5 h-3.5 text-content-subtle/40 dark:text-content-subtle-inverse/40" />
                       </div>
                       <span className="text-content-disabled text-xs italic">{t("booking.phEmail")}</span>
                     </div>
@@ -217,62 +228,62 @@ const Booking = () => {
             /* ── Calendar mode: original single-column layout ── */
             <>
               <div className="mt-4">
-                <h3 className="font-bold text-xl md:text-2xl text-content-inverse mb-2">{t("meetWithTitle")}</h3>
-                <p className="text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">{t("bookingDescription")}</p>
+                <h3 className="font-bold text-xl md:text-2xl text-content dark:text-content-inverse mb-2">{t("meetWithTitle")}</h3>
+                <p className="text-content-subtle dark:text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">{t("bookingDescription")}</p>
               </div>
 
               {/* Meeting Details */}
               <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2.5 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                <div className="flex items-center gap-2.5 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                   <div className="w-8 h-8 rounded-md bg-gradient-to-br from-brand to-accent-teal flex items-center justify-center shrink-0">
                     <CalendarIcon className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-content-inverse text-xs md:text-sm truncate">
+                  <span className="text-content dark:text-content-inverse text-xs md:text-sm truncate">
                     {selectedDateFormated
                       ? `${selectedDateFormated}${selectedTime ? ` · ${selectedTime}` : ""}`
                       : t("pickADate")}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                <div className="flex items-center gap-2.5 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                   <div className="w-8 h-8 rounded-md bg-gradient-to-br from-accent-teal to-brand flex items-center justify-center shrink-0">
                     <Clock className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-content-inverse text-xs md:text-sm">{t("meetingDuration")}</span>
+                  <span className="text-content dark:text-content-inverse text-xs md:text-sm">{t("meetingDuration")}</span>
                 </div>
-                <div className="flex items-center gap-2.5 p-2 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                <div className="flex items-center gap-2.5 p-2 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                   <div className="w-8 h-8 rounded-md bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0">
                     <Video className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-content-inverse text-xs md:text-sm">{t("googleMeet")}</span>
+                  <span className="text-content dark:text-content-inverse text-xs md:text-sm">{t("googleMeet")}</span>
                 </div>
               </div>
 
               {/* User Info Preview */}
               {(fullName || company || email) && (
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] uppercase tracking-wider text-content-subtle-inverse font-semibold mb-1">{t("booking.yourDetails")}</h4>
+                  <h4 className="text-[10px] uppercase tracking-wider text-content-subtle dark:text-content-subtle-inverse font-semibold mb-1">{t("booking.yourDetails")}</h4>
                   {fullName && (
-                    <div className="flex items-center gap-2 p-1.5 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-1.5 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center shrink-0">
                         <User className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{fullName}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{fullName}</span>
                     </div>
                   )}
                   {company && (
-                    <div className="flex items-center gap-2 p-1.5 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-1.5 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-6 h-6 rounded-md bg-gradient-to-br from-accent-teal to-brand flex items-center justify-center shrink-0">
                         <Building2 className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{company}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{company}</span>
                     </div>
                   )}
                   {email && (
-                    <div className="flex items-center gap-2 p-1.5 bg-surface-elevated/50 rounded-lg border border-line-glass">
+                    <div className="flex items-center gap-2 p-1.5 bg-black/[0.03] dark:bg-surface-elevated/50 rounded-lg border border-line dark:border-line-glass">
                       <div className="w-6 h-6 rounded-md bg-gradient-to-br from-brand-hover to-accent-teal flex items-center justify-center shrink-0">
                         <Mail className="w-3 h-3 text-white" />
                       </div>
-                      <span className="text-content-inverse text-xs truncate">{email}</span>
+                      <span className="text-content dark:text-content-inverse text-xs truncate">{email}</span>
                     </div>
                   )}
                 </div>
@@ -283,7 +294,7 @@ const Booking = () => {
 
         {/* Calendar Section */}
         {!showForm && (
-          <div className="min-w-0 p-4 md:p-6 border-b lg:border-b-0 lg:border-r border-line-glass flex flex-col lg:flex-1 lg:min-h-0">
+          <div className="min-w-0 p-4 md:p-6 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass flex flex-col lg:flex-1 lg:min-h-0">
             <div className="lg:flex-1 lg:min-h-0">
               <Calendar
                 className="booking-calendar !bg-transparent !w-full !border-none min-h-[320px] lg:!h-full"
@@ -292,7 +303,7 @@ const Booking = () => {
                   !rounded-xl !transition-all !duration-200
                   hover:!bg-brand/30 hover:!text-white
                   focus:!bg-brand focus:!text-white
-                  !text-content-inverse
+                  !text-content dark:!text-content-inverse
                 `}
                 tileContent={({ date }) =>
                   date.toDateString() === new Date().toDateString()
@@ -313,12 +324,12 @@ const Booking = () => {
                 }
                 showNeighboringMonth={true}
                 navigationLabel={({ date }) => (
-                  <span className="text-lg font-semibold text-content-inverse">
+                  <span className="text-lg font-semibold text-content dark:text-content-inverse">
                     {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </span>
                 )}
-                nextLabel={<span className="text-content-inverse hover:text-brand-hover transition-colors">›</span>}
-                prevLabel={<span className="text-content-inverse hover:text-brand-hover transition-colors">‹</span>}
+                nextLabel={<span className="text-content dark:text-content-inverse hover:text-brand-hover transition-colors">›</span>}
+                prevLabel={<span className="text-content dark:text-content-inverse hover:text-brand-hover transition-colors">‹</span>}
                 next2Label={null}
                 prev2Label={null}
               />
@@ -330,7 +341,7 @@ const Booking = () => {
         <div className={`flex flex-col w-full lg:shrink-0${showForm ? " p-5 md:p-7 lg:overflow-y-auto lg:custom-scrollbar lg:w-[400px] lg:min-w-[340px]" : " p-4 md:p-5 lg:overflow-hidden lg:w-[280px] lg:min-w-[260px]"}`}>
           {!showForm && (
             <>
-              <h4 className="text-base font-semibold text-content-inverse mb-3">
+              <h4 className="text-base font-semibold text-content dark:text-content-inverse mb-3">
                 {selectedDateFormated ? t("booking.availableTimes") : t("booking.selectADate")}
               </h4>
               <div className="space-y-4 px-1 lg:overflow-y-auto lg:flex-1 lg:min-h-0 lg:pr-2 custom-scrollbar">
@@ -342,8 +353,8 @@ const Booking = () => {
                         <div className={`w-5 h-5 rounded-md bg-gradient-to-br ${color} flex items-center justify-center`}>
                           <Icon className="w-3 h-3 text-white" />
                         </div>
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-content-subtle-inverse">{label}</span>
-                        <div className="flex-1 h-px bg-line-glass/50" />
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-content-subtle dark:text-content-subtle-inverse">{label}</span>
+                        <div className="flex-1 h-px bg-line/60 dark:bg-line-glass/50" />
                       </div>
                       {/* Slots */}
                       <ul className="space-y-1.5">
@@ -353,7 +364,7 @@ const Booking = () => {
                               className={`w-full px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
                                 ${selectedValues.includes(timeInMinutes.toString())
                                   ? "bg-gradient-to-r from-brand to-accent-teal text-white shadow-lg shadow-brand/30 scale-[1.02]"
-                                  : "bg-surface-elevated/50 text-content-inverse border border-line-glass hover:bg-brand/20 hover:border-brand/30"
+                                  : "bg-black/[0.03] dark:bg-surface-elevated/50 text-content dark:text-content-inverse border border-line dark:border-line-glass hover:bg-brand/20 hover:border-brand/30"
                                 }`}
                               onClick={() => handleSelection(timeInMinutes.toString())}
                             >
@@ -366,8 +377,8 @@ const Booking = () => {
                   ))
                 ) : (
                   <div className="flex flex-col items-center justify-center h-32 text-center">
-                    <CalendarIcon className="w-10 h-10 text-content-subtle-inverse/40 mb-2" />
-                    <p className="text-content-subtle-inverse text-sm">
+                    <CalendarIcon className="w-10 h-10 text-content-subtle/40 dark:text-content-subtle-inverse/40 mb-2" />
+                    <p className="text-content-subtle dark:text-content-subtle-inverse text-sm">
                       {t("pickADate")}
                     </p>
                   </div>
@@ -392,22 +403,22 @@ const Booking = () => {
             <div className="form-slide-in">
               {/* Step indicator */}
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] uppercase tracking-widest text-content-subtle-inverse font-semibold">{t("booking.stepIndicator")}</span>
-                <span className="text-[10px] text-content-subtle-inverse">{t("booking.fieldsProgress", { count: String(filledCount) })}</span>
+                <span className="text-[10px] uppercase tracking-widest text-content-subtle dark:text-content-subtle-inverse font-semibold">{t("booking.stepIndicator")}</span>
+                <span className="text-[10px] text-content-subtle dark:text-content-subtle-inverse">{t("booking.fieldsProgress", { count: String(filledCount) })}</span>
               </div>
 
               {/* Animated completion progress bar */}
-              <div className="w-full h-1.5 bg-surface-elevated/60 rounded-full mb-3 overflow-hidden">
+              <div className="w-full h-1.5 bg-black/[0.05] dark:bg-surface-elevated/60 rounded-full mb-3 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-brand to-accent-teal transition-all duration-500 ease-out"
                   style={{ width: `${(filledCount / 4) * 100}%` }}
                 />
               </div>
 
-              <h4 className="text-lg font-bold text-content-inverse mb-0.5">
+              <h4 className="text-lg font-bold text-content dark:text-content-inverse mb-0.5">
                 {allFilled ? t("booking.readyToConfirm") : t("booking.almostThere")}
               </h4>
-              <p className="text-xs text-content-subtle-inverse mb-4 leading-relaxed">
+              <p className="text-xs text-content-subtle dark:text-content-subtle-inverse mb-4 leading-relaxed">
                 {allFilled
                   ? t("booking.readyDesc")
                   : t("booking.almostDesc")}
@@ -416,14 +427,14 @@ const Booking = () => {
               <div className="space-y-3">
                 {/* Full Name */}
                 <div>
-                  <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
+                  <label className="block text-xs text-content-subtle dark:text-content-subtle-inverse font-medium mb-1">
                     {t("booking.fullNameLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      className={`w-full px-3 py-2.5 bg-surface-black/40 border rounded-lg text-white text-sm
+                      className={`w-full px-3 py-2.5 bg-white dark:bg-surface-black/40 border rounded-lg text-content dark:text-white text-sm
                         placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all pr-9
-                        ${formErrors.fullName ? "border-red-500" : fullName.trim() ? "border-accent-teal/60" : "border-line-glass"}`}
+                        ${formErrors.fullName ? "border-red-500" : fullName.trim() ? "border-accent-teal/60" : "border-line dark:border-line-glass"}`}
                       value={fullName}
                       onChange={(e) => { setFullName(e.target.value); setFormErrors((p) => ({ ...p, fullName: "" })); }}
                       type="text"
@@ -440,15 +451,15 @@ const Booking = () => {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
+                  <label className="block text-xs text-content-subtle dark:text-content-subtle-inverse font-medium mb-1">
                     {t("booking.emailLabel")} <span className="text-red-400">*</span>{" "}
                     <span className="text-content-disabled text-[10px]">{t("booking.companyEmailHint")}</span>
                   </label>
                   <div className="relative">
                     <input
-                      className={`w-full px-3 py-2.5 bg-surface-black/40 border rounded-lg text-white text-sm
+                      className={`w-full px-3 py-2.5 bg-white dark:bg-surface-black/40 border rounded-lg text-content dark:text-white text-sm
                         placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all pr-9
-                        ${formErrors.email ? "border-red-500" : email.trim() ? "border-accent-teal/60" : "border-line-glass"}`}
+                        ${formErrors.email ? "border-red-500" : email.trim() ? "border-accent-teal/60" : "border-line dark:border-line-glass"}`}
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setFormErrors((p) => ({ ...p, email: "" })); }}
                       type="email"
@@ -465,14 +476,14 @@ const Booking = () => {
 
                 {/* Company Name */}
                 <div>
-                  <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
+                  <label className="block text-xs text-content-subtle dark:text-content-subtle-inverse font-medium mb-1">
                     {t("booking.companyNameLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      className={`w-full px-3 py-2.5 bg-surface-black/40 border rounded-lg text-white text-sm
+                      className={`w-full px-3 py-2.5 bg-white dark:bg-surface-black/40 border rounded-lg text-content dark:text-white text-sm
                         placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all pr-9
-                        ${formErrors.company ? "border-red-500" : company.trim() ? "border-accent-teal/60" : "border-line-glass"}`}
+                        ${formErrors.company ? "border-red-500" : company.trim() ? "border-accent-teal/60" : "border-line dark:border-line-glass"}`}
                       value={company}
                       onChange={(e) => { setCompany(e.target.value); setFormErrors((p) => ({ ...p, company: "" })); }}
                       type="text"
@@ -489,14 +500,14 @@ const Booking = () => {
 
                 {/* Where did you hear about us? */}
                 <div>
-                  <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
+                  <label className="block text-xs text-content-subtle dark:text-content-subtle-inverse font-medium mb-1">
                     {t("booking.referralLabel")} <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <select
-                      className={`w-full px-3 py-2.5 bg-surface-black/40 border rounded-lg text-white text-sm
+                      className={`w-full px-3 py-2.5 bg-white dark:bg-surface-black/40 border rounded-lg text-content dark:text-white text-sm
                         focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all appearance-none pr-9
-                        ${formErrors.referralSource ? "border-red-500" : referralSource ? "border-accent-teal/60" : "border-line-glass"}
+                        ${formErrors.referralSource ? "border-red-500" : referralSource ? "border-accent-teal/60" : "border-line dark:border-line-glass"}
                         ${!referralSource ? "text-content-disabled" : ""}`}
                       value={referralSource}
                       onChange={(e) => {
@@ -524,14 +535,14 @@ const Booking = () => {
                 {/* "Other" free-text input */}
                 {referralSource === "Other" && (
                   <div>
-                    <label className="block text-xs text-content-subtle-inverse font-medium mb-1">
+                    <label className="block text-xs text-content-subtle dark:text-content-subtle-inverse font-medium mb-1">
                       {t("booking.specifyLabel")} <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
                       <input
-                        className={`w-full px-3 py-2.5 bg-surface-black/40 border rounded-lg text-white text-sm
+                        className={`w-full px-3 py-2.5 bg-white dark:bg-surface-black/40 border rounded-lg text-content dark:text-white text-sm
                           placeholder:text-content-disabled focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/40 transition-all pr-9
-                          ${formErrors.referralSourceOther ? "border-red-500" : referralSourceOther.trim() ? "border-accent-teal/60" : "border-line-glass"}`}
+                          ${formErrors.referralSourceOther ? "border-red-500" : referralSourceOther.trim() ? "border-accent-teal/60" : "border-line dark:border-line-glass"}`}
                         value={referralSourceOther}
                         onChange={(e) => { setReferralSourceOther(e.target.value); setFormErrors((p) => ({ ...p, referralSourceOther: "" })); }}
                         type="text"
@@ -573,8 +584,8 @@ const Booking = () => {
                 </button>
 
                 <button
-                  className="w-full py-2.5 bg-transparent border border-line-glass text-content-subtle-inverse font-medium rounded-xl text-sm
-                    hover:border-brand/40 hover:text-content-inverse transition-all"
+                  className="w-full py-2.5 bg-transparent border border-line dark:border-line-glass text-content-subtle dark:text-content-subtle-inverse font-medium rounded-xl text-sm
+                    hover:border-brand/40 hover:text-content dark:hover:text-content-inverse transition-all"
                   onClick={() => setShowForm(false)}
                 >
                   <span className="flex items-center justify-center gap-1.5"><ArrowLeft className="w-4 h-4" />{t("back") || "Change date/time"}</span>
@@ -582,11 +593,11 @@ const Booking = () => {
 
                 {/* Reassurance strip */}
                 <div className="flex items-center justify-center gap-3 pt-1">
-                  <span className="flex items-center gap-1 text-[10px] text-content-subtle-inverse/70">
+                  <span className="flex items-center gap-1 text-[10px] text-content-subtle/70 dark:text-content-subtle-inverse/70">
                     <Lock className="w-2.5 h-2.5" /> {t("booking.secure")}
                   </span>
-                  <span className="text-content-subtle-inverse/30 text-[10px]">·</span>
-                  <span className="text-[10px] text-content-subtle-inverse/70">{t("booking.noCommitment")}</span>
+                  <span className="text-content-subtle/30 dark:text-content-subtle-inverse/30 text-[10px]">·</span>
+                  <span className="text-[10px] text-content-subtle/70 dark:text-content-subtle-inverse/70">{t("booking.noCommitment")}</span>
 
                 </div>
               </div>
@@ -605,7 +616,7 @@ const Booking = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark"
+        theme={darkMode ? "dark" : "light"}
         transition={Bounce}
       />
       
@@ -616,19 +627,28 @@ const Booking = () => {
           margin-bottom: 1rem;
         }
         .booking-calendar .react-calendar__navigation button {
-          color: white;
+          color: #1f2937;
           font-size: 1.5rem;
           background: transparent;
         }
+        .dark .booking-calendar .react-calendar__navigation button {
+          color: white;
+        }
         .booking-calendar .react-calendar__navigation button:hover {
-          background: rgba(101, 85, 143, 0.2);
+          background: rgba(101, 85, 143, 0.12);
           border-radius: 0.75rem;
         }
+        .dark .booking-calendar .react-calendar__navigation button:hover {
+          background: rgba(101, 85, 143, 0.2);
+        }
         .booking-calendar .react-calendar__month-view__weekdays {
-          color: #A5A5A5;
+          color: #6B7280;
           font-size: 0.75rem;
           font-weight: 500;
           text-transform: uppercase;
+        }
+        .dark .booking-calendar .react-calendar__month-view__weekdays {
+          color: #A5A5A5;
         }
         .booking-calendar .react-calendar__month-view__weekdays abbr {
           text-decoration: none;
@@ -639,20 +659,29 @@ const Booking = () => {
         }
         .booking-calendar .react-calendar__tile--now,
         .booking-calendar .react-calendar__tile--now:enabled {
-          background: rgba(101, 85, 143, 0.15) !important;
+          background: rgba(101, 85, 143, 0.10) !important;
           position: relative;
           padding-top: 1.1rem !important;
+          border: 1px solid rgba(101, 85, 143, 0.30) !important;
+        }
+        .dark .booking-calendar .react-calendar__tile--now,
+        .dark .booking-calendar .react-calendar__tile--now:enabled {
+          background: rgba(101, 85, 143, 0.15) !important;
           border: 1px solid rgba(101, 85, 143, 0.35) !important;
         }
         .booking-calendar .react-calendar__tile--now:enabled:hover {
-          background: rgba(101, 85, 143, 0.30) !important;
+          background: rgba(101, 85, 143, 0.20) !important;
           position: relative;
           padding-top: 1.1rem !important;
         }
         .booking-calendar .react-calendar__tile--now:enabled:focus {
-          background: rgba(101, 85, 143, 0.30) !important;
+          background: rgba(101, 85, 143, 0.20) !important;
           position: relative;
           padding-top: 1.1rem !important;
+        }
+        .dark .booking-calendar .react-calendar__tile--now:enabled:hover,
+        .dark .booking-calendar .react-calendar__tile--now:enabled:focus {
+          background: rgba(101, 85, 143, 0.30) !important;
         }
         .booking-calendar .react-calendar__tile--now.react-calendar__tile--active,
         .booking-calendar .react-calendar__tile--now.react-calendar__tile--active:enabled,
@@ -689,20 +718,32 @@ const Booking = () => {
           font-weight: 600;
         }
         .booking-calendar .react-calendar__month-view__days__day--neighboringMonth {
+          color: #9CA3AF !important;
+        }
+        .dark .booking-calendar .react-calendar__month-view__days__day--neighboringMonth {
           color: #4B5563 !important;
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(0, 0, 0, 0.05);
           border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(101, 85, 143, 0.5);
+          background: rgba(101, 85, 143, 0.4);
           border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(101, 85, 143, 0.6);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(101, 85, 143, 0.5);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(101, 85, 143, 0.7);
         }
         .form-slide-in {

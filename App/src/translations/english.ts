@@ -548,6 +548,8 @@ export const english = {
   'booking.changeDateTime': "Change date/time",
   'booking.secure': "Secure",
   'booking.noCommitment': "No commitment",
+  'booking.themeLight': "Switch to light mode",
+  'booking.themeDark': "Switch to dark mode",
 
   // ── Common (shared) ──
   'common.unknownError': "An unknown error occurred.",

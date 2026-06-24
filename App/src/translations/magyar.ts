@@ -548,6 +548,8 @@ export const magyar: Record<TranslationKey, string> = {
   'booking.changeDateTime': "Dátum/időpont módosítása",
   'booking.secure': "Biztonságos",
   'booking.noCommitment': "Nincs kötelezettség",
+  'booking.themeLight': "Váltás világos módra",
+  'booking.themeDark': "Váltás sötét módra",
 
   // ── Közös (megosztott) ──
   'common.unknownError': "Ismeretlen hiba történt.",

@@ -132,7 +132,7 @@ const DeleteAvailability = () => {
   return (
     <BookingPageLayout>
       {/* Left Panel - Info */}
-      <div className="flex flex-col py-5 px-5 md:px-6 w-full lg:w-[280px] lg:min-w-[260px] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line-glass bg-gradient-to-br from-status-error/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar">
+      <div className="flex flex-col py-5 px-5 md:px-6 w-full lg:w-[280px] lg:min-w-[260px] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass bg-gradient-to-br from-status-error/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar">
         <ThemeIcon
           lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10 object-contain" />}
           darkIcon={<img src={lightLogo} alt="Dark Logo" className="h-10 w-10 object-contain" />}
@@ -141,10 +141,10 @@ const DeleteAvailability = () => {
         />
 
         <div className="mt-4">
-          <h3 className="font-bold text-xl md:text-2xl text-content-inverse mb-2">
+          <h3 className="font-bold text-xl md:text-2xl text-content dark:text-content-inverse mb-2">
             {t("delAvail.title")}
           </h3>
-          <p className="text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">
+          <p className="text-content-subtle dark:text-content-subtle-inverse mb-4 text-xs md:text-sm leading-relaxed">
             {t("delAvail.description")}
           </p>
         </div>
@@ -176,7 +176,7 @@ const DeleteAvailability = () => {
       </div>
 
       {/* Calendar Section */}
-      <div className="min-w-0 p-4 md:p-6 border-b lg:border-b-0 lg:border-r border-line-glass flex flex-col lg:flex-1 lg:min-h-0">
+      <div className="min-w-0 p-4 md:p-6 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass flex flex-col lg:flex-1 lg:min-h-0">
         <div className="lg:flex-1 lg:min-h-0">
           <BookingCalendar
             value={calendarValue}
@@ -233,7 +233,7 @@ const DeleteAvailability = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark"
+        theme="colored"
         transition={Bounce}
       />
     </BookingPageLayout>

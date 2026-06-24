@@ -245,7 +245,7 @@ const Availability = () => {
   }, [showMobileModal]);
 
   return (
-    <div className="h-full bg-surface-overlay flex flex-col relative overflow-x-hidden overflow-y-auto scrollbar-hide">
+    <div className="h-full bg-[#F4F4F8] dark:bg-surface-overlay flex flex-col relative overflow-x-hidden overflow-y-auto scrollbar-hide">
       {/* Background gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 max-w-full h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 max-w-full h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
@@ -265,10 +265,10 @@ const Availability = () => {
               ariaLabel="ANL logo"
             />
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-content-inverse">
+              <h1 className="text-xl md:text-2xl font-bold text-content dark:text-content-inverse">
                 Manage Availability
               </h1>
-              <p className="text-xs text-content-subtle-inverse">
+              <p className="text-xs text-content-subtle dark:text-content-subtle-inverse">
                 Set your standard weekly schedule
               </p>
             </div>
@@ -279,7 +279,7 @@ const Availability = () => {
             <Link
               to="/home/booking/availability/add-availability"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium
-                bg-surface-elevated/50 border border-line-glass text-content-inverse
+                bg-black/[0.03] dark:bg-surface-elevated/50 border border-line dark:border-line-glass text-content dark:text-content-inverse
                 hover:bg-brand/20 hover:border-brand/30 transition-all duration-200"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -288,7 +288,7 @@ const Availability = () => {
             <Link
               to="/home/booking/availability/delete-availability"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium
-                bg-surface-elevated/50 border border-line-glass text-content-inverse
+                bg-black/[0.03] dark:bg-surface-elevated/50 border border-line dark:border-line-glass text-content dark:text-content-inverse
                 hover:bg-status-error/20 hover:border-status-error/30 transition-all duration-200"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -321,8 +321,8 @@ const Availability = () => {
               className={`p-4 md:p-5 rounded-2xl border backdrop-blur-md transition-all duration-300 availability-card
                 ${
                   dayAvailability.isDayOff
-                    ? "bg-surface-elevated/30 border-line-glass opacity-60"
-                    : "bg-surface-elevated/50 border-line-glass"
+                    ? "bg-black/[0.02] dark:bg-surface-elevated/30 border-line dark:border-line-glass opacity-60"
+                    : "bg-black/[0.03] dark:bg-surface-elevated/50 border-line dark:border-line-glass"
                 }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
@@ -333,7 +333,7 @@ const Availability = () => {
                       className={`text-sm font-semibold ${
                         dayAvailability.isDayOff
                           ? "text-content-muted line-through"
-                          : "text-content-inverse"
+                          : "text-content dark:text-content-inverse"
                       }`}
                     >
                       {dayAvailability.day}
@@ -342,7 +342,7 @@ const Availability = () => {
                       className={`text-xs mt-0.5 ${
                         dayAvailability.isDayOff
                           ? "text-content-disabled"
-                          : "text-content-subtle-inverse"
+                          : "text-content-subtle dark:text-content-subtle-inverse"
                       }`}
                     >
                       {dayAvailability.isDayOff
@@ -477,17 +477,17 @@ const Availability = () => {
         <div className="lg:hidden fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-6">
           <div
             id="custom-availability-modal"
-            className="bg-surface-elevated border border-line-glass w-full max-w-md rounded-t-2xl p-5 mobile-modal-slide-up"
+            className="bg-white dark:bg-surface-elevated border border-line dark:border-line-glass w-full max-w-md rounded-t-2xl p-5 mobile-modal-slide-up"
           >
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-bold text-content-inverse">
+              <h2 className="text-lg font-bold text-content dark:text-content-inverse">
                 Custom Availability
               </h2>
               <button
                 onClick={() => setShowMobileModal(false)}
-                className="p-1.5 rounded-lg hover:bg-surface-elevated/80 border border-line-glass transition-colors"
+                className="p-1.5 rounded-lg hover:bg-white/90 dark:hover:bg-surface-elevated/80 border border-line dark:border-line-glass transition-colors"
               >
-                <X className="w-5 h-5 text-content-subtle-inverse" />
+                <X className="w-5 h-5 text-content-subtle dark:text-content-subtle-inverse" />
               </button>
             </div>
 
@@ -505,7 +505,7 @@ const Availability = () => {
               <Link
                 to="/home/booking/availability/delete-availability"
                 className="flex items-center gap-3 w-full px-4 py-3 rounded-xl
-                  bg-surface-elevated/50 border border-line-glass text-content-inverse font-medium text-sm
+                  bg-black/[0.03] dark:bg-surface-elevated/50 border border-line dark:border-line-glass text-content dark:text-content-inverse font-medium text-sm
                   hover:bg-status-error/10 hover:border-status-error/30 transition-all"
                 onClick={() => setShowMobileModal(false)}
               >
@@ -527,7 +527,7 @@ const Availability = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="dark"
+        theme="colored"
         transition={Bounce}
       />
 

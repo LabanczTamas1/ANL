@@ -305,10 +305,10 @@ const SuccessfulBooking = () => {
 
         {/* Title + subtitle */}
         <div className={`text-center mb-8 transition-all duration-700 delay-200 ${showContent ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <h2 className="text-2xl md:text-4xl font-bold text-content-inverse mb-3 flex items-center justify-center gap-2">
+          <h2 className="text-2xl md:text-4xl font-bold text-content dark:text-content-inverse mb-3 flex items-center justify-center gap-2">
             {t("successBooking.confirmedTitle")} <PartyPopper className="w-7 h-7 md:w-8 md:h-8 text-accent-teal party-pop" />
           </h2>
-          <p className="text-content-subtle-inverse text-sm md:text-base leading-relaxed max-w-md mx-auto">
+          <p className="text-content-subtle dark:text-content-subtle-inverse text-sm md:text-base leading-relaxed max-w-md mx-auto">
             {t("successBooking.subtitle")}
           </p>
         </div>
@@ -317,7 +317,7 @@ const SuccessfulBooking = () => {
         {meetingDetails.loading ? (
           <div className="flex flex-col items-center py-8">
             <div className="w-10 h-10 border-[3px] border-brand border-t-transparent rounded-full animate-spin mb-3" />
-            <p className="text-content-subtle-inverse text-sm">{t("successBooking.loadingDetails")}</p>
+            <p className="text-content-subtle dark:text-content-subtle-inverse text-sm">{t("successBooking.loadingDetails")}</p>
           </div>
         ) : meetingDetails.error && !meetingDetails.date ? (
           <div className={`w-full max-w-lg p-4 rounded-xl bg-status-error/10 border border-status-error/30 text-center transition-all duration-500 ${showDetails ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
@@ -325,8 +325,8 @@ const SuccessfulBooking = () => {
           </div>
         ) : (
           <div className={`w-full max-w-lg transition-all duration-700 ${showDetails ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-            <div className="bg-surface-elevated/60 backdrop-blur-md border border-line-glass rounded-2xl p-5 md:p-6 space-y-3 meeting-card-glow">
-              <h3 className="text-xs uppercase tracking-widest text-content-subtle-inverse font-semibold mb-2">
+            <div className="bg-black/[0.04] dark:bg-surface-elevated/60 backdrop-blur-md border border-line dark:border-line-glass rounded-2xl p-5 md:p-6 space-y-3 meeting-card-glow">
+              <h3 className="text-xs uppercase tracking-widest text-content-subtle dark:text-content-subtle-inverse font-semibold mb-2">
                 {t("successBooking.meetingDetails")}
               </h3>
 
@@ -380,7 +380,7 @@ const SuccessfulBooking = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
-                    bg-surface-elevated/50 border border-line-glass text-content-inverse font-semibold text-sm
+                    bg-black/[0.03] dark:bg-surface-elevated/50 border border-line dark:border-line-glass text-content dark:text-content-inverse font-semibold text-sm
                     hover:border-blue-500/40 hover:scale-[1.02] transition-all duration-200"
                 >
                   <Video className="w-4 h-4" />

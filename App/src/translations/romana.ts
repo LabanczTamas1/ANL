@@ -550,6 +550,8 @@ export const romana: Record<TranslationKey, string> = {
   'booking.changeDateTime': "Schimbați data/ora",
   'booking.secure': "Securizat",
   'booking.noCommitment': "Fără obligații",
+  'booking.themeLight': "Comută la modul luminos",
+  'booking.themeDark': "Comută la modul întunecat",
 
   // ── Comun (partajat) ──
   'common.unknownError': "A apărut o eroare necunoscută.",

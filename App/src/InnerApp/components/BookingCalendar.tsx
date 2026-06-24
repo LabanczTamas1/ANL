@@ -29,7 +29,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         !rounded-xl !transition-all !duration-200
         hover:!bg-brand/30 hover:!text-white
         focus:!bg-brand focus:!text-white
-        !text-content-inverse
+        !text-content dark:!text-content-inverse
       `}
       tileContent={({ date }) =>
         date.toDateString() === new Date().toDateString()
@@ -45,12 +45,12 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
       }
       showNeighboringMonth
       navigationLabel={({ date }) => (
-        <span className="text-lg font-semibold text-content-inverse">
+        <span className="text-lg font-semibold text-content dark:text-content-inverse">
           {date.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </span>
       )}
-      nextLabel={<span className="text-content-inverse hover:text-brand-hover transition-colors">&rsaquo;</span>}
-      prevLabel={<span className="text-content-inverse hover:text-brand-hover transition-colors">&lsaquo;</span>}
+      nextLabel={<span className="text-content dark:text-content-inverse hover:text-brand-hover transition-colors">&rsaquo;</span>}
+      prevLabel={<span className="text-content dark:text-content-inverse hover:text-brand-hover transition-colors">&lsaquo;</span>}
       next2Label={null}
       prev2Label={null}
     />
@@ -61,19 +61,28 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         margin-bottom: 1rem;
       }
       .booking-calendar .react-calendar__navigation button {
-        color: white;
+        color: #1f2937;
         font-size: 1.5rem;
         background: transparent;
       }
+      .dark .booking-calendar .react-calendar__navigation button {
+        color: white;
+      }
       .booking-calendar .react-calendar__navigation button:hover {
-        background: rgba(101, 85, 143, 0.2);
+        background: rgba(101, 85, 143, 0.12);
         border-radius: 0.75rem;
       }
+      .dark .booking-calendar .react-calendar__navigation button:hover {
+        background: rgba(101, 85, 143, 0.2);
+      }
       .booking-calendar .react-calendar__month-view__weekdays {
-        color: #A5A5A5;
+        color: #6B7280;
         font-size: 0.75rem;
         font-weight: 500;
         text-transform: uppercase;
+      }
+      .dark .booking-calendar .react-calendar__month-view__weekdays {
+        color: #A5A5A5;
       }
       .booking-calendar .react-calendar__month-view__weekdays abbr {
         text-decoration: none;
@@ -84,20 +93,29 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
       }
       .booking-calendar .react-calendar__tile--now,
       .booking-calendar .react-calendar__tile--now:enabled {
-        background: rgba(101, 85, 143, 0.15) !important;
+        background: rgba(101, 85, 143, 0.10) !important;
         position: relative;
         padding-top: 1.1rem !important;
+        border: 1px solid rgba(101, 85, 143, 0.30) !important;
+      }
+      .dark .booking-calendar .react-calendar__tile--now,
+      .dark .booking-calendar .react-calendar__tile--now:enabled {
+        background: rgba(101, 85, 143, 0.15) !important;
         border: 1px solid rgba(101, 85, 143, 0.35) !important;
       }
       .booking-calendar .react-calendar__tile--now:enabled:hover {
-        background: rgba(101, 85, 143, 0.30) !important;
+        background: rgba(101, 85, 143, 0.20) !important;
         position: relative;
         padding-top: 1.1rem !important;
       }
       .booking-calendar .react-calendar__tile--now:enabled:focus {
-        background: rgba(101, 85, 143, 0.30) !important;
+        background: rgba(101, 85, 143, 0.20) !important;
         position: relative;
         padding-top: 1.1rem !important;
+      }
+      .dark .booking-calendar .react-calendar__tile--now:enabled:hover,
+      .dark .booking-calendar .react-calendar__tile--now:enabled:focus {
+        background: rgba(101, 85, 143, 0.30) !important;
       }
       .booking-calendar .react-calendar__tile--now.react-calendar__tile--active,
       .booking-calendar .react-calendar__tile--now.react-calendar__tile--active:enabled,
@@ -134,6 +152,9 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
         font-weight: 600;
       }
       .booking-calendar .react-calendar__month-view__days__day--neighboringMonth {
+        color: #9CA3AF !important;
+      }
+      .dark .booking-calendar .react-calendar__month-view__days__day--neighboringMonth {
         color: #4B5563 !important;
       }
     `}</style>
