@@ -17,8 +17,6 @@ interface User {
   lastName: string;
   company: string;
   progressionStatus: string;
-  progressionCategory: string;
-  progressionTimeline: string;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -120,8 +118,6 @@ const UserManagement = () => {
         lastName: u.lastName,
         company: u.company || "",
         progressionStatus: u.progressionStatus || "pending",
-        progressionCategory: u.progressionCategory || "",
-        progressionTimeline: u.progressionTimeline || "",
       }));
       setUsers(mapped);
     } catch (err: any) {
@@ -204,44 +200,6 @@ const UserManagement = () => {
     } catch (err: any) {
       fetchUsers();
       toast.error(err.message || t("userMgmt.failUpdateStatus"));
-    }
-  };
-
-  // Update progression category/timeline
-  const handleProgressUpdate = async (
-    userId: string,
-    updates: { progressionCategory?: string; progressionTimeline?: string }
-  ) => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      toast.error(t("userMgmt.authRequired"));
-      return;
-    }
-
-    try {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, ...updates } : u))
-      );
-      if (selectedUser && selectedUser.id === userId) {
-        setSelectedUser((prev) => prev ? { ...prev, ...updates } : prev);
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/progress/changeUserProgress/${userId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updates),
-        }
-      );
-
-      if (!response.ok) throw new Error(`Failed to update progress: ${response.status}`);
-    } catch (err: any) {
-      fetchUsers();
-      toast.error(err.message || t("userMgmt.failUpdateProgress"));
     }
   };
 
@@ -486,7 +444,6 @@ const UserManagement = () => {
             displayCurrency={displayCurrency}
             displayRate={displayRate}
             onStatusChange={(status) => handleStatusChange(selectedUser.id, status)}
-            onProgressUpdate={(updates) => handleProgressUpdate(selectedUser.id, updates)}
             onOpenMoney={() => { setIsDetailModalOpen(false); setIsMoneyModalOpen(true); }}
             onOpenHistory={() => { setIsDetailModalOpen(false); setIsHistoryModalOpen(true); }}
             onOpenPending={() => { setIsDetailModalOpen(false); setIsPendingModalOpen(true); }}

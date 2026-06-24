@@ -165,7 +165,7 @@ export async function getUserProgress(req: Request, res: Response): Promise<void
 export async function createMilestone(req: Request, res: Response): Promise<void> {
   try {
     const { userId } = req.params;
-    const { title, description, status, note } = req.body;
+    const { title, description, category, status, note } = req.body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       res.status(400).json({ error: 'Title is required' });
@@ -185,6 +185,7 @@ export async function createMilestone(req: Request, res: Response): Promise<void
     const milestone = await progressService.createMilestone(userId, {
       title: title.trim(),
       description,
+      category,
       status,
       note,
     });
@@ -199,7 +200,7 @@ export async function createMilestone(req: Request, res: Response): Promise<void
 export async function updateMilestone(req: Request, res: Response): Promise<void> {
   try {
     const { milestoneId } = req.params;
-    const { title, description, status, position, note } = req.body;
+    const { title, description, category, status, position, note } = req.body;
 
     if (status !== undefined && !progressService.isValidStatus(status)) {
       res.status(400).json({ error: 'Invalid status' });
@@ -215,6 +216,7 @@ export async function updateMilestone(req: Request, res: Response): Promise<void
     const updated = await progressService.updateMilestone(milestoneId, {
       title,
       description,
+      category,
       status,
       position,
       note,

@@ -101,6 +101,7 @@ export const magyar: Record<TranslationKey, string> = {
 
     'sidebar.logo': 'Ads and Leads',
     'sidebar.menu': 'Menü',
+    'sidebar.management': 'Kezelés',
     'sidebar.progressTracker': 'Folyamatkövetés',
     'sidebar.progressManagement': 'Folyamatkezelés',
     'sidebar.availability': 'Elérhetőség',
@@ -822,6 +823,10 @@ export const magyar: Record<TranslationKey, string> = {
   'userMgmt.name': "Név",
   'userMgmt.company': "Cég",
   'userMgmt.status': "Állapot",
+  'userMgmt.accountStatus': "Fiók állapota",
+  'userMgmt.tabProfile': "Profil",
+  'userMgmt.tabProgress': "Folyamat",
+  'userMgmt.tabFinance': "Pénzügy",
   'userMgmt.category': "Kategória",
   'userMgmt.timeline': "Idővonal",
   'userMgmt.balance': "Egyenleg",
@@ -1057,6 +1062,8 @@ export const magyar: Record<TranslationKey, string> = {
   'progress.pending': "Következő",
   'progress.completedOn': "Befejezve: {{date}}",
   'progress.noteLabel': "Megjegyzés",
+  'progress.allComplete': "Minden kész",
+  'progress.ungrouped': "Mérföldkövek",
 
   // Progress management (admin/owner)
   'progressAdmin.title': "Folyamatkezelés",
@@ -1075,6 +1082,7 @@ export const magyar: Record<TranslationKey, string> = {
   'progressAdmin.addMilestone': "Mérföldkő hozzáadása",
   'progressAdmin.newTitle': "Mérföldkő címe",
   'progressAdmin.newDescription': "Leírás (opcionális)",
+  'progressAdmin.newCategory': "Fázis / kategória (opcionális)",
   'progressAdmin.add': "Hozzáadás",
   'progressAdmin.overallProgress': "Összesített haladás",
   'progressAdmin.completedCount': "{{completed}} / {{total}} befejezve",

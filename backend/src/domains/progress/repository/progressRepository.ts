@@ -16,6 +16,7 @@ export interface CreateMilestoneInput {
   userId: string;
   title: string;
   description?: string;
+  category?: string;
   status?: MilestoneStatus;
   position: number;
   note?: string;
@@ -24,6 +25,7 @@ export interface CreateMilestoneInput {
 export interface UpdateMilestoneInput {
   title?: string;
   description?: string;
+  category?: string;
   status?: MilestoneStatus;
   position?: number;
   note?: string;
@@ -38,6 +40,7 @@ class ProgressRepository {
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL DEFAULT '',
+        category VARCHAR(120) NOT NULL DEFAULT '',
         status VARCHAR(20) NOT NULL DEFAULT 'pending',
         position INTEGER NOT NULL DEFAULT 0,
         note TEXT NOT NULL DEFAULT '',
@@ -77,13 +80,14 @@ class ProgressRepository {
     const completedAt = status === 'completed' ? new Date().toISOString() : null;
     const row = await queryOne<MilestoneRow>(
       `INSERT INTO progress_milestones
-         (user_id, title, description, status, position, note, completed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (user_id, title, description, category, status, position, note, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         input.userId,
         input.title,
         input.description ?? '',
+        input.category ?? '',
         status,
         input.position,
         input.note ?? '',
@@ -99,16 +103,16 @@ class ProgressRepository {
     const values: string[] = [];
     const params: unknown[] = [];
     DEFAULT_MILESTONES.forEach((m, i) => {
-      const base = i * 5;
+      const base = i * 6;
       values.push(
-        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`,
+        `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`,
       );
-      // Explicit status + note so we never depend on column defaults.
-      params.push(userId, m.title, m.description, i, 'pending');
+      // Explicit status so we never depend on column defaults.
+      params.push(userId, m.title, m.description, m.category, i, 'pending');
     });
 
     const rows = await query<MilestoneRow>(
-      `INSERT INTO progress_milestones (user_id, title, description, position, status)
+      `INSERT INTO progress_milestones (user_id, title, description, category, position, status)
        VALUES ${values.join(', ')}
        RETURNING *`,
       params,
@@ -129,6 +133,10 @@ class ProgressRepository {
     if (input.description !== undefined) {
       sets.push(`description = $${idx++}`);
       params.push(input.description);
+    }
+    if (input.category !== undefined) {
+      sets.push(`category = $${idx++}`);
+      params.push(input.category);
     }
     if (input.position !== undefined) {
       sets.push(`position = $${idx++}`);

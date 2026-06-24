@@ -16,6 +16,7 @@ export type MilestoneRow = {
   user_id: string;
   title: string;
   description: string;
+  category: string;
   status: MilestoneStatus;
   position: number;
   note: string;
@@ -30,6 +31,7 @@ export interface Milestone {
   userId: string;
   title: string;
   description: string;
+  category: string;
   status: MilestoneStatus;
   position: number;
   note: string;
@@ -44,6 +46,7 @@ export function toApiMilestone(row: MilestoneRow): Milestone {
     userId: row.user_id,
     title: row.title,
     description: row.description ?? '',
+    category: row.category ?? '',
     status: row.status,
     position: row.position,
     note: row.note ?? '',
@@ -55,14 +58,19 @@ export function toApiMilestone(row: MilestoneRow): Milestone {
 
 /**
  * The default journey seeded for every user the first time their progress is
- * requested. Mirrors the original 7-stage ANL onboarding path.
+ * requested. Mirrors the original 7-stage ANL onboarding path, grouped into
+ * collapsible phases (categories).
  */
-export const DEFAULT_MILESTONES: { title: string; description: string }[] = [
-  { title: 'First Contact', description: 'Initial introduction to our services' },
-  { title: 'Register to ANL', description: 'Complete your registration process' },
-  { title: 'Meeting', description: 'Discuss your goals and requirements' },
-  { title: 'Onboarding + Contract', description: 'Complete paperwork and get started' },
-  { title: 'Strategy Session', description: 'Create your personalized growth plan' },
-  { title: '90 Day Program', description: 'Execute your growth strategy' },
-  { title: 'Enjoy Your Growth!', description: 'See the results of your journey' },
+export const DEFAULT_MILESTONES: {
+  category: string;
+  title: string;
+  description: string;
+}[] = [
+  { category: 'Getting Started', title: 'First Contact', description: 'Initial introduction to our services' },
+  { category: 'Getting Started', title: 'Register to ANL', description: 'Complete your registration process' },
+  { category: 'Discovery', title: 'Meeting', description: 'Discuss your goals and requirements' },
+  { category: 'Discovery', title: 'Onboarding + Contract', description: 'Complete paperwork and get started' },
+  { category: 'Strategy', title: 'Strategy Session', description: 'Create your personalized growth plan' },
+  { category: 'Execution', title: '90 Day Program', description: 'Execute your growth strategy' },
+  { category: 'Growth', title: 'Enjoy Your Growth!', description: 'See the results of your journey' },
 ];

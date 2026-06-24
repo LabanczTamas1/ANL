@@ -49,13 +49,14 @@ export async function updateMilestone(
 
 export async function createMilestone(
   userId: string,
-  data: { title: string; description?: string; status?: MilestoneStatus; note?: string },
+  data: { title: string; description?: string; category?: string; status?: MilestoneStatus; note?: string },
 ): Promise<Milestone> {
   const count = await progressRepository.countForUser(userId);
   const row = await progressRepository.create({
     userId,
     title: data.title,
     description: data.description,
+    category: data.category,
     status: data.status,
     note: data.note,
     position: count,

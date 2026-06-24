@@ -103,6 +103,7 @@ export const romana: Record<TranslationKey, string> = {
     // Sidebar translations in Romanian
     'sidebar.logo': 'Ads and Leads',
     'sidebar.menu': 'Meniu',
+    'sidebar.management': 'Administrare',
     'sidebar.progressTracker': 'Urmărirea Progresului',
     'sidebar.progressManagement': 'Gestionarea Progresului',
     'sidebar.availability': 'Disponibilitate',
@@ -824,6 +825,10 @@ export const romana: Record<TranslationKey, string> = {
   'userMgmt.name': "Nume",
   'userMgmt.company': "Companie",
   'userMgmt.status': "Stare",
+  'userMgmt.accountStatus': "Starea contului",
+  'userMgmt.tabProfile': "Profil",
+  'userMgmt.tabProgress': "Progres",
+  'userMgmt.tabFinance': "Finanțe",
   'userMgmt.category': "Categorie",
   'userMgmt.timeline': "Cronologie",
   'userMgmt.balance': "Sold",
@@ -1059,6 +1064,8 @@ export const romana: Record<TranslationKey, string> = {
   'progress.pending': "Urmează",
   'progress.completedOn': "Finalizat pe {{date}}",
   'progress.noteLabel': "Notă",
+  'progress.allComplete': "Totul finalizat",
+  'progress.ungrouped': "Etape",
 
   // Progress management (admin/owner)
   'progressAdmin.title': "Gestionarea Progresului",
@@ -1077,6 +1084,7 @@ export const romana: Record<TranslationKey, string> = {
   'progressAdmin.addMilestone': "Adaugă o etapă",
   'progressAdmin.newTitle': "Titlul etapei",
   'progressAdmin.newDescription': "Descriere (opţional)",
+  'progressAdmin.newCategory': "Fază / categorie (opțional)",
   'progressAdmin.add': "Adaugă",
   'progressAdmin.overallProgress': "Progres general",
   'progressAdmin.completedCount': "{{completed}} din {{total}} finalizate",

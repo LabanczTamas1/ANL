@@ -101,6 +101,7 @@ export const english = {
 
     'sidebar.logo': 'Ads and Leads',
     'sidebar.menu': 'Menu',
+    'sidebar.management': 'Management',
     'sidebar.progressTracker': 'Progress Tracker',
     'sidebar.progressManagement': 'Progress Management',
     'sidebar.availability': 'Availability',
@@ -822,6 +823,10 @@ export const english = {
   'userMgmt.name': "Name",
   'userMgmt.company': "Company",
   'userMgmt.status': "Status",
+  'userMgmt.accountStatus': "Account status",
+  'userMgmt.tabProfile': "Profile",
+  'userMgmt.tabProgress': "Progress",
+  'userMgmt.tabFinance': "Finance",
   'userMgmt.category': "Category",
   'userMgmt.timeline': "Timeline",
   'userMgmt.balance': "Balance",
@@ -1057,6 +1062,8 @@ export const english = {
   'progress.pending': "Upcoming",
   'progress.completedOn': "Completed on {{date}}",
   'progress.noteLabel': "Note",
+  'progress.allComplete': "All complete",
+  'progress.ungrouped': "Milestones",
 
   // Progress management (admin/owner)
   'progressAdmin.title': "Progress Management",
@@ -1075,6 +1082,7 @@ export const english = {
   'progressAdmin.addMilestone': "Add a milestone",
   'progressAdmin.newTitle': "Milestone title",
   'progressAdmin.newDescription': "Description (optional)",
+  'progressAdmin.newCategory': "Phase / category (optional)",
   'progressAdmin.add': "Add",
   'progressAdmin.overallProgress': "Overall progress",
   'progressAdmin.completedCount': "{{completed}} of {{total}} completed",

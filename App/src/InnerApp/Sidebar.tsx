@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaChartBar, FaColumns, FaUserShield } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import { FaCalendarCheck } from 'react-icons/fa';
@@ -46,30 +46,6 @@ const Sidebar: React.FC = () => {
               <span>{t('sidebar.progressTracker')}</span>
             </div>
           </Link>
-          {(role === "admin" || role === "owner") ?
-            <Link to="/home/progress-management">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaStar className="text-lg" />
-                <span>{t('sidebar.progressManagement')}</span>
-              </div>
-            </Link>
-          : ""}
-          {(role === "admin" || role === "owner") ?
-            <Link to="/home/booking/availability">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaEnvelope className="text-lg" />
-                <span>{t('sidebar.availability')}</span>
-              </div>
-            </Link>
-          : ""}
-          {(role === "admin" || role === "owner") ?
-            <Link to="/home/booking/availability/overview">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaCalendarCheck className="text-lg" />
-                <span>{t('sidebar.availabilityOverview')}</span>
-              </div>
-            </Link>
-          : ""}
           <Link to='/home/booking'>
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
               <FaEnvelope className="text-lg" />
@@ -78,6 +54,59 @@ const Sidebar: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {/* Management Section (admin / owner) */}
+      {(role === "admin" || role === "owner") && (
+        <div className="flex flex-col gap-3 mt-6">
+          <div className="font-bold text-sm">{t('sidebar.management')}</div>
+          <div className="flex flex-col gap-3">
+            <Link to="user-management">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaUserCircle className="text-lg" />
+                <span>{t('sidebar.userManagement')}</span>
+              </div>
+            </Link>
+            <Link to="/home/progress-management">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaStar className="text-lg" />
+                <span>{t('sidebar.progressManagement')}</span>
+              </div>
+            </Link>
+            <Link to="/home/statistics">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaChartBar className="text-lg" />
+                <span>{t('sidebar.statistics')}</span>
+              </div>
+            </Link>
+            <Link to="/home/kanban">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaColumns className="text-lg" />
+                <span>{t('sidebar.kanban')}</span>
+              </div>
+            </Link>
+            <Link to="/home/booking/availability">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaEnvelope className="text-lg" />
+                <span>{t('sidebar.availability')}</span>
+              </div>
+            </Link>
+            <Link to="/home/booking/availability/overview">
+              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                <FaCalendarCheck className="text-lg" />
+                <span>{t('sidebar.availabilityOverview')}</span>
+              </div>
+            </Link>
+            {role === "admin" && (
+              <Link to="/home/adminpage">
+                <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                  <FaUserShield className="text-lg" />
+                  <span>{t('sidebar.adminPage')}</span>
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Email Section */}
       <div className="flex flex-col gap-3 mt-6">
@@ -116,38 +145,6 @@ const Sidebar: React.FC = () => {
               <span>{t('sidebar.myAccount')}</span>
             </div>
           </Link>
-          {(role === "admin" || role === "owner") ?
-            <Link to="user-management">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
-                <span>{t('sidebar.userManagement')}</span>
-              </div>
-            </Link>
-          : ""}
-          {(role === "admin" || role === "owner") ?
-            <Link to="/home/statistics">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaStar className="text-lg" />
-                <span>{t('sidebar.statistics')}</span>
-              </div>
-            </Link>
-          : ""}
-          {(role === "admin" || role === "owner") ?
-            <Link to="/home/kanban">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
-                <span>{t('sidebar.kanban')}</span>
-              </div>
-            </Link>
-          : ""}
-          {role === "admin" ?
-            <Link to="/home/adminpage">
-              <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
-                <FaUserCircle className="text-lg" />
-                <span>{t('sidebar.adminPage')}</span>
-              </div>
-            </Link>
-          : ""}
           <div onClick={handleLogout} className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg cursor-pointer">
             <FaSignOutAlt className="text-lg" />
             <span>{t('sidebar.logout')}</span>

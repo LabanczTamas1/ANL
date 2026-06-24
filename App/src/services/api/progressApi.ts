@@ -11,6 +11,7 @@ export interface Milestone {
   userId: string;
   title: string;
   description: string;
+  category: string;
   status: MilestoneStatus;
   position: number;
   note: string;
@@ -50,7 +51,49 @@ export const normalizeMilestone = (m: Milestone): Milestone => ({
   status: stripQuoteArtifact(m.status) as MilestoneStatus,
   note: stripQuoteArtifact(m.note),
   description: stripQuoteArtifact(m.description),
+  category: stripQuoteArtifact(m.category ?? ''),
 });
+
+/** A milestone phase: a named category plus its ordered milestones. */
+export interface MilestoneGroup {
+  category: string;
+  milestones: Milestone[];
+  total: number;
+  completed: number;
+  inProgress: number;
+  /** Percent of milestones completed in this group (0-100). */
+  percent: number;
+}
+
+/**
+ * Group milestones into ordered phases by `category`, preserving the order in
+ * which each category first appears (by position). Uncategorized milestones
+ * collapse into a single trailing group with an empty category name.
+ */
+export const groupMilestonesByCategory = (
+  milestones: Milestone[],
+): MilestoneGroup[] => {
+  const ordered = [...milestones].sort((a, b) => a.position - b.position);
+  const map = new Map<string, Milestone[]>();
+  for (const m of ordered) {
+    const key = (m.category ?? '').trim();
+    const bucket = map.get(key);
+    if (bucket) bucket.push(m);
+    else map.set(key, [m]);
+  }
+  return Array.from(map.entries()).map(([category, items]) => {
+    const completed = items.filter((m) => m.status === 'completed').length;
+    const inProgress = items.filter((m) => m.status === 'in_progress').length;
+    return {
+      category,
+      milestones: items,
+      total: items.length,
+      completed,
+      inProgress,
+      percent: items.length ? Math.round((completed / items.length) * 100) : 0,
+    };
+  });
+};
 
 /** GET /api/v1/progress/me — current user's milestone journey. */
 export const getMyProgress = () =>
@@ -74,6 +117,7 @@ export const createMilestone = (
   payload: {
     title: string;
     description?: string;
+    category?: string;
     status?: MilestoneStatus;
     note?: string;
   },
@@ -89,6 +133,7 @@ export const updateMilestone = (
   payload: {
     title?: string;
     description?: string;
+    category?: string;
     status?: MilestoneStatus;
     position?: number;
     note?: string;
