@@ -1090,6 +1090,12 @@ export const magyar: Record<TranslationKey, string> = {
   'progressAdmin.allComplete': "Minden mérföldkő befejezve",
   'progressAdmin.saving': "Mentés",
   'progressAdmin.saved': "Mentve",
+  'progressAdmin.editNote': "Jegyzet szerkesztése",
+  'progressAdmin.addNote': "Jegyzet hozzáadása",
+  'progressAdmin.saveNote': "Mentés",
+  'progressAdmin.cancel': "Mégse",
+  'progressAdmin.noNote': "Még nincs jegyzet",
+  'progressAdmin.unsaved': "Nincs mentve",
 
   // OAuth callback
   'oauth.authenticating': "Hitelesítés...",

@@ -122,12 +122,11 @@ const UserProgressEditor = ({
     patchMilestone(m.id, { status });
   };
 
-  const handleNoteChange = (id: string, note: string) => {
-    setMilestones((prev) => prev.map((x) => (x.id === id ? { ...x, note } : x)));
-  };
-
-  const handleNoteBlur = (m: Milestone, note: string, original: string) => {
-    if (note === original) return;
+  const handleSaveNote = (m: Milestone, note: string) => {
+    if (note.trim() === m.note.trim()) return;
+    setMilestones((prev) =>
+      prev.map((x) => (x.id === m.id ? { ...x, note } : x)),
+    );
     patchMilestone(m.id, { note });
   };
 
@@ -233,8 +232,7 @@ const UserProgressEditor = ({
         formatDate={formatDate}
         saveState={saveState}
         onSetStatus={handleSetStatus}
-        onNoteChange={handleNoteChange}
-        onNoteBlur={handleNoteBlur}
+        onSaveNote={handleSaveNote}
         onDelete={handleDelete}
       />
 

@@ -7,6 +7,8 @@ import {
   Check,
   Loader2,
   Trash2,
+  Pencil,
+  X,
 } from 'lucide-react';
 import {
   Milestone,
@@ -64,8 +66,7 @@ interface MilestoneJourneyProps {
   formatDate: (value: string | null) => string;
   saveState?: Record<string, MilestoneSaveState>;
   onSetStatus?: (m: Milestone, status: MilestoneStatus) => void;
-  onNoteChange?: (id: string, note: string) => void;
-  onNoteBlur?: (m: Milestone, note: string, original: string) => void;
+  onSaveNote?: (m: Milestone, note: string) => void;
   onDelete?: (m: Milestone) => void;
 }
 
@@ -93,14 +94,116 @@ const SaveIndicator = ({
   return null;
 };
 
+/** Editable note with explicit edit / save / cancel controls. */
+const NoteEditor = ({
+  milestone,
+  saveState,
+  onSave,
+  t,
+}: {
+  milestone: Milestone;
+  saveState: MilestoneSaveState;
+  onSave: (note: string) => void;
+  t: (k: string) => string;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(milestone.note);
+
+  // Keep the draft in sync when the saved note changes from outside.
+  useEffect(() => {
+    if (!editing) setDraft(milestone.note);
+  }, [milestone.note, editing]);
+
+  const startEdit = () => {
+    setDraft(milestone.note);
+    setEditing(true);
+  };
+
+  const cancel = () => {
+    setDraft(milestone.note);
+    setEditing(false);
+  };
+
+  const save = () => {
+    onSave(draft);
+    setEditing(false);
+  };
+
+  const dirty = draft.trim() !== milestone.note.trim();
+
+  return (
+    <div className="mt-2.5">
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-xs font-medium text-content-subtle dark:text-content-subtle-inverse">
+          {t('progressAdmin.noteLabel')}
+        </label>
+        <SaveIndicator state={saveState} t={t} />
+      </div>
+
+      {editing ? (
+        <div className="space-y-2">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={2}
+            autoFocus
+            placeholder={t('progressAdmin.notePlaceholder')}
+            className="w-full rounded-md border border-line dark:border-line-dark bg-white dark:bg-surface-dark text-sm px-3 py-2 text-content dark:text-content-inverse focus:outline-none focus:ring-2 focus:ring-brand-focus"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={save}
+              disabled={!dirty || saveState === 'saving'}
+              className="inline-flex items-center gap-1.5 rounded-md bg-brand hover:bg-brand-hover text-white text-xs font-medium px-3 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Check size={13} />
+              {t('progressAdmin.saveNote')}
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              className="inline-flex items-center gap-1.5 rounded-md border border-line dark:border-line-dark text-content-subtle dark:text-content-subtle-inverse text-xs font-medium px-3 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors"
+            >
+              <X size={13} />
+              {t('progressAdmin.cancel')}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2">
+          <div
+            className={`flex-1 min-w-0 rounded-md border px-3 py-2 text-sm ${
+              milestone.note
+                ? 'border-brand/20 bg-brand/[0.06] dark:bg-brand/[0.12] text-content-subtle dark:text-content-subtle-inverse'
+                : 'border-dashed border-line dark:border-line-dark text-content-muted italic'
+            }`}
+          >
+            {milestone.note || t('progressAdmin.noNote')}
+          </div>
+          <button
+            type="button"
+            onClick={startEdit}
+            className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-md border border-line dark:border-line-dark text-content-subtle dark:text-content-subtle-inverse text-xs font-medium px-3 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.05] transition-colors"
+          >
+            <Pencil size={13} />
+            {milestone.note
+              ? t('progressAdmin.editNote')
+              : t('progressAdmin.addNote')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MilestoneJourney = ({
   milestones,
   editable = false,
   formatDate,
   saveState = {},
   onSetStatus,
-  onNoteChange,
-  onNoteBlur,
+  onSaveNote,
   onDelete,
 }: MilestoneJourneyProps) => {
   const { t } = useLanguage();
@@ -250,15 +353,22 @@ const MilestoneJourney = ({
                               {m.title}
                             </h4>
                             {editable ? (
-                              <button
-                                type="button"
-                                onClick={() => onDelete?.(m)}
-                                className="flex-shrink-0 text-content-muted hover:text-status-error p-1"
-                                aria-label={t('progressAdmin.delete')}
-                                title={t('progressAdmin.delete')}
-                              >
-                                <Trash2 size={15} />
-                              </button>
+                              <div className="flex-shrink-0 flex items-center gap-2">
+                                <span
+                                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${meta.badge}`}
+                                >
+                                  {t(meta.labelKey)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => onDelete?.(m)}
+                                  className="text-content-muted hover:text-status-error p-1"
+                                  aria-label={t('progressAdmin.delete')}
+                                  title={t('progressAdmin.delete')}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
                             ) : (
                               <span
                                 className={`flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${meta.badge}`}
@@ -308,28 +418,14 @@ const MilestoneJourney = ({
                             </div>
                           )}
 
-                          {/* Note — editable textarea or read-only box */}
+                          {/* Note — editable editor or read-only box */}
                           {editable ? (
-                            <div className="mt-2.5">
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs font-medium text-content-subtle dark:text-content-subtle-inverse">
-                                  {t('progressAdmin.noteLabel')}
-                                </label>
-                                <SaveIndicator state={saveState[m.id]} t={t} />
-                              </div>
-                              <textarea
-                                value={m.note}
-                                onChange={(e) =>
-                                  onNoteChange?.(m.id, e.target.value)
-                                }
-                                onBlur={(e) =>
-                                  onNoteBlur?.(m, e.target.value, m.note)
-                                }
-                                rows={2}
-                                placeholder={t('progressAdmin.notePlaceholder')}
-                                className="w-full rounded-md border border-line dark:border-line-dark bg-white dark:bg-surface-dark text-sm px-3 py-2 text-content dark:text-content-inverse focus:outline-none focus:ring-2 focus:ring-brand-focus"
-                              />
-                            </div>
+                            <NoteEditor
+                              milestone={m}
+                              saveState={saveState[m.id]}
+                              onSave={(note) => onSaveNote?.(m, note)}
+                              t={t}
+                            />
                           ) : (
                             m.note && (
                               <div className="mt-2 text-sm rounded-md bg-brand/[0.06] dark:bg-brand/[0.12] border border-brand/20 px-3 py-2 text-content-subtle dark:text-content-subtle-inverse">

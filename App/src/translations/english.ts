@@ -1090,6 +1090,12 @@ export const english = {
   'progressAdmin.allComplete': "All milestones completed",
   'progressAdmin.saving': "Saving",
   'progressAdmin.saved': "Saved",
+  'progressAdmin.editNote': "Edit note",
+  'progressAdmin.addNote': "Add note",
+  'progressAdmin.saveNote': "Save",
+  'progressAdmin.cancel': "Cancel",
+  'progressAdmin.noNote': "No note yet",
+  'progressAdmin.unsaved': "Unsaved",
 
   // OAuth callback
   'oauth.authenticating': "Authenticating...",

@@ -1092,6 +1092,12 @@ export const romana: Record<TranslationKey, string> = {
   'progressAdmin.allComplete': "Toate etapele finalizate",
   'progressAdmin.saving': "Se salvează",
   'progressAdmin.saved': "Salvat",
+  'progressAdmin.editNote': "Editează nota",
+  'progressAdmin.addNote': "Adaugă notă",
+  'progressAdmin.saveNote': "Salvează",
+  'progressAdmin.cancel': "Anulează",
+  'progressAdmin.noNote': "Nicio notă încă",
+  'progressAdmin.unsaved': "Nesalvat",
 
   // OAuth callback
   'oauth.authenticating': "Se autentifică...",
