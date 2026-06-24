@@ -19,6 +19,7 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 const Booking = () => {
   const { t } = useLanguage();
   const { darkMode, toggleTheme } = useThemePreference();
+  const isLoggedIn = !!localStorage.getItem("authToken");
 
   const REFERRAL_OPTIONS = [
     { value: "Google Search", label: t("booking.referralGoogle") },
@@ -125,12 +126,14 @@ const Booking = () => {
               size="l"
               ariaLabel="ANL logo"
             />
-            <ThemeToggle
-              darkMode={darkMode}
-              onToggle={toggleTheme}
-              labelLight={t("booking.themeLight")}
-              labelDark={t("booking.themeDark")}
-            />
+            {!isLoggedIn && (
+              <ThemeToggle
+                darkMode={darkMode}
+                onToggle={toggleTheme}
+                labelLight={t("booking.themeLight")}
+                labelDark={t("booking.themeDark")}
+              />
+            )}
           </div>
           
           {showForm ? (
