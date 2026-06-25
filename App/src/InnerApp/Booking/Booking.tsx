@@ -118,7 +118,7 @@ const Booking = () => {
       
       <div className={`relative z-10 flex flex-col lg:flex-row w-full h-auto lg:h-full bg-white/90 dark:bg-surface-elevated/80 backdrop-blur-xl border border-line dark:border-line-glass rounded-2xl md:rounded-3xl shadow-glass overflow-visible lg:overflow-hidden${showForm ? " lg:justify-center" : ""}`}>
         {/* Left Panel - Meeting Info */}
-        <div className={`flex flex-col py-5 px-5 md:px-6 w-full lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass bg-gradient-to-br from-brand/10 to-transparent lg:overflow-y-auto lg:custom-scrollbar${showForm ? " hidden lg:flex lg:w-[440px] lg:min-w-[380px]" : " lg:w-[280px] lg:min-w-[260px]"}`}>
+        <div className={`flex flex-col py-5 px-5 md:px-6 w-full lg:shrink-0 border-b lg:border-b-0 lg:border-r border-line dark:border-line-glass bg-gradient-to-br from-brand/10 to-transparent rounded-t-2xl md:rounded-t-3xl lg:rounded-none lg:overflow-y-auto lg:custom-scrollbar${showForm ? " hidden lg:flex lg:w-[440px] lg:min-w-[380px]" : " lg:w-[280px] lg:min-w-[260px]"}`}>
           <div className="flex items-center justify-between gap-2">
             <ThemeIcon
               lightIcon={<img src={darkLogo} alt="Light Logo" className="h-10 w-10 object-contain" />}
