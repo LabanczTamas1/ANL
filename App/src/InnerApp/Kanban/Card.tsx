@@ -674,7 +674,7 @@ const Card: React.FC<CardProps> = ({
             onClick={handleOpenModal}
           >
             <div className="relative h-1 w-full bg-[#65558F] text-xs">
-              <div className="absolute top-5 right-1">
+              <div className={`absolute top-5 ${isMobile ? "right-9" : "right-1"}`}>
                 {cardData.DateOfAdded ? timeAgo(Number(cardData.DateOfAdded)) : "just now"}
               </div>
             </div>

@@ -177,7 +177,7 @@ const Column: React.FC<ColumnProps> = ({
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="space-y-1 min-h-[1vh] max-h-[50vh] overflow-y-auto mx-2"
+                  className={`space-y-1 min-h-[1vh] mx-2 ${isMobile ? "" : "max-h-[50vh] overflow-y-auto"}`}
                 >
                   {currentCards.map((card, index) => {
                     const globalIndex = (currentPage - 1) * cardsPerPage + index;
