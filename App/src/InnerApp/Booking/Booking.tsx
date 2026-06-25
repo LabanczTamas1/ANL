@@ -301,13 +301,30 @@ const Booking = () => {
             <div className="lg:flex-1 lg:min-h-0">
               <Calendar
                 className="booking-calendar !bg-transparent !w-full !border-none min-h-[320px] lg:!h-full"
-                minDate={new Date()}
-                tileClassName={() => `
-                  !rounded-xl !transition-all !duration-200
-                  hover:!bg-brand/30 hover:!text-white
-                  focus:!bg-brand focus:!text-white
-                  !text-content dark:!text-content-inverse
-                `}
+                minDate={(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })()}
+                tileDisabled={({ date, view }) => {
+                  if (view !== "month") return false;
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today;
+                }}
+                tileClassName={({ date, view }) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const isPast = view === "month" && date < today;
+                  return isPast
+                    ? `
+                      !rounded-xl !transition-all !duration-200
+                      !text-content-subtle/40 dark:!text-content-subtle-inverse/40
+                      !cursor-not-allowed !line-through
+                    `
+                    : `
+                      !rounded-xl !transition-all !duration-200
+                      hover:!bg-brand/30 hover:!text-white
+                      focus:!bg-brand focus:!text-white
+                      !text-content dark:!text-content-inverse
+                    `;
+                }}
                 tileContent={({ date }) =>
                   date.toDateString() === new Date().toDateString()
                     ? <span className="booking-today-label">{t("booking.today")}</span>
