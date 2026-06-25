@@ -1,8 +1,10 @@
 import React, { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { Draggable } from "@hello-pangea/dnd";
+import { MoreVertical, ArrowUp, ArrowDown, FolderInput } from "lucide-react";
 import CardMessageSection from "./CardMessageSection";
 import ActivityLog, { ActivityLogHandle } from "./ActivityLog";
+import MobileActionSheet, { SheetAction } from "./MobileActionSheet";
 import { updateCard } from "../../services/api/kanbanApi";
 import { FiMessageSquare } from "react-icons/fi";
 import timeAgo from "./../../utils/calculateTimeAgo";
@@ -29,14 +31,32 @@ interface CardProps {
   columnId: string;
   index: number;
   onDeleteCard: (columnId: string, cardId: string) => void;
+  isMobile?: boolean;
+  isFirstCard?: boolean;
+  isLastCard?: boolean;
+  otherColumns?: { id: string; name: string }[];
+  onMoveCardWithin?: (columnId: string, cardId: string, direction: "up" | "down") => void;
+  onMoveCardToColumn?: (sourceColumnId: string, cardId: string, destinationColumnId: string) => void;
 }
 
 type CardKey = keyof CardProps["card"];
 
-const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
+const Card: React.FC<CardProps> = ({
+  card,
+  columnId,
+  index,
+  onDeleteCard,
+  isMobile = false,
+  isFirstCard = false,
+  isLastCard = false,
+  otherColumns = [],
+  onMoveCardWithin,
+  onMoveCardToColumn,
+}) => {
   const { t } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isCardSheetOpen, setIsCardSheetOpen] = useState(false);
   const [cardData, setCardData] = useState(card);
   const [isEditing, setIsEditing] = useState<CardKey | null>(null);
   const [value, setValue] = useState<string | boolean>(cardData.name);
@@ -637,11 +657,11 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
       <Draggable
         draggableId={card.id}
         index={index}
-        isDragDisabled={isModalOpen}
+        isDragDisabled={isModalOpen || isMobile}
       >
         {(provided, snapshot) => (
           <div
-            className={`bg-white shadow-lg mb-0 w-full h-10 space-y-2 dark:bg-[#464646] dark:text-[white] hover:shadow-xl ${
+            className={`relative bg-white shadow-lg mb-0 w-full h-10 space-y-2 dark:bg-[#464646] dark:text-[white] hover:shadow-xl ${
               snapshot.isDragging ? "scale-105" : ""
             }`}
             ref={provided.innerRef}
@@ -658,7 +678,7 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                 {cardData.DateOfAdded ? timeAgo(Number(cardData.DateOfAdded)) : "just now"}
               </div>
             </div>
-            <p className="flex flex-row items-center text-base font-semibold text-gray-800 dark:text-[white] truncate px-4">
+            <p className={`flex flex-row items-center text-base font-semibold text-gray-800 dark:text-[white] truncate px-4 ${isMobile ? "pr-10" : ""}`}>
               {(cardData as any).Name || cardData.BusinessName || 'Untitled'}
               <div className="pl-2">
                 {Object.keys(reorderedObject)
@@ -669,9 +689,71 @@ const Card: React.FC<CardProps> = ({ card, columnId, index, onDeleteCard }) => {
                   })}
               </div>
             </p>
+            {isMobile && (
+              <button
+                type="button"
+                aria-label={t("kanban.cardActions")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCardSheetOpen(true);
+                }}
+                className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 dark:text-gray-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.1] transition-colors"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
       </Draggable>
+
+      {/* Mobile card action sheet */}
+      <MobileActionSheet
+        open={isCardSheetOpen}
+        title={(cardData as any).Name || cardData.BusinessName || "Untitled"}
+        onClose={() => setIsCardSheetOpen(false)}
+        closeLabel={t("kanban.close")}
+      >
+        <SheetAction
+          icon={<ArrowUp className="w-5 h-5" />}
+          label={t("kanban.moveUp")}
+          disabled={isFirstCard}
+          onClick={() => {
+            onMoveCardWithin?.(columnId, card.id, "up");
+            setIsCardSheetOpen(false);
+          }}
+        />
+        <SheetAction
+          icon={<ArrowDown className="w-5 h-5" />}
+          label={t("kanban.moveDown")}
+          disabled={isLastCard}
+          onClick={() => {
+            onMoveCardWithin?.(columnId, card.id, "down");
+            setIsCardSheetOpen(false);
+          }}
+        />
+        <div className="mt-1 border-t border-line dark:border-line-glass pt-2">
+          <p className="flex items-center gap-2 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-content-subtle dark:text-content-subtle-inverse">
+            <FolderInput className="w-4 h-4" />
+            {t("kanban.moveToColumn")}
+          </p>
+          {otherColumns.length === 0 ? (
+            <p className="px-4 py-2 text-sm text-content-subtle dark:text-content-subtle-inverse">
+              {t("kanban.noOtherColumns")}
+            </p>
+          ) : (
+            otherColumns.map((col) => (
+              <SheetAction
+                key={col.id}
+                label={col.name}
+                onClick={() => {
+                  onMoveCardToColumn?.(columnId, card.id, col.id);
+                  setIsCardSheetOpen(false);
+                }}
+              />
+            ))
+          )}
+        </div>
+      </MobileActionSheet>
 
       {isModalOpen && ReactDOM.createPortal(modalContent, document.body)}
       {isDeleteModalOpen && ReactDOM.createPortal(deleteModalContent, document.body)}

@@ -759,6 +759,17 @@ export const romana: Record<TranslationKey, string> = {
   // TrashBin
   'kanban.dropColumnHere': "Trageți coloana aici pentru a o șterge",
 
+  // Mobile reorder / move
+  'kanban.cardActions': "Acțiuni card",
+  'kanban.columnActions': "Acțiuni coloană",
+  'kanban.moveUp': "Mută în sus",
+  'kanban.moveDown': "Mută în jos",
+  'kanban.moveColumnLeft': "Mută coloana la stânga",
+  'kanban.moveColumnRight': "Mută coloana la dreapta",
+  'kanban.moveToColumn': "Mută în coloana",
+  'kanban.noOtherColumns': "Nu există alte coloane",
+  'kanban.close': "Închide",
+
   // User Management
   'userMgmt.statusPending': "În așteptare",
   'userMgmt.statusActive': "Activ",

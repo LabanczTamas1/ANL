@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
+import { MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import Card from "./Card";
+import MobileActionSheet, { SheetAction } from "./MobileActionSheet";
 import { usePostHog } from "@posthog/react";
 import { useLanguage } from "../../hooks/useLanguage";
 
@@ -30,6 +32,13 @@ interface ColumnProps {
   onDeleteCard: (columnId: string, cardId: string) => void;
   index: number;
   className?: string;
+  isMobile?: boolean;
+  isFirstColumn?: boolean;
+  isLastColumn?: boolean;
+  allColumns?: { id: string; name: string }[];
+  onMoveColumn?: (columnId: string, direction: "left" | "right") => void;
+  onMoveCardWithin?: (columnId: string, cardId: string, direction: "up" | "down") => void;
+  onMoveCardToColumn?: (sourceColumnId: string, cardId: string, destinationColumnId: string) => void;
 }
 
 // Confirmation Modal Component
@@ -75,12 +84,20 @@ const Column: React.FC<ColumnProps> = ({
   onDeleteColumn,
   onDeleteCard,
   index,
+  isMobile = false,
+  isFirstColumn = false,
+  isLastColumn = false,
+  allColumns = [],
+  onMoveColumn,
+  onMoveCardWithin,
+  onMoveCardToColumn,
 }) => {
   const { t } = useLanguage();
   const posthog = usePostHog();
   const [currentPage, setCurrentPage] = useState(1);
   const [inputPage, setInputPage] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isColumnSheetOpen, setIsColumnSheetOpen] = useState(false);
   const cardsPerPage = 10; // Number of cards per page
 
   const totalPages = Math.ceil(column.cards.length / cardsPerPage);
@@ -119,10 +136,10 @@ const Column: React.FC<ColumnProps> = ({
 
   return (
     <>
-      <Draggable draggableId={column.id} index={index}>
+      <Draggable draggableId={column.id} index={index} isDragDisabled={isMobile}>
         {(provided) => (
           <div
-          className="kanban-column min-w-[300px] w-[350px] h-full bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg mr-4"
+          className={`kanban-column ${isMobile ? "w-full" : "min-w-[300px] w-[350px] mr-4"} h-full bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg`}
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
@@ -133,7 +150,17 @@ const Column: React.FC<ColumnProps> = ({
             ></div>
             <div className="p-2">
             {/* Column Header */}
-            <div className="flex flex-col justify-between mb-4 items-center">
+            <div className="flex flex-col justify-between mb-4 items-center relative">
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setIsColumnSheetOpen(true)}
+                  aria-label={t("kanban.columnActions")}
+                  className="absolute right-0 top-0 inline-flex items-center justify-center w-9 h-9 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              )}
               <h2 className="text-xl font-semibold">{column.name}</h2>
               <div className="">{t("kanban.cardsCount", { count: column.cardNumber })}</div>
               <button
@@ -152,15 +179,24 @@ const Column: React.FC<ColumnProps> = ({
                   {...provided.droppableProps}
                   className="space-y-1 min-h-[1vh] max-h-[50vh] overflow-y-auto mx-2"
                 >
-                  {currentCards.map((card, index) => (
-                    <Card
-                      key={card.id}
-                      card={card}
-                      columnId={column.id}
-                      index={index}
-                      onDeleteCard={onDeleteCard}
-                    />
-                  ))}
+                  {currentCards.map((card, index) => {
+                    const globalIndex = (currentPage - 1) * cardsPerPage + index;
+                    return (
+                      <Card
+                        key={card.id}
+                        card={card}
+                        columnId={column.id}
+                        index={index}
+                        onDeleteCard={onDeleteCard}
+                        isMobile={isMobile}
+                        isFirstCard={globalIndex === 0}
+                        isLastCard={globalIndex === column.cards.length - 1}
+                        otherColumns={allColumns.filter((c) => c.id !== column.id)}
+                        onMoveCardWithin={onMoveCardWithin}
+                        onMoveCardToColumn={onMoveCardToColumn}
+                      />
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}
@@ -227,6 +263,33 @@ const Column: React.FC<ColumnProps> = ({
         onConfirm={handleConfirmDelete}
         columnName={column.name}
       />
+
+      {/* Mobile column action sheet */}
+      <MobileActionSheet
+        open={isColumnSheetOpen}
+        title={column.name}
+        onClose={() => setIsColumnSheetOpen(false)}
+        closeLabel={t("kanban.close")}
+      >
+        <SheetAction
+          icon={<ChevronLeft className="w-5 h-5" />}
+          label={t("kanban.moveColumnLeft")}
+          disabled={isFirstColumn}
+          onClick={() => {
+            onMoveColumn?.(column.id, "left");
+            setIsColumnSheetOpen(false);
+          }}
+        />
+        <SheetAction
+          icon={<ChevronRight className="w-5 h-5" />}
+          label={t("kanban.moveColumnRight")}
+          disabled={isLastColumn}
+          onClick={() => {
+            onMoveColumn?.(column.id, "right");
+            setIsColumnSheetOpen(false);
+          }}
+        />
+      </MobileActionSheet>
     </>
   );
 };

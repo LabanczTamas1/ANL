@@ -757,6 +757,17 @@ export const english = {
   // TrashBin
   'kanban.dropColumnHere': "Drop column here to delete",
 
+  // Mobile reorder / move
+  'kanban.cardActions': "Card actions",
+  'kanban.columnActions': "Column actions",
+  'kanban.moveUp': "Move up",
+  'kanban.moveDown': "Move down",
+  'kanban.moveColumnLeft': "Move column left",
+  'kanban.moveColumnRight': "Move column right",
+  'kanban.moveToColumn': "Move to column",
+  'kanban.noOtherColumns': "No other columns available",
+  'kanban.close': "Close",
+
   // User Management
   'userMgmt.statusPending': "Pending",
   'userMgmt.statusActive': "Active",

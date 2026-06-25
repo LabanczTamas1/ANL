@@ -757,6 +757,17 @@ export const magyar: Record<TranslationKey, string> = {
   // TrashBin
   'kanban.dropColumnHere': "Húzza ide az oszlopot a törléshez",
 
+  // Mobile reorder / move
+  'kanban.cardActions': "Kártya műveletek",
+  'kanban.columnActions': "Oszlop műveletek",
+  'kanban.moveUp': "Mozgatás felfelé",
+  'kanban.moveDown': "Mozgatás lefelé",
+  'kanban.moveColumnLeft': "Oszlop balra",
+  'kanban.moveColumnRight': "Oszlop jobbra",
+  'kanban.moveToColumn': "Áthelyezés oszlopba",
+  'kanban.noOtherColumns': "Nincs másik oszlop",
+  'kanban.close': "Bezárás",
+
   // User Management
   'userMgmt.statusPending': "Függőben",
   'userMgmt.statusActive': "Aktív",

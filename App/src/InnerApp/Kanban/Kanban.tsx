@@ -16,8 +16,10 @@ import CardCreationModal from './CardCreationModal';
 import TemplateBuilder from './TemplateBuilder';
 import type { FieldDef } from './CardCreationModal';
 import TrashBin from './TrashBin';
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 
 const Kanban: React.FC = () => {
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const [columns, setColumns] = useState<any[]>([]);
   const [filteredColumns, setFilteredColumns] = useState<any[]>([]);
   const [showCardModal, setShowCardModal] = useState(false);
@@ -334,6 +336,111 @@ const Kanban: React.FC = () => {
     setShowColumnModal((prev) => !prev);
   };
 
+  // ── Mobile reorder / move handlers (drag-and-drop alternative) ──────────────
+  const handleMoveColumn = async (columnId: string, direction: "left" | "right") => {
+    const idx = columns.findIndex((col) => col.id === columnId);
+    if (idx === -1) return;
+    const targetIdx = direction === "left" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= columns.length) return;
+
+    const reordered = Array.from(columns);
+    const [moved] = reordered.splice(idx, 1);
+    reordered.splice(targetIdx, 0, moved);
+    setColumns(reordered);
+
+    const priorityUpdates = reordered.map((column, index) => ({
+      columnId: column.id,
+      priority: index,
+    }));
+
+    try {
+      await updateColumnPriority({ columns: priorityUpdates });
+    } catch (error) {
+      console.error("Error updating column priority:", error);
+    }
+  };
+
+  const handleMoveCardWithin = async (
+    columnId: string,
+    cardId: string,
+    direction: "up" | "down"
+  ) => {
+    const column = columns.find((col) => col.id === columnId);
+    if (!column) return;
+    const idx = column.cards.findIndex((card: any) => card.id === cardId);
+    if (idx === -1) return;
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= column.cards.length) return;
+
+    const updatedCards = Array.from(column.cards);
+    const [moved] = updatedCards.splice(idx, 1);
+    updatedCards.splice(targetIdx, 0, moved);
+
+    setColumns((prev) =>
+      prev.map((col) => (col.id === columnId ? { ...col, cards: updatedCards } : col))
+    );
+
+    try {
+      await moveCard({
+        sourceColumnId: columnId,
+        destinationColumnId: columnId,
+        cardId,
+        newIndex: targetIdx,
+      });
+    } catch (error) {
+      console.error("Error reordering card:", error);
+    }
+  };
+
+  const handleMoveCardToColumn = async (
+    sourceColumnId: string,
+    cardId: string,
+    destinationColumnId: string
+  ) => {
+    if (sourceColumnId === destinationColumnId) return;
+    const sourceColumn = columns.find((col) => col.id === sourceColumnId);
+    const destinationColumn = columns.find((col) => col.id === destinationColumnId);
+    if (!sourceColumn || !destinationColumn) return;
+
+    const movedCard = sourceColumn.cards.find((card: any) => card.id === cardId);
+    if (!movedCard) return;
+
+    const updatedSourceCards = sourceColumn.cards.filter((card: any) => card.id !== cardId);
+    const updatedDestinationCards = [...destinationColumn.cards, movedCard];
+    const newIndex = updatedDestinationCards.length - 1;
+
+    setColumns((prev) =>
+      prev.map((col) => {
+        if (col.id === sourceColumnId) {
+          return {
+            ...col,
+            cardNumber: Number(col.cardNumber) - 1,
+            cards: updatedSourceCards,
+          };
+        }
+        if (col.id === destinationColumnId) {
+          return {
+            ...col,
+            cardNumber: Number(col.cardNumber) + 1,
+            cards: updatedDestinationCards,
+          };
+        }
+        return col;
+      })
+    );
+
+    try {
+      await moveCard({
+        sourceColumnId,
+        destinationColumnId,
+        cardId,
+        newIndex,
+      });
+    } catch (error) {
+      console.error("Error moving card to column:", error);
+    }
+  };
+
   const toggleDeleteMode = (): void => {
     setIsDeleteMode((prev) => !prev);
     const contentElement = document.querySelector(
@@ -371,11 +478,19 @@ const Kanban: React.FC = () => {
 
       {/* Drag and Drop Context */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        {/* Original columns layout - preserved exactly as in the original code */}
-        <Droppable droppableId="columns" direction="horizontal" type="column">
+        {/* Columns layout: horizontal on desktop, vertical stack on mobile */}
+        <Droppable
+          droppableId="columns"
+          direction={isMobile ? "vertical" : "horizontal"}
+          type="column"
+        >
           {(provided) => (
             <div
-              className="flex overflow-x-auto pb-4 gap-4 px-2 [&>*]:min-w-[350px]"
+              className={
+                isMobile
+                  ? "flex flex-col gap-4 px-2 pb-4"
+                  : "flex overflow-x-auto pb-4 gap-4 px-2 [&>*]:min-w-[350px]"
+              }
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
@@ -398,6 +513,13 @@ const Kanban: React.FC = () => {
                       onDeleteCard={handleDeleteCard}
                       index={index}
                       className="min-w-[280px] sm:min-w-[300px]"
+                      isMobile={isMobile}
+                      isFirstColumn={index === 0}
+                      isLastColumn={index === filteredColumns.length - 1}
+                      allColumns={filteredColumns.map((c) => ({ id: c.id, name: c.name }))}
+                      onMoveColumn={handleMoveColumn}
+                      onMoveCardWithin={handleMoveCardWithin}
+                      onMoveCardToColumn={handleMoveCardToColumn}
                     />
                   );
                 })}
