@@ -34,3 +34,94 @@ html, body, #root {
 #child-paddings > *{
     padding-top: 1em;
 }
+
+/* ───────────────────────── Toastify: mobile-friendly UX ───────────────────────── */
+/* Layout the toast as a row: icon | message | close button (vertically centred) */
+.Toastify__toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.Toastify__toast-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.Toastify__toast-icon {
+  width: 22px;
+  margin-inline-end: 0;
+  flex-shrink: 0;
+}
+
+/* Larger, vertically-centred, touch-friendly close button on the right */
+.Toastify__close-button {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.Toastify__close-button:hover,
+.Toastify__close-button:focus {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.Toastify__close-button > svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Mobile: full-width toasts with safe-area-aware spacing and bigger touch targets */
+@media (max-width: 480px) {
+  .Toastify__toast-container {
+    width: calc(100vw - 24px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    margin: 0;
+  }
+
+  .Toastify__toast-container--top-left,
+  .Toastify__toast-container--top-center,
+  .Toastify__toast-container--top-right {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+  }
+
+  .Toastify__toast-container--bottom-left,
+  .Toastify__toast-container--bottom-center,
+  .Toastify__toast-container--bottom-right {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  }
+
+  .Toastify__toast {
+    margin-bottom: 10px;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+  }
+
+  .Toastify__close-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .Toastify__close-button > svg {
+    width: 20px;
+    height: 20px;
+  }
+}
