@@ -139,7 +139,7 @@ const Column: React.FC<ColumnProps> = ({
       <Draggable draggableId={column.id} index={index} isDragDisabled={isMobile}>
         {(provided) => (
           <div
-          className={`kanban-column ${isMobile ? "w-full" : "min-w-[300px] w-[350px] mr-4"} h-full bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg`}
+          className={`kanban-column ${isMobile ? "w-full h-auto" : "min-w-[300px] w-[350px] mr-4 h-full"} bg-gradient-to-b from-[#EFEFEF] via-[#CDCDCD] to-[#FCFCFD] dark:from-[#353535] dark:via-[#121212] dark:to-[#353535] rounded-lg shadow-lg`}
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}

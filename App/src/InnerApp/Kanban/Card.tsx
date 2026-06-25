@@ -673,12 +673,15 @@ const Card: React.FC<CardProps> = ({
             }}
             onClick={handleOpenModal}
           >
-            <div className="relative h-1 w-full bg-[#65558F] text-xs">
-              <div className={`absolute top-5 ${isMobile ? "right-9" : "right-1"}`}>
-                {cardData.DateOfAdded ? timeAgo(Number(cardData.DateOfAdded)) : "just now"}
-              </div>
+            <div className="relative h-1 w-full bg-[#65558F] text-xs" />
+            <div
+              className={`absolute text-xs ${
+                isMobile ? "top-1/2 -translate-y-1/2 right-10" : "top-5 right-1"
+              }`}
+            >
+              {cardData.DateOfAdded ? timeAgo(Number(cardData.DateOfAdded)) : "just now"}
             </div>
-            <p className={`flex flex-row items-center text-base font-semibold text-gray-800 dark:text-[white] truncate px-4 ${isMobile ? "pr-10" : ""}`}>
+            <p className={`flex flex-row items-center text-base font-semibold text-gray-800 dark:text-[white] truncate px-4 ${isMobile ? "pr-24" : ""}`}>
               {(cardData as any).Name || cardData.BusinessName || 'Untitled'}
               <div className="pl-2">
                 {Object.keys(reorderedObject)
