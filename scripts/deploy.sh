@@ -25,6 +25,18 @@ cp /tmp/.env.docker.bak $COMPOSE_DIR/.env.docker 2>/dev/null || true
 
 log "✅ Code updated to $(git rev-parse --short HEAD)"
 
+# ── Ensure Postgres data dir exists on the Hetzner Volume ───────────────────
+# The volume (UUID b7395125-...) is mounted at /mnt/data via /etc/fstab and also
+# hosts Docker's data-root. Postgres data lives at /mnt/data/postgres.
+DATA_VOL="/mnt/data"
+if mountpoint -q "$DATA_VOL"; then
+  mkdir -p "$DATA_VOL/postgres"
+  log "✅ Volume ready at $DATA_VOL (postgres dir ensured)"
+else
+  log "❌ ERROR: $DATA_VOL is not mounted — aborting to protect Postgres data!"
+  exit 1
+fi
+
 # ── Rebuild and restart containers ──────────────────────────────────────────
 cd $COMPOSE_DIR
 
@@ -39,16 +51,6 @@ docker compose rm -sf backend 2>/dev/null || true
 docker compose up -d --remove-orphans
 
 # ── Health check ────────────────────────────────────────────────────────────
-# ── Prepare Hetzner volume directory ───────────────────────────────────────
-HETZNER_VOL="/mnt/HC_Volume_105365621"
-if mountpoint -q "$HETZNER_VOL"; then
-  mkdir -p "$HETZNER_VOL/postgres"
-  log "✅ Hetzner volume ready at $HETZNER_VOL"
-else
-  log "⚠️  WARNING: $HETZNER_VOL is not mounted — postgres data will not persist!"
-  log "   Mount the Hetzner volume and re-deploy."
-fi
-
 log "⏳ Waiting for backend to be healthy..."
 ELAPSED=0
 until curl -sf $HEALTH_URL > /dev/null 2>&1; do

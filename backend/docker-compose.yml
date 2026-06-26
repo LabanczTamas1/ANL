@@ -7,9 +7,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: anl
     volumes:
-      # Hetzner Volume-ANL (ID: 105365621) mounted at /mnt/HC_Volume_105365621
-      # Run: mkdir -p /mnt/HC_Volume_105365621/postgres on first deploy
-      - /mnt/HC_Volume_105365621/postgres:/var/lib/postgresql/data
+      # Postgres data lives on the dedicated Hetzner Volume (ID 105365621,
+      # UUID b7395125-..., 10GB) mounted at /mnt/data via /etc/fstab.
+      # Dir created on first deploy: mkdir -p /mnt/data/postgres
+      - /mnt/data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
