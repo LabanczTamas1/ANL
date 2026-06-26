@@ -4,3 +4,6 @@ dist
 build
 *.log
 *.env
+
+# Infrastructure documentation (kept local only)
+INFRASTRUCTURE.md
