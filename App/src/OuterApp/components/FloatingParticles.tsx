@@ -34,24 +34,62 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Respect users who prefer reduced motion — skip the animation entirely.
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    if (prefersReducedMotion) return;
+
+    // On mobile the perpetual canvas loop is the single biggest main-thread
+    // cost on the outer pages, which makes taps (navbar, buttons) feel laggy.
+    // Scale the work down aggressively there: fewer particles, no O(n²)
+    // connection lines, capped device-pixel-ratio and a lower frame rate.
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    const count = isMobile
+      ? Math.min(particleCount, 18)
+      : particleCount;
+    const drawConnections = !isMobile;
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2);
+    const frameInterval = isMobile ? 1000 / 30 : 0; // throttle mobile to ~30fps
+
+    // Pre-render a soft glow sprite per hue ONCE, then blit it each frame with
+    // drawImage. This avoids allocating a fresh radial gradient per particle
+    // per frame (the previous approach), which was extremely expensive.
+    const makeGlowSprite = (hue: number): HTMLCanvasElement => {
+      const s = 64;
+      const sprite = document.createElement('canvas');
+      sprite.width = s;
+      sprite.height = s;
+      const sctx = sprite.getContext('2d')!;
+      const g = sctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+      g.addColorStop(0, `hsla(${hue}, 70%, 60%, 1)`);
+      g.addColorStop(1, `hsla(${hue}, 70%, 60%, 0)`);
+      sctx.fillStyle = g;
+      sctx.fillRect(0, 0, s, s);
+      return sprite;
+    };
+    const sprites: Record<number, HTMLCanvasElement> = {
+      270: makeGlowSprite(270),
+      180: makeGlowSprite(180),
+    };
+
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      
-      const dpr = window.devicePixelRatio || 1;
+
       canvas.width = parent.clientWidth * dpr;
       canvas.height = parent.clientHeight * dpr;
       canvas.style.width = `${parent.clientWidth}px`;
       canvas.style.height = `${parent.clientHeight}px`;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     const initParticles = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
-      
+
       const particles: Particle[] = [];
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * parent.clientWidth,
           y: Math.random() * parent.clientHeight,
@@ -65,75 +103,116 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
       particlesRef.current = particles;
     };
 
-    const animate = () => {
+    let lastFrame = 0;
+    let running = true;
+
+    const animate = (now: number) => {
+      if (!running) return;
+      animationRef.current = requestAnimationFrame(animate);
+
+      // Frame-rate throttle on mobile.
+      if (frameInterval && now - lastFrame < frameInterval) return;
+      lastFrame = now;
+
       const parent = canvas.parentElement;
       if (!parent || !ctx) return;
 
-      ctx.clearRect(0, 0, parent.clientWidth, parent.clientHeight);
+      const w = parent.clientWidth;
+      const h = parent.clientHeight;
+      ctx.clearRect(0, 0, w, h);
 
-      particlesRef.current.forEach((particle) => {
+      const particles = particlesRef.current;
+
+      for (const particle of particles) {
         // Update position
         particle.x += particle.speedX;
         particle.y += particle.speedY;
 
         // Wrap around edges
-        if (particle.x < 0) particle.x = parent.clientWidth;
-        if (particle.x > parent.clientWidth) particle.x = 0;
-        if (particle.y < 0) particle.y = parent.clientHeight;
-        if (particle.y > parent.clientHeight) particle.y = 0;
+        if (particle.x < 0) particle.x = w;
+        if (particle.x > w) particle.x = 0;
+        if (particle.y < 0) particle.y = h;
+        if (particle.y > h) particle.y = 0;
 
-        // Draw particle with glow
-        ctx.beginPath();
-        const gradient = ctx.createRadialGradient(
-          particle.x,
-          particle.y,
-          0,
-          particle.x,
-          particle.y,
-          particle.size * 3
-        );
-        gradient.addColorStop(0, `hsla(${particle.hue}, 70%, 60%, ${particle.opacity})`);
-        gradient.addColorStop(1, `hsla(${particle.hue}, 70%, 60%, 0)`);
-        ctx.fillStyle = gradient;
-        ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
+        // Draw pre-rendered glow sprite (cheap) instead of a per-frame gradient.
+        const r = particle.size * 3;
+        ctx.globalAlpha = particle.opacity;
+        ctx.drawImage(sprites[particle.hue], particle.x - r, particle.y - r, r * 2, r * 2);
+      }
+      ctx.globalAlpha = 1;
 
-      // Draw connections between nearby particles
-      particlesRef.current.forEach((p1, i) => {
-        particlesRef.current.slice(i + 1).forEach((p2) => {
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance < 100) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(101, 85, 143, ${0.1 * (1 - distance / 100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
+      // Draw connections between nearby particles (desktop only — O(n²)).
+      if (drawConnections) {
+        for (let i = 0; i < particles.length; i++) {
+          const p1 = particles[i];
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 100) {
+              ctx.beginPath();
+              ctx.strokeStyle = `rgba(101, 85, 143, ${0.1 * (1 - distance / 100)})`;
+              ctx.lineWidth = 0.5;
+              ctx.moveTo(p1.x, p1.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
           }
-        });
-      });
+        }
+      }
+    };
 
+    const start = () => {
+      if (animationRef.current) return;
+      running = true;
+      lastFrame = 0;
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    resizeCanvas();
-    initParticles();
-    animate();
-
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      initParticles();
-    });
-
-    return () => {
+    const stop = () => {
+      running = false;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
-      window.removeEventListener('resize', resizeCanvas);
+    };
+
+    const handleResize = () => {
+      resizeCanvas();
+      initParticles();
+    };
+
+    // Pause the loop entirely when the canvas is scrolled out of view — no
+    // point burning CPU animating a background nobody can see.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) start();
+        else stop();
+      },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+
+    // Also pause when the tab is hidden.
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    resizeCanvas();
+    initParticles();
+    start();
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      stop();
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('resize', handleResize);
     };
   }, [particleCount]);
 

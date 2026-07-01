@@ -9,6 +9,10 @@ posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
   defaults: "2026-01-30",
   opt_out_capturing_by_default: true,
+  // Dead-click detection schedules a timeout + DOM-mutation check on every
+  // click, adding per-tap main-thread work that makes taps feel laggy on
+  // low-end mobile. We don't use the signal, so turn it off.
+  capture_dead_clicks: false,
 });
 
 // Re-enable capturing if the user already consented in a previous visit

@@ -31,6 +31,20 @@ html, body, #root {
   margin: 0;
 }
 
+/* Eliminate the ~300ms mobile tap delay (double-tap-to-zoom detection) on all
+   interactive elements. Without this, tapping nav links / buttons on touch
+   devices feels sluggish even though the handler is cheap. */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea,
+label,
+summary {
+  touch-action: manipulation;
+}
+
 #child-paddings > *{
     padding-top: 1em;
 }
