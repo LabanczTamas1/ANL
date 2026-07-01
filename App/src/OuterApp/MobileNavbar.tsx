@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
 import { FaBars, FaTimes, FaSignInAlt, FaUserPlus, FaGlobe } from "react-icons/fa";
 import { createPortal } from "react-dom";
@@ -55,6 +55,7 @@ const MobileNavbar = () => {
   const { language, setLanguage, translations } = useLanguage();
   const t = translations[language];
   const location = useLocation();
+  const navigate = useNavigate();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const langTriggerRef = useRef<HTMLButtonElement>(null);
@@ -125,6 +126,20 @@ const MobileNavbar = () => {
   const closeMenu = () => {
     setMenuOpen(false);
     setLangOpen(false);
+  };
+
+  // Close the overlay and navigate on the NEXT frame. If we let <Link> navigate
+  // synchronously, React batches the menu-close state update together with the
+  // (heavy) destination page render into one commit, so the main thread blocks
+  // on the new page and the overlay looks frozen for a "huge delay" after the
+  // tap. Splitting them lets the menu paint its closed state instantly first,
+  // giving immediate feedback, then the route mounts.
+  const closeAndNavigate = (to: string) => (e: React.MouseEvent) => {
+    // Allow modifier-clicks / non-primary buttons to behave normally.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    closeMenu();
+    requestAnimationFrame(() => requestAnimationFrame(() => navigate(to)));
   };
 
   const toggleLangDropdown = () => {
@@ -239,7 +254,7 @@ const MobileNavbar = () => {
           className="flex items-center justify-between px-4"
           style={{ height: 56 }}
         >
-          <Link to="/" onClick={closeMenu} className="flex items-center gap-2">
+          <Link to="/" onClick={closeAndNavigate("/")} className="flex items-center gap-2">
             <img
               src="/light-logo.png"
               alt="Logo"
@@ -270,7 +285,7 @@ const MobileNavbar = () => {
             <Link
               key={to}
               to={to}
-              onClick={closeMenu}
+              onClick={closeAndNavigate(to)}
               className="flex items-center px-4 py-3 text-lg font-semibold text-white rounded-xl hover:bg-[#65558F]/20 focus:outline-none focus:ring-2 focus:ring-[#a78bfa] transition-colors"
             >
               {label}
@@ -285,7 +300,7 @@ const MobileNavbar = () => {
         <div className="flex gap-3 px-8 mt-6" role="group" aria-label={t['nav.authentication']}>
           <Link
             to="/login"
-            onClick={closeMenu}
+            onClick={closeAndNavigate("/login")}
             className="flex-1 flex items-center justify-center gap-2 bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-xl py-3 px-4 font-semibold text-base shadow transition-colors focus:outline-none focus:ring-2 focus:ring-[#a78bfa] text-center no-underline"
             role="button"
           >
@@ -294,7 +309,7 @@ const MobileNavbar = () => {
           </Link>
           <Link
             to="/register"
-            onClick={closeMenu}
+            onClick={closeAndNavigate("/register")}
             className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white rounded-xl py-3 px-4 font-semibold text-base border border-white/20 shadow transition-colors focus:outline-none focus:ring-2 focus:ring-[#a78bfa] text-center no-underline"
             role="button"
           >
