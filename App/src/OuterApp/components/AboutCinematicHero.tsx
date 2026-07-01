@@ -24,7 +24,7 @@ const AboutCinematicHero: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
+    <section className="relative -mt-16 min-h-screen flex flex-col justify-center overflow-hidden">
       {/* Layered backgrounds */}
       <div className="absolute inset-0 bg-surface-black" />
       <div
