@@ -48,6 +48,17 @@ summary {
   touch-action: manipulation;
 }
 
+/* While the fullscreen mobile menu is open, freeze CSS animations on the page
+   behind it. The menu overlay is portalled to <body> (outside #root), so it
+   keeps animating normally; only the covered page content is paused. This stops
+   background animation from competing for the main thread and making in-menu
+   taps feel laggy. */
+body.mobile-menu-open #root *,
+body.mobile-menu-open #root *::before,
+body.mobile-menu-open #root *::after {
+  animation-play-state: paused !important;
+}
+
 #child-paddings > *{
     padding-top: 1em;
 }

@@ -72,17 +72,27 @@ const MobileNavbar = () => {
     if (menuOpen) {
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
-      // Focus the dialog container (not the close button): on iOS, tapping a
-      // button that was just programmatically focused can be swallowed,
-      // contributing to the "needs two taps" feel.
-      setTimeout(() => dialogRef.current?.focus(), 100);
+      document.body.classList.add("mobile-menu-open");
+      // While the fullscreen menu is open, the animated page BEHIND it keeps
+      // running its requestAnimationFrame canvas loops (FloatingParticles, etc.)
+      // at full tilt. On a weak mobile CPU that starves React's state updates +
+      // paint, so every tap inside the menu lags badly. Broadcast a pause signal
+      // so background animations stop while the menu is open; resume on close.
+      window.dispatchEvent(new CustomEvent("anl:pause-bg-animation"));
+      // Focus the dialog container for a11y on the next frame (setTimeout here
+      // could trigger a reflow/scroll jump on iOS).
+      requestAnimationFrame(() => dialogRef.current?.focus());
     } else {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
     }
     return () => {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
+      document.body.classList.remove("mobile-menu-open");
+      window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
     };
   }, [menuOpen]);
 

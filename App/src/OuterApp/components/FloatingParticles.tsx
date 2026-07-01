@@ -202,6 +202,17 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    // Pause while a fullscreen overlay (e.g. the mobile nav menu) is open — the
+    // overlay COVERS the canvas without scrolling it out of view, so the
+    // IntersectionObserver above wouldn't catch it, yet the loop would keep
+    // starving the main thread and making in-menu taps feel laggy.
+    const handlePause = () => stop();
+    const handleResume = () => {
+      if (!document.hidden) start();
+    };
+    window.addEventListener('anl:pause-bg-animation', handlePause);
+    window.addEventListener('anl:resume-bg-animation', handleResume);
+
     resizeCanvas();
     initParticles();
     start();
@@ -212,6 +223,8 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
       stop();
       observer.disconnect();
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('anl:pause-bg-animation', handlePause);
+      window.removeEventListener('anl:resume-bg-animation', handleResume);
       window.removeEventListener('resize', handleResize);
     };
   }, [particleCount]);
