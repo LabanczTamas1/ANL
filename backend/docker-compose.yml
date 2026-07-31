@@ -2,9 +2,11 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: anl-postgres
+    # Credentials are provided via .env.docker (POSTGRES_USER / POSTGRES_PASSWORD)
+    # so no default password is baked into the repo.
+    env_file:
+      - .env.docker
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: anl
     volumes:
       # Postgres data lives on the dedicated Hetzner Volume (ID 105365621,
@@ -12,7 +14,7 @@ services:
       # Dir created on first deploy: mkdir -p /mnt/data/postgres
       - /mnt/data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -37,7 +39,9 @@ services:
     build: .
     container_name: ads-backend
     ports:
-      - "3001:3001"
+      # Bound to loopback only; Caddy reverse-proxies from localhost. Prevents
+      # Docker from publishing on 0.0.0.0 and bypassing UFW.
+      - "127.0.0.1:3001:3001"
     depends_on:
       redis:
         condition: service_healthy
@@ -55,10 +59,13 @@ services:
     image: datalust/seq:latest
     container_name: anl-seq
     ports:
-      - "8081:80"
+      # Loopback only; access is via the Caddy-protected seq subdomain.
+      - "127.0.0.1:8081:80"
+    # SEQ_FIRSTRUN_ADMINPASSWORD is provided via .env.docker (not committed).
+    env_file:
+      - .env.docker
     environment:
       ACCEPT_EULA: "Y"
-      SEQ_FIRSTRUN_ADMINPASSWORD: "anl-best-admin"
       SEQ_FIRSTRUN_REQUIREAPIKEYFORWRITINGEVENTS: "false"
     volumes:
       - seq_data:/data
