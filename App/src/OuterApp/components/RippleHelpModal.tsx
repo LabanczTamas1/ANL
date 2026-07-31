@@ -190,12 +190,10 @@ const RippleHelpModal: React.FC<RippleHelpModalProps> = ({
           <div className="relative z-10 p-8 md:p-12">
             {/* Header */}
             <div className="text-center mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand/20 rounded-full text-brand-hover text-xs font-medium mb-4">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-hover opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-brand-hover" />
-                </span>
+              <div className="inline-flex items-center gap-3 mb-4 text-brand-hover text-xs font-semibold uppercase tracking-[0.25em]">
+                <span className="h-px w-6 bg-brand-hover/40" />
                 Available now
+                <span className="h-px w-6 bg-brand-hover/40" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
                 How can we help you?

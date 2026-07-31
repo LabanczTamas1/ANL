@@ -99,8 +99,10 @@ const ModernTimeline: React.FC<ModernTimelineProps> = ({
       <div className="relative z-10 max-w-4xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-20">
-          <span className="inline-block px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-4">
+          <span className="inline-flex items-center gap-3 mb-4 text-brand-hover text-xs font-semibold uppercase tracking-[0.25em]">
+            <span className="h-px w-6 bg-brand-hover/40" />
             How It Works
+            <span className="h-px w-6 bg-brand-hover/40" />
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             {title}

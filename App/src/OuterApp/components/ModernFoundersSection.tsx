@@ -40,8 +40,10 @@ const ModernFoundersSection: React.FC<ModernFoundersSectionProps> = ({
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <span className="inline-block px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-4">
+          <span className="inline-flex items-center gap-3 mb-4 text-brand-hover text-xs font-semibold uppercase tracking-[0.25em]">
+            <span className="h-px w-6 bg-brand-hover/40" />
             Our Team
+            <span className="h-px w-6 bg-brand-hover/40" />
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
             {title}
@@ -156,7 +158,7 @@ const FounderCard: React.FC<FounderCardProps> = ({ founder }) => {
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xl font-bold text-white">{founder.name}</h3>
-            <span className="px-3 py-1 bg-brand/20 rounded-full text-brand-hover text-sm font-medium">
+            <span className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-brand-hover text-xs font-medium">
               {founder.position}
             </span>
           </div>

@@ -4,7 +4,7 @@ import Footer from "./Footer";
 import ContactForm from "./ContactForm";
 import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
-import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaClock } from "react-icons/fa";
+import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaClock, FaArrowRight } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 import RippleHelpModal from "./components/RippleHelpModal";
 
@@ -115,13 +115,10 @@ const Contact = () => {
         <button
           ref={badgeRef}
           onClick={openHelpModal}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand/20 rounded-full text-brand-hover text-sm font-medium mb-6 cursor-pointer hover:bg-brand/30 hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay"
+          className="group inline-flex items-center gap-2.5 px-4 py-2 mb-6 rounded-full border border-white/15 bg-white/5 text-sm font-medium text-content-muted cursor-pointer hover:border-brand/40 hover:bg-white/[0.07] hover:text-white transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface-overlay"
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-hover opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-hover" />
-          </span>
           We&apos;re here to help
+          <FaArrowRight className="w-3 h-3 text-brand-hover transition-transform duration-200 group-hover:translate-x-0.5" />
         </button>
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4">
           {t.contactUs || "Get in Touch"}
