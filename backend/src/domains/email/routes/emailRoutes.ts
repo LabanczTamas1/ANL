@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../../middleware/authMiddleware.js';
+import { emailLimiter } from '../../../middleware/rateLimiter.js';
 import * as ec from '../controller/emailController.js';
 
 const router = Router();
 
-router.post('/save-email', authMiddleware, ec.saveEmail);
+router.post('/save-email', authMiddleware, emailLimiter, ec.saveEmail);
 router.put('/mark-as-read', authMiddleware, ec.markAsRead);
 router.delete('/delete-emails', authMiddleware, ec.deleteEmails);
 // unread-count reads username from query param — must be before /:username

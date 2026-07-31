@@ -4,6 +4,9 @@
 
 import { Router } from 'express';
 
+// Middleware
+import { apiLimiter } from '../../middleware/rateLimiter.js';
+
 // Domain routers
 import authRoutes from '../../domains/user/routes/authRoutes.js';
 import userRoutes from '../../domains/user/routes/userRoutes.js';
@@ -20,6 +23,10 @@ import youtubeRoutes from '../../domains/youtube/routes/youtubeRoutes.js';
 import financeRoutes from '../../domains/finance/routes/financeRoutes.js';
 
 const router = Router();
+
+// Per-user/IP throughput limiter for the whole v1 surface. Sensitive
+// endpoints layer additional, stricter limiters on top (see route modules).
+router.use(apiLimiter);
 
 // ─── Domain prefixes ─────────────────────────────────────────────────────────
 

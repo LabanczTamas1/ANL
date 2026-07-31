@@ -11,10 +11,16 @@ import { httpLogger } from './config/httpLogger.js';
 import { correlationId } from './middleware/correlationId.js';
 import { trackRequest } from './utils/admin/trackRequest.js';
 import { blockBannedIPs } from './utils/admin/blockBannedIPs.js';
+import { globalLimiter } from './middleware/rateLimiter.js';
 import apiV1Router from './api/v1/index.js';
 import { logError } from './utils/logger.js';
 
 const app = express();
+
+// Behind a single reverse proxy (Caddy) — trust exactly one hop so
+// `req.ip` / X-Forwarded-For resolve to the real client without allowing
+// upstream clients to spoof their address for the rate limiter.
+app.set('trust proxy', 1);
 
 // ---------------------------------------------------------------------------
 // Middleware stack (request order)
@@ -27,6 +33,10 @@ app.use(httpLogger);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Coarse cluster-wide safety net against volumetric abuse. Fine-grained
+// per-endpoint limiters live in the individual route modules.
+app.use(globalLimiter);
 
 // Passport + sessions (for OAuth)
 app.use(
