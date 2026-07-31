@@ -40,6 +40,13 @@ export const env = {
     10,
   ),
 
+  // CSRF — secret for the double-submit-cookie token HMAC
+  CSRF_SECRET:
+    process.env.CSRF_SECRET ||
+    process.env.REFRESH_TOKEN_SECRET ||
+    process.env.JWT_SECRET ||
+    'your-csrf-fallback-secret',
+
   // URLs
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',

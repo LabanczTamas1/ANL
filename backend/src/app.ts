@@ -12,6 +12,11 @@ import { correlationId } from './middleware/correlationId.js';
 import { trackRequest } from './utils/admin/trackRequest.js';
 import { blockBannedIPs } from './utils/admin/blockBannedIPs.js';
 import { globalLimiter } from './middleware/rateLimiter.js';
+import {
+  doubleCsrfProtection,
+  generateCsrfToken,
+  CSRF_ERROR_CODE,
+} from './middleware/csrf.js';
 import apiV1Router from './api/v1/index.js';
 import { logError } from './utils/logger.js';
 
@@ -48,6 +53,22 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+// ---------------------------------------------------------------------------
+// CSRF protection (double-submit cookie). Must run after cookie-parser and
+// session so it can read cookies and bind tokens to the session id. Bearer
+// (stateless) and public auth requests are skipped inside the middleware.
+// ---------------------------------------------------------------------------
+
+app.use(doubleCsrfProtection);
+
+// Endpoint the SPA can call to obtain a CSRF token (sets the paired cookie).
+app.get('/csrf-token', (req: Request, res: Response) => {
+  res.json({ csrfToken: generateCsrfToken(req, res) });
+});
+app.get('/api/v1/csrf-token', (req: Request, res: Response) => {
+  res.json({ csrfToken: generateCsrfToken(req, res) });
+});
 
 // ---------------------------------------------------------------------------
 // Health check — must be before any auth middleware
@@ -123,6 +144,11 @@ app.get('/', (_req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  // Reject failed CSRF validation with a clear 403 instead of a 500.
+  if ((err as { code?: string }).code === CSRF_ERROR_CODE) {
+    res.status(403).json({ error: 'Invalid or missing CSRF token' });
+    return;
+  }
   logError(err, { context: 'globalErrorHandler' });
   res.status(500).json({ error: 'Internal server error' });
 });

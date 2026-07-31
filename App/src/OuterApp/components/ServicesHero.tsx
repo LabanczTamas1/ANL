@@ -98,16 +98,6 @@ const ServicesHero: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-28 pb-16 flex flex-col items-center text-center">
-        {/* Badge */}
-        <div
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand/40 bg-brand/10 backdrop-blur-sm text-sm text-brand mb-8 transition-all duration-700 ${
-            visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-          <span className="font-medium tracking-wide">Our Services</span>
-        </div>
-
         {/* Headline */}
         <h1
           className={`text-5xl md:text-7xl lg:text-8xl font-extrabold text-white leading-[1.05] max-w-5xl transition-all duration-700 delay-100 ${
