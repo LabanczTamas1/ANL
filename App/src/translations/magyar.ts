@@ -449,6 +449,7 @@ export const magyar: Record<TranslationKey, string> = {
   'contact.officeLocation': "Iroda helye",
 
   // ── CTA szekció (közös) ──
+  'cta.heroWord': "Növekedj.",
   'cta.defaultTitle': "Készen áll vállalkozása átalakítására?",
   'cta.defaultSubtitle': "Beszéljük meg, hogyan segíthetünk elérni céljait. Foglaljon ingyenes konzultációt még ma.",
   'cta.bookMeeting': "Találkozó foglalása",

@@ -91,7 +91,9 @@ import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
 import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
 import EmailVerification from "./OuterApp/EmailVerification.tsx";
 import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
-import DesignPlayground from "./OuterApp/DesignPlayground.tsx";
+import DesignPlaygroundLayout from "./OuterApp/DesignPlayground/DesignPlaygroundLayout.tsx";
+import PlaygroundOverview from "./OuterApp/DesignPlayground/PlaygroundOverview.tsx";
+import PlaygroundComponentPage from "./OuterApp/DesignPlayground/PlaygroundComponentPage.tsx";
 import LastOutComing from "./InnerApp/SentEmails";
 import CalendarCallback from "./InnerApp/AdminPage/CalendarCallback.tsx";
 import AddReview from "./InnerApp/AddReview.tsx";
@@ -173,7 +175,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/design-playground",
-    element: <DesignPlayground />,
+    element: <DesignPlaygroundLayout />,
+    children: [
+      { index: true, element: <PlaygroundOverview /> },
+      { path: ":slug", element: <PlaygroundComponentPage /> },
+    ],
   },
   {
     path: "/progress",

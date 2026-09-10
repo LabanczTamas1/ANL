@@ -449,6 +449,7 @@ export const english = {
   'contact.officeLocation': "Office location",
 
   // ── CTA section (shared) ──
+  'cta.heroWord': "Grow.",
   'cta.defaultTitle': "Ready to Transform Your Business?",
   'cta.defaultSubtitle': "Let's discuss how we can help you achieve your goals. Book a free consultation today.",
   'cta.bookMeeting': "Book a Meeting",

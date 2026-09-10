@@ -69,8 +69,8 @@ const LandingPage = () => {
 
       {/* Hero Section - Unchanged as requested */}
       <CTASection 
-        title={t("cta.defaultTitle")}
-        subtitle={t("cta.defaultSubtitle")}
+        title={t("cta.heroWord")}
+        subtitle=""
         primaryButtonText={t("cta.bookMeeting")}
         primaryButtonLink="/booking"
         secondaryButtonText={t("cta.learnMore")}
@@ -82,11 +82,13 @@ const LandingPage = () => {
       <GradientDivider style="wave" />
 
       {/* Modern Founders Section */}
-      <ModernFoundersSection 
-        founders={founders}
-        title={t("landing.foundersTitle")}
-        subtitle={t("landing.foundersSubtitle")}
-      />
+      <div id="founders">
+        <ModernFoundersSection 
+          founders={founders}
+          title={t("landing.foundersTitle")}
+          subtitle={t("landing.foundersSubtitle")}
+        />
+      </div>
 
       {/* YouTube Videos Section */}
       <section className="relative bg-surface-black">

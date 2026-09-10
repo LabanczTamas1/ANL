@@ -451,6 +451,7 @@ export const romana: Record<TranslationKey, string> = {
   'contact.officeLocation': "Locația biroului",
 
   // ── Secțiunea CTA (comună) ──
+  'cta.heroWord': "Crește.",
   'cta.defaultTitle': "Sunteți gata să vă transformați afacerea?",
   'cta.defaultSubtitle': "Să discutăm cum vă putem ajuta să vă atingeți obiectivele. Rezervați o consultație gratuită astăzi.",
   'cta.bookMeeting': "Programați o întâlnire",

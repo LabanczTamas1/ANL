@@ -116,9 +116,9 @@ const FeatureGrid: React.FC<FeatureGridProps> = ({
             >
               <GlowCard className="h-full">
                 <div className="p-8">
-                  {/* Icon with gradient background */}
+                  {/* Icon with rose badge (design-system single-color) */}
                   <div
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mb-6 shadow-lg`}
+                    className="w-16 h-16 rounded-2xl bg-accent-rose flex items-center justify-center text-white mb-6 shadow-lg"
                   >
                     {feature.icon}
                   </div>

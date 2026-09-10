@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import { FaBars, FaTimes, FaSignInAlt, FaUserPlus, FaGlobe } from "react-icons/fa";
+import { FaBars, FaTimes, FaSignInAlt, FaUserPlus, FaGlobe, FaCalendarAlt } from "react-icons/fa";
 import { createPortal } from "react-dom";
 
 type Language = "english" | "magyar" | "romana";
@@ -52,6 +52,7 @@ const MobileNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [activeDescendant, setActiveDescendant] = useState<number>(-1);
+  const [showNavCta, setShowNavCta] = useState(false);
   const { language, setLanguage, translations } = useLanguage();
   const t = translations[language];
   const location = useLocation();
@@ -65,6 +66,32 @@ const MobileNavbar = () => {
   useEffect(() => {
     setMenuOpen(false);
     setLangOpen(false);
+  }, [location.pathname]);
+
+  // Show a compact "Book a Meeting" CTA in the top bar once the hero's primary
+  // CTA (#hero-cta-primary) has scrolled out of view. Only active on pages that
+  // render that hero button (the landing page). A scroll listener is used
+  // instead of IntersectionObserver because it reliably re-checks even if the
+  // target mounts after this effect and works across all mobile browsers.
+  useEffect(() => {
+    setShowNavCta(false);
+    const check = () => {
+      const target = document.getElementById("hero-cta-primary");
+      if (!target) {
+        setShowNavCta(false);
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      // Once the hero button's bottom passes above the 56px nav bar, show it.
+      setShowNavCta(rect.bottom <= 56);
+    };
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
   }, [location.pathname]);
 
   // Lock body scroll when menu is open
@@ -416,15 +443,32 @@ const MobileNavbar = () => {
             style={{ height: "2rem", width: "auto" }}
           />
         </Link>
-        <button
-          className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
-          style={{ touchAction: "manipulation" }}
-          onClick={() => setMenuOpen(true)}
-          aria-label={t['nav.openMenu']}
-          aria-expanded={menuOpen}
-        >
-          <FaBars />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Compact CTA — appears once the hero's Book a Meeting button
+              scrolls out of view. */}
+          <Link
+            to="/booking"
+            aria-hidden={!showNavCta}
+            tabIndex={showNavCta ? 0 : -1}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-accent-rose/15 border border-accent-rose/40 text-white text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+              showNavCta
+                ? "opacity-100 translate-x-0 pointer-events-auto"
+                : "opacity-0 translate-x-3 pointer-events-none"
+            }`}
+          >
+            <FaCalendarAlt className="w-3.5 h-3.5" />
+            <span>{t["cta.bookMeeting"]}</span>
+          </Link>
+          <button
+            className="text-white text-2xl p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a78bfa] hover:bg-white/10 transition-colors"
+            style={{ touchAction: "manipulation" }}
+            onClick={() => setMenuOpen(true)}
+            aria-label={t['nav.openMenu']}
+            aria-expanded={menuOpen}
+          >
+            <FaBars />
+          </button>
+        </div>
       </nav>
 
       {/* Fullscreen overlay (portalled to body) */}
