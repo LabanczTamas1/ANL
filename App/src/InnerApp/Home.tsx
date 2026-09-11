@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Mail, Kanban } from "lucide-react";
+import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Mail, Kanban, Send } from "lucide-react";
 import { useLanguage } from '../hooks/useLanguage';
+import { useNotification } from '../contexts/NotificationContext';
 import { getMyProgress, normalizeMilestone } from '../services/api/progressApi';
 import { getUserBookings } from '../services/api/bookingApi';
 import GradientButton from "./components/GradientButton";
@@ -10,7 +11,9 @@ import MeetingsDashboard from "./components/MeetingsDashboard";
 const Home = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { unreadEmailCount, fetchUnreadCount } = useNotification();
   const locale = language === 'magyar' ? 'hu' : language === 'romana' ? 'ro' : 'en-US';
+  const role = localStorage.getItem('superRole');
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState<{ percent: number; current: number; total: number } | null>(null);
   const [nextEvent, setNextEvent] = useState<{ title: string; date: Date } | null>(null);
@@ -76,6 +79,10 @@ const Home = () => {
     };
   }, [t]);
 
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
   const features = [
     {
       id: 1,
@@ -83,6 +90,7 @@ const Home = () => {
       icon: <Calendar size={24} />,
       description: t('stayOnTop'),
       link: "/home/booking",
+      cta: t('home.ctaBook'),
       featured: true,
     },
     {
@@ -91,6 +99,7 @@ const Home = () => {
       icon: <Users size={24} />,
       description: t('connectUsers'),
       link: "/home/progress-tracker",
+      cta: t('home.ctaProgress'),
       progress: true,
     },
     {
@@ -99,6 +108,7 @@ const Home = () => {
       icon: <Activity size={24} />,
       description: t('trackPerformance'),
       link: "/home/calendar",
+      cta: t('home.ctaCalendar'),
       nextEvent: true,
     },
     {
@@ -107,13 +117,16 @@ const Home = () => {
       icon: <Settings size={24} />,
       description: t('customizeExperience'),
       link: "/home/account",
+      cta: t('home.ctaSettings'),
     },
     {
       id: 5,
-      title: t('mailingSystem'),
+      title: t('mails'),
       icon: <Mail size={24} />,
       description: t('simpleMails'),
       link: "/home/mail/inbox",
+      cta: t('home.viewInbox'),
+      mail: true,
     },
     {
       id: 6,
@@ -121,8 +134,10 @@ const Home = () => {
       icon: <Kanban size={24} />,
       description: t('organizeWorkflows'),
       link: "/home/kanban",
+      cta: t('home.ctaKanban'),
+      adminOnly: true,
     },
-  ];
+  ].filter((feature) => !feature.adminOnly || role === 'admin' || role === 'owner');
 
   if (isLoading) {
     return (
@@ -234,22 +249,52 @@ const Home = () => {
                       </p>
                     )}
                   </div>
+                ) : feature.mail ? (
+                  <div className="mb-4 flex-grow">
+                    {unreadEmailCount > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full bg-status-error text-white text-sm font-bold">
+                          {unreadEmailCount}
+                        </span>
+                        <span className="text-sm font-medium text-content dark:text-content-inverse">
+                          {unreadEmailCount === 1 ? t('home.newEmail') : t('home.newEmails')}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-content-subtle dark:text-content-subtle-inverse">
+                        {t('home.inboxEmpty')}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <p className={`mb-4 flex-grow ${feature.featured ? "text-white/85" : "text-content-subtle dark:text-content-subtle-inverse"}`}>
                     {feature.description}
                   </p>
                 )}
                 <div className="mt-auto">
-                  <span
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
-                      feature.featured
-                        ? "text-white group-hover:bg-white group-hover:text-brand"
-                        : "text-brand group-hover:bg-brand/10"
-                    }`}
-                  >
-                    {t('learnMore')}
-                    <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-                  </span>
+                  {feature.mail && unreadEmailCount === 0 ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/home/mail/send');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold bg-brand text-white hover:bg-brand-hover transition-colors"
+                    >
+                      <Send size={16} />
+                      {t('home.sendEmail')}
+                    </button>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
+                        feature.featured
+                          ? "text-white group-hover:bg-white group-hover:text-brand"
+                          : "text-brand group-hover:bg-brand/10"
+                      }`}
+                    >
+                      {feature.mail ? t('home.viewInbox') : feature.cta}
+                      <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
