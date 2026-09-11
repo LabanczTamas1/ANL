@@ -12,7 +12,7 @@ const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
   const { t } = useLanguage();
   return (
     <div
-      className={`relative border-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer mb-2 border-[#E5E6E7] dark:border-gray-700`}
+      className={`relative border border-line dark:border-line-dark rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 cursor-pointer mb-2 transition-colors`}
     >
       {/* Desktop view */}
       <div className="hidden md:flex flex-row justify-between px-2 py-2 pr-6 transition-all duration-300">
@@ -25,7 +25,7 @@ const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
         <div className="flex-1 px-2 truncate font-medium">
           {item.subject || t("inboxRow.noSubject")}
         </div>
-        <div className="flex-1 px-2 truncate text-gray-600 dark:text-gray-400">
+        <div className="flex-1 px-2 truncate text-content-muted">
           {item.body
             ? item.body.replace(/#|```|\*\*/g, "").slice(0, 30) +
               (item.body.length > 30 ? "..." : "")
@@ -42,7 +42,7 @@ const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
           <div className="font-medium text-sm truncate flex-1">
             {item.fromName || t("inboxRow.noName")}
           </div>
-          <div className="text-xs text-gray-500 ml-2 flex items-center">
+          <div className="text-xs text-content-muted ml-2 flex items-center">
             {formatDate(item.timeSended || null)}
           </div>
         </div>
@@ -51,14 +51,14 @@ const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
           {item.subject || t("inboxRow.noSubject")}
         </div>
 
-        <div className="text-sm truncate text-gray-600 dark:text-gray-400">
+        <div className="text-sm truncate text-content-muted">
           {item.body
             ? item.body.replace(/#|```|\*\*/g, "").slice(0, 60) +
               (item.body.length > 60 ? "..." : "")
             : t("inboxRow.noMessage")}
         </div>
 
-        <div className="text-xs text-gray-500 mt-1 truncate">
+        <div className="text-xs text-content-muted mt-1 truncate">
           {item.fromEmail || t("inboxRow.noEmail")}
         </div>
       </div>

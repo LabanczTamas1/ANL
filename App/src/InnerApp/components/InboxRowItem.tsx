@@ -27,7 +27,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
   return (
     <>
       <div
-        className={`relative border-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer mb-2 transition-colors`}
+        className={`relative border border-line dark:border-line-dark rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 cursor-pointer mb-2 transition-colors`}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onClick={() => onMessageClick(item.id)}
@@ -38,7 +38,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
             e.stopPropagation();
             setShowModal(true);
           }}
-          className={`absolute top-2 right-2 text-gray-400 hover:text-red-600 transition-opacity duration-200 ${
+          className={`absolute top-2 right-2 text-content-muted hover:text-status-error transition-opacity duration-200 ${
             hovered ? "opacity-100" : "opacity-0"
           }`}
           aria-label={t("inboxRow.deleteMessage")}
@@ -58,6 +58,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               checked={isSelected}
               onChange={(e) => onCheckboxChange(e, item.id)}
               aria-label={t("inboxRow.selectMessage")}
+              className="accent-brand"
             />
           </div>
           <div className="flex-1 px-2 truncate">
@@ -65,7 +66,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
           </div>
           <div className="flex-1 px-2 truncate">
             {item.isRead === "false" && (
-              <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+              <span className="inline-block w-2 h-2 bg-brand rounded-full mr-2"></span>
             )}
             <span className={`${item.isRead === "false" ? "font-bold" : ""}`}>
               {item.fromName || t("inboxRow.noName")}
@@ -81,8 +82,8 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
           <div
             className={`flex-1 px-2 truncate ${
               item.isRead === "false"
-                ? "text-black dark:text-white font-medium"
-                : "text-gray-600 dark:text-gray-400"
+                ? "text-content dark:text-content-inverse font-medium"
+                : "text-content-muted"
             }`}
           >
             {item.body
@@ -92,7 +93,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
           </div>
           <div className="flex-none ml-auto px-2 text-right whitespace-nowrap">
             {item.isRead === "false" && (
-              <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+              <span className="inline-block w-3 h-3 bg-brand rounded-full mr-2"></span>
             )}
             {formatDate(item.timeSended || null)}
           </div>
@@ -111,13 +112,13 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               }`}
             >
               {item.isRead === "false" && (
-                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                <span className="inline-block w-2 h-2 bg-brand rounded-full mr-2"></span>
               )}
               {item.fromName || t("inboxRow.noName")}
             </div>
-            <div className="text-xs text-gray-500 ml-2 flex items-center">
+            <div className="text-xs text-content-muted ml-2 flex items-center">
               {item.isRead === "false" && (
-                <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
+                <span className="inline-block w-2 h-2 bg-brand rounded-full mr-1"></span>
               )}
               {formatDate(item.timeSended || null)}
             </div>
@@ -134,8 +135,8 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
           <div
             className={`text-sm truncate ${
               item.isRead === "false"
-                ? "text-black dark:text-white font-medium"
-                : "text-gray-600 dark:text-gray-400"
+                ? "text-content dark:text-content-inverse font-medium"
+                : "text-content-muted"
             }`}
           >
             {item.body
@@ -144,7 +145,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               : t("inboxRow.noMessage")}
           </div>
 
-          <div className="text-xs text-gray-500 mt-1 truncate">
+          <div className="text-xs text-content-muted mt-1 truncate">
             {item.fromEmail || t("inboxRow.noEmail")}
           </div>
         </div>

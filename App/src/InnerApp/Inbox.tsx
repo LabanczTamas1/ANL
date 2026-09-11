@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import InboxRowItem from "./components/InboxRowItem";
 import ConfirmModal from "./components/ConfirmModal";
+import GradientButton from "./components/GradientButton";
 import { useNotification } from "../contexts/NotificationContext";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -195,9 +196,9 @@ const Inbox = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#121212]">
-      <div className="bg-white dark:bg-[#1e1e1e] w-full rounded-tl-lg">
-        <div className="p-4 text-black dark:text-white">
+    <div className="min-h-screen bg-surface-light dark:bg-surface-dark">
+      <div className="bg-surface-light dark:bg-surface-elevated w-full rounded-tl-lg">
+        <div className="p-4 text-content dark:text-content-inverse">
           {/* Header */}
           <div className="flex flex-row mb-2 items-center justify-between">
             <div className="flex items-center">
@@ -219,12 +220,12 @@ const Inbox = () => {
 
             {/* Right side actions */}
             <div className="flex items-center space-x-3">
-              <button
+              <GradientButton
                 onClick={() => navigate("/home/mail/send")}
-                className="flex items-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
+                className="flex items-center gap-1"
               >
                 <svg
-                  className="w-5 h-5 mr-1"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -237,15 +238,16 @@ const Inbox = () => {
                   />
                 </svg>
                 {t("inbox.writeMail")}
-              </button>
+              </GradientButton>
 
               {selectedEmails.length > 0 && (
-                <button
+                <GradientButton
+                  variant="danger"
                   onClick={() => setBulkDeleteModal(true)}
-                  className="flex items-center p-2 bg-red-500 hover:bg-red-600 text-white rounded"
+                  className="flex items-center gap-1"
                 >
                   <svg
-                    className="w-5 h-5 mr-1"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -258,13 +260,13 @@ const Inbox = () => {
                     />
                   </svg>
                   {t("inbox.deleteCount", { count: String(selectedEmails.length) })}
-                </button>
+                </GradientButton>
               )}
             </div>
           </div>
 
           {/* Main Inbox */}
-          <div className="p-2 border border-[#E5E6E7] dark:border-gray-700 rounded-lg mt-2">
+          <div className="p-2 border border-line dark:border-line-dark rounded-xl mt-2 shadow-soft dark:shadow-dark-card">
             <div className="flex justify-between items-center mb-4">
               <h2 className="font-bold text-xl md:text-2xl lg:text-4xl pl-2">
                 {t("inbox.title")}
@@ -280,9 +282,9 @@ const Inbox = () => {
                       inboxData.length > 0
                     }
                     onChange={handleSelectAll}
-                    className="mr-2"
+                    className="mr-2 accent-brand"
                   />
-                  <label htmlFor="selectAll" className="text-sm">
+                  <label htmlFor="selectAll" className="text-sm text-content-subtle dark:text-content-subtle-inverse">
                     {t("inbox.selectAll")}
                   </label>
                 </div>
@@ -291,9 +293,9 @@ const Inbox = () => {
 
             <div className="max-h-96 overflow-y-auto">
               {loading ? (
-                <div className="text-center py-4">{t("inbox.loading")}</div>
+                <div className="text-center py-4 text-content-muted">{t("inbox.loading")}</div>
               ) : !Array.isArray(inboxData) || inboxData.length === 0 ? (
-                <div className="text-center py-4">{t("inbox.noEmails")}</div>
+                <div className="text-center py-4 text-content-muted">{t("inbox.noEmails")}</div>
               ) : (
                 inboxData.map((item) => (
                   <InboxRowItem

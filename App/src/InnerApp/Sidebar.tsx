@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaChartBar, FaColumns, FaUserShield } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaChartBar, FaColumns, FaUserShield, FaRegCalendarAlt } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 import { FaCalendarCheck } from 'react-icons/fa';
@@ -50,6 +50,12 @@ const Sidebar: React.FC = () => {
             <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
               <FaEnvelope className="text-lg" />
               <span>{t('sidebar.bookMeeting')}</span>
+            </div>
+          </Link>
+          <Link to='/home/calendar'>
+            <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+              <FaRegCalendarAlt className="text-lg" />
+              <span>{t('sidebar.calendar')}</span>
             </div>
           </Link>
         </div>

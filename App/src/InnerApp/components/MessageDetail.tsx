@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { InboxItem } from "../Inbox";
 import { useLanguage } from "../../hooks/useLanguage";
+import GradientButton from "./GradientButton";
 
 interface MessageDetailProps {
   messageId?: string;
@@ -79,28 +80,28 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-white dark:bg-[#121212]">
-        <div className="text-black dark:text-white text-xl">{t("msgDetail.loading")}</div>
+      <div className="flex justify-center items-center h-screen bg-surface-light dark:bg-surface-dark">
+        <div className="text-content dark:text-content-inverse text-xl">{t("msgDetail.loading")}</div>
       </div>
     );
   }
 
   if (!message) {
     return (
-      <div className="flex justify-center items-center h-screen bg-white dark:bg-[#121212]">
-        <div className="text-black dark:text-white text-xl">{t("msgDetail.notFound")}</div>
+      <div className="flex justify-center items-center h-screen bg-surface-light dark:bg-surface-dark">
+        <div className="text-content dark:text-content-inverse text-xl">{t("msgDetail.notFound")}</div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen overflow-auto bg-white dark:bg-[#121212] p-4">
-      <div className="bg-white dark:bg-[#1e1e1e] rounded-lg p-6 max-w-4xl mx-auto">
+    <div className="h-screen overflow-auto bg-surface-light dark:bg-surface-dark p-4">
+      <div className="bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-dark rounded-2xl shadow-card dark:shadow-dark-card p-6 max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-black dark:text-white">{message.subject}</h1>
+          <h1 className="text-2xl font-bold text-content dark:text-content-inverse">{message.subject}</h1>
           <button 
             onClick={handleGoBack}
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="p-2 rounded-full text-content dark:text-content-inverse hover:bg-brand/5 dark:hover:bg-brand/10 transition-colors"
             aria-label={t("msgDetail.closeMessage")}
           >
             <svg 
@@ -109,7 +110,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
               viewBox="0 0 24 24" 
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
-              className="text-black dark:text-white"
+              className="text-content dark:text-content-inverse"
             >
               <path 
                 d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z" 
@@ -119,28 +120,28 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
           </button>
         </div>
         
-        <div className="border-b border-gray-300 dark:border-gray-700 pb-4 mb-4">
+        <div className="border-b border-line dark:border-line-dark pb-4 mb-4">
           <div className="flex items-center mb-2">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.from")}</span>
-            <span className="text-black dark:text-white">{message.fromName} &lt;{message.fromEmail}&gt;</span>
+            <span className="font-medium text-content-muted mr-2">{t("msgDetail.from")}</span>
+            <span className="text-content dark:text-content-inverse">{message.fromName} &lt;{message.fromEmail}&gt;</span>
           </div>
           <div className="flex items-center mb-2">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.to")}</span>
-            <span className="text-black dark:text-white">{message.recipient}</span>
+            <span className="font-medium text-content-muted mr-2">{t("msgDetail.to")}</span>
+            <span className="text-content dark:text-content-inverse">{message.recipient}</span>
           </div>
           <div className="flex items-center">
-            <span className="font-medium text-gray-600 dark:text-gray-300 mr-2">{t("msgDetail.date")}</span>
-            <span className="text-black dark:text-white">{formatDate(message.timeSended)}</span>
+            <span className="font-medium text-content-muted mr-2">{t("msgDetail.date")}</span>
+            <span className="text-content dark:text-content-inverse">{formatDate(message.timeSended)}</span>
           </div>
         </div>
         
-        <div className="prose prose-lg dark:prose-invert max-w-none text-black dark:text-white">
+        <div className="prose prose-lg dark:prose-invert max-w-none text-content dark:text-content-inverse">
           <ReactMarkdown
             components={{
               a: ({children, ...props}) => (
                 <a 
                   {...props} 
-                  className="text-blue-500 hover:text-blue-700 underline" 
+                  className="text-brand dark:text-brand-focus hover:text-brand-hover underline" 
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
@@ -166,19 +167,16 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
         </div>
 
         <div className="mt-6 flex justify-between">
-          <button 
-            onClick={handleGoBack}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-          >
+          <GradientButton onClick={handleGoBack}>
             {t("msgDetail.backToInbox")}
-          </button>
-          <div>
-            <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition mr-2">
+          </GradientButton>
+          <div className="flex gap-2">
+            <GradientButton>
               {t("msgDetail.reply")}
-            </button>
-            <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+            </GradientButton>
+            <GradientButton>
               {t("msgDetail.forward")}
-            </button>
+            </GradientButton>
           </div>
         </div>
       </div>

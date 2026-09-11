@@ -1,36 +1,89 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Star, BookOpen, Mail } from "lucide-react";
+import { ArrowRight, Activity, Users, Calendar, Settings, ChevronRight, Mail, Kanban } from "lucide-react";
 import { useLanguage } from '../hooks/useLanguage';
+import { getMyProgress, normalizeMilestone } from '../services/api/progressApi';
+import { getUserBookings } from '../services/api/bookingApi';
+import GradientButton from "./components/GradientButton";
 import MeetingsDashboard from "./components/MeetingsDashboard";
 
 const Home = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const [greeting, setGreeting] = useState(t('welcomeInner'));
+  const locale = language === 'magyar' ? 'hu' : language === 'romana' ? 'ro' : 'en-US';
   const [isLoading, setIsLoading] = useState(true);
+  const [progress, setProgress] = useState<{ percent: number; current: number; total: number } | null>(null);
+  const [nextEvent, setNextEvent] = useState<{ title: string; date: Date } | null>(null);
 
   useEffect(() => {
-    const greetings = [t('welcomeInner'), t('hello'), t('hiThere'), t('greetings'), t('hey')];
-    const interval = setInterval(() => {
-      const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
-      setGreeting(randomGreeting);
-    }, 1500);
+    const timeout = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timeout);
+  }, []);
 
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+  useEffect(() => {
+    let active = true;
+    getMyProgress()
+      .then((res) => {
+        if (!active) return;
+        const milestones = (res.data.milestones ?? []).map(normalizeMilestone);
+        const total = milestones.length;
+        const completed = milestones.filter((m) => m.status === 'completed').length;
+        setProgress({
+          percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+          current: Math.min(completed + 1, total),
+          total,
+        });
+      })
+      .catch(() => {
+        if (active) setProgress(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    return () => clearInterval(interval);
+  useEffect(() => {
+    let active = true;
+    getUserBookings()
+      .then((res) => {
+        if (!active) return;
+        const bookings =
+          (res.data as { bookings?: Record<string, unknown>[] }).bookings ?? [];
+        const now = Date.now();
+        const upcoming = bookings
+          .map((b) => {
+            const datePart = String(b.date ?? '').slice(0, 10);
+            const [y, m, d] = datePart.split('-').map(Number);
+            const mins = Number(b.time) || 0;
+            const date =
+              y && m && d
+                ? new Date(y, m - 1, d, Math.floor(mins / 60), mins % 60)
+                : new Date(NaN);
+            return {
+              title: String(b.company || b.full_name || t('bookMeeting')),
+              date,
+            };
+          })
+          .filter((e) => !isNaN(e.date.getTime()) && e.date.getTime() >= now)
+          .sort((a, b) => a.date.getTime() - b.date.getTime());
+        setNextEvent(upcoming[0] ?? null);
+      })
+      .catch(() => {
+        if (active) setNextEvent(null);
+      });
+    return () => {
+      active = false;
+    };
   }, [t]);
 
   const features = [
     {
       id: 1,
       title: t('bookMeeting'),
-      icon: <Activity size={24} />,
-      description: t('trackPerformance'),
+      icon: <Calendar size={24} />,
+      description: t('stayOnTop'),
       link: "/home/booking",
+      featured: true,
     },
     {
       id: 2,
@@ -38,13 +91,15 @@ const Home = () => {
       icon: <Users size={24} />,
       description: t('connectUsers'),
       link: "/home/progress-tracker",
+      progress: true,
     },
     {
       id: 3,
       title: t('eventCalendar'),
-      icon: <Calendar size={24} />,
-      description: t('stayOnTop'),
-      link: "/home/booking",
+      icon: <Activity size={24} />,
+      description: t('trackPerformance'),
+      link: "/home/calendar",
+      nextEvent: true,
     },
     {
       id: 4,
@@ -63,7 +118,7 @@ const Home = () => {
     {
       id: 6,
       title: t('projectManagement'),
-      icon: <Activity size={24} />,
+      icon: <Kanban size={24} />,
       description: t('organizeWorkflows'),
       link: "/home/kanban",
     },
@@ -85,85 +140,120 @@ const Home = () => {
       <div className="max-w-6xl mx-auto">
 
         {/* Hero */}
-        <div className="text-center mb-12 mt-8">
-          <h1 className="text-4xl font-bold text-content dark:text-content-inverse mb-4">
-            {greeting} <span className="text-brand">{t('toDashboard')}</span>
+        <div className="mb-12 mt-8">
+          <h1 className="text-4xl font-bold text-content dark:text-content-inverse mb-3">
+            {t('welcomeInner')} <span className="text-brand">{t('toDashboard')}</span>
           </h1>
-          <p className="text-xl text-content-subtle dark:text-content-subtle-inverse max-w-2xl mx-auto">
+          <p className="text-lg text-content-subtle dark:text-content-subtle-inverse max-w-2xl">
             {t('discoverBetterWay')}
           </p>
-          <div className="mt-8">
-            <button
+          <div className="mt-6">
+            <GradientButton
               onClick={() => navigate('/home/booking')}
-              className="bg-brand hover:bg-brand-hover text-content-inverse font-medium py-3 px-6 rounded-lg transition-colors duration-300 inline-flex items-center"
+              className="inline-flex items-center gap-2"
             >
-              {t('getStarted')} <ArrowRight className="ml-2" size={18} />
-            </button>
+              {t('getStarted')} <ArrowRight size={18} />
+            </GradientButton>
           </div>
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {features.map((feature) => (
             <div
               key={feature.id}
-              className="bg-surface-light dark:bg-surface-elevated rounded-lg shadow-card hover:shadow-card-hover border border-line dark:border-line-dark overflow-hidden cursor-pointer transition duration-300 hover:-translate-y-1"
               onClick={() => navigate(feature.link)}
+              className={
+                feature.featured
+                  ? "group relative rounded-2xl overflow-hidden cursor-pointer transition duration-300 hover:-translate-y-1 bg-accent-rose text-white border border-accent-rose shadow-lg shadow-accent-rose/30 hover:shadow-xl hover:shadow-accent-rose/40"
+                  : "group rounded-2xl overflow-hidden cursor-pointer transition duration-300 hover:-translate-y-1 bg-surface-light dark:bg-surface-elevated shadow-card hover:shadow-card-hover border border-line dark:border-line-dark"
+              }
             >
               <div className="p-6 flex flex-col h-full">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-content-inverse bg-brand mr-3">
+                  <div
+                    className={
+                      feature.featured
+                        ? "w-10 h-10 rounded-xl flex items-center justify-center bg-white/20 text-white mr-3"
+                        : "w-10 h-10 rounded-xl flex items-center justify-center bg-brand/10 text-brand mr-3"
+                    }
+                  >
                     {feature.icon}
                   </div>
-                  <h3 className="font-bold text-lg text-content dark:text-content-inverse">{feature.title}</h3>
+                  <h3 className={`font-bold text-lg ${feature.featured ? "text-white" : "text-content dark:text-content-inverse"}`}>
+                    {feature.title}
+                  </h3>
                 </div>
-                <p className="text-content-subtle dark:text-content-subtle-inverse mb-4 flex-grow">{feature.description}</p>
-                <div className="flex items-center mt-auto text-sm font-medium text-brand">
-                  {t('learnMore')} <ChevronRight size={16} className="ml-1" />
+                {feature.progress && progress ? (
+                  <div className="mb-4 flex-grow">
+                    <div className="flex items-baseline justify-between mb-1.5">
+                      <span className="text-2xl font-bold text-content dark:text-content-inverse">
+                        {progress.percent}%
+                      </span>
+                      {progress.total > 0 && (
+                        <span className="text-xs text-content-muted">
+                          {t('progress.stepOf', {
+                            current: String(progress.current),
+                            total: String(progress.total),
+                          })}
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-brand/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-brand transition-[width] duration-500"
+                        style={{ width: `${progress.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : feature.nextEvent ? (
+                  <div className="mb-4 flex-grow">
+                    <p className="text-xs font-medium uppercase tracking-wide text-content-muted mb-1">
+                      {t('home.nextEvent')}
+                    </p>
+                    {nextEvent ? (
+                      <>
+                        <p className="text-base font-semibold text-content dark:text-content-inverse truncate">
+                          {nextEvent.title}
+                        </p>
+                        <p className="text-sm text-brand font-medium mt-0.5">
+                          {nextEvent.date.toLocaleDateString(locale, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                          {' · '}
+                          {nextEvent.date.toLocaleTimeString(locale, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-content-subtle dark:text-content-subtle-inverse">
+                        {t('home.noUpcomingEvent')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className={`mb-4 flex-grow ${feature.featured ? "text-white/85" : "text-content-subtle dark:text-content-subtle-inverse"}`}>
+                    {feature.description}
+                  </p>
+                )}
+                <div className="mt-auto">
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 ${
+                      feature.featured
+                        ? "text-white group-hover:bg-white group-hover:text-brand"
+                        : "text-brand group-hover:bg-brand/10"
+                    }`}
+                  >
+                    {t('learnMore')}
+                    <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Testimonial */}
-        <div className="bg-surface-light dark:bg-surface-elevated rounded-lg shadow-card border border-line dark:border-line-dark p-8 mb-16">
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-4 flex gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={24} className="fill-brand text-brand" />
-              ))}
-            </div>
-            <p className="text-xl italic text-content-subtle dark:text-content-subtle-inverse mb-6">
-              "{t('testimonialText')}"
-            </p>
-            <div className="flex items-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-content-inverse font-bold bg-brand">JD</div>
-              <div className="ml-4 text-left">
-                <p className="font-bold text-content dark:text-content-inverse">{t('testimonialName')}</p>
-                <p className="text-content-muted">{t('testimonialPosition')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA Banner */}
-        <div className="bg-brand rounded-lg shadow-elevated p-8 text-content-inverse text-center mb-8">
-          <h2 className="text-3xl font-bold mb-4">{t('readyForNextStep')}</h2>
-          <p className="mb-8 max-w-2xl mx-auto opacity-90">
-            {t('joinThousands')}
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={() => navigate('/home/booking')}
-              className="bg-surface-light hover:bg-surface-light/90 text-brand font-medium py-3 px-6 rounded-lg transition-colors duration-300"
-            >
-              {t('bookMeeting')}
-            </button>
-            <button className="bg-transparent border-2 border-content-inverse hover:bg-brand-hover text-content-inverse font-medium py-3 px-6 rounded-lg transition-colors duration-300 flex items-center">
-              <BookOpen className="mr-2" size={18} /> {t('learnMore')}
-            </button>
-          </div>
         </div>
 
         <MeetingsDashboard />

@@ -1,6 +1,7 @@
 import React from "react";
 import { LinkData } from "../../Types/types";
 import { useLanguage } from "../../hooks/useLanguage";
+import GradientButton from "./GradientButton";
 
 interface Props {
   show: boolean;
@@ -15,40 +16,40 @@ const LinkModal: React.FC<Props> = ({ show, linkData, setLinkData, onInsert, onC
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 dark:bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="relative bg-white dark:bg-[#1e1e1e] p-4 rounded-md shadow-lg w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t("linkModal.insertLink")}</h3>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-modal p-4">
+      <div className="relative bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-glass p-5 rounded-2xl shadow-elevated w-full max-w-md">
+        <h3 className="text-lg font-semibold mb-4 text-content dark:text-content-inverse">{t("linkModal.insertLink")}</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("linkModal.url")}</label>
+            <label className="block text-sm font-medium text-content-subtle dark:text-content-subtle-inverse mb-1">{t("linkModal.url")}</label>
             <input
               type="url"
               value={linkData.url}
               onChange={setLinkData} // now type-safe
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-line dark:border-line-dark rounded-xl bg-surface-light dark:bg-surface-dark text-content dark:text-content-inverse placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand transition-shadow"
               placeholder={t("linkModal.urlPlaceholder")}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t("linkModal.displayText")}</label>
+            <label className="block text-sm font-medium text-content-subtle dark:text-content-subtle-inverse mb-1">{t("linkModal.displayText")}</label>
             <input
               type="text"
               value={linkData.text}
               onChange={setLinkData} // also type-safe
-              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-line dark:border-line-dark rounded-xl bg-surface-light dark:bg-surface-dark text-content dark:text-content-inverse placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand transition-shadow"
               placeholder={t("linkModal.displayTextPlaceholder")}
             />
           </div>
 
           <div className="flex justify-end space-x-2 mt-4">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-200 dark:bg-[#2a2a2a] hover:bg-gray-300 dark:hover:bg-[#333] rounded-md text-gray-800 dark:text-gray-200">
+            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-line dark:border-line-dark text-content-subtle dark:text-content-subtle-inverse hover:bg-brand/5 dark:hover:bg-brand/10 transition-colors">
               {t("linkModal.cancel")}
             </button>
-            <button onClick={onInsert} className="px-4 py-2 bg-[#65558F] hover:bg-opacity-90 rounded-md text-white transition-colors" disabled={!linkData.url}>
+            <GradientButton onClick={onInsert} disabled={!linkData.url}>
               {t("linkModal.insertLink")}
-            </button>
+            </GradientButton>
           </div>
         </div>
       </div>

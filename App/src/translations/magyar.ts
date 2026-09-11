@@ -1079,6 +1079,26 @@ export const magyar: Record<TranslationKey, string> = {
   'progress.allComplete': "Minden kész",
   'progress.ungrouped': "Mérföldkövek",
 
+  // Calendar
+  'calendar.title': "Naptár",
+  'calendar.subtitle': "Közelgő találkozóid és teljesített mérföldköveid.",
+  'calendar.loading': "Naptár betöltése...",
+  'calendar.today': "Ma",
+  'calendar.upcomingMeetings': "Közelgő találkozók",
+  'calendar.completedMilestones': "Teljesített mérföldkövek",
+  'calendar.noUpcoming': "Nincsenek közelgő találkozók.",
+  'calendar.noCompleted': "Még nincs teljesített mérföldkő.",
+  'calendar.noEventsDay': "Erre a napra nincs semmi ütemezve.",
+  'calendar.meeting': "Találkozó",
+  'calendar.join': "Csatlakozás",
+  'calendar.completedLabel': "Teljesítve",
+  'calendar.legendMeeting': "Találkozó",
+  'calendar.legendMilestone': "Teljesítve",
+  'calendar.oneEvent': "1 esemény",
+  'calendar.eventCount': "{{count}} esemény",
+  'home.nextEvent': "Következő esemény",
+  'home.noUpcomingEvent': "Nincs közelgő esemény",
+
   // Progress management (admin/owner)
   'progressAdmin.title': "Folyamatkezelés",
   'progressAdmin.subtitle': "Tekintsd meg és kezeld az egyes felhasználók mérföldköveit.",

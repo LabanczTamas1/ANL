@@ -31,24 +31,24 @@ const RecipientInput: React.FC<Props> = ({
         value={recipientInput}
         onChange={onChange}
         onFocus={onFocus}
-        className="w-full pl-1 rounded-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full pl-1 rounded-sm bg-transparent text-content dark:text-content-inverse placeholder-content-muted focus:outline-none"
         placeholder={t("recipient.searchPlaceholder")}
         autoComplete="off"
       />
       {showDropdown && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-dropdown w-full mt-1 bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-dark rounded-xl shadow-elevated max-h-60 overflow-auto">
           {filteredUsers.map((user, index) => (
             <div
               key={index}
-              className={`p-2 hover:bg-gray-100 dark:hover:bg-[#333] cursor-pointer flex justify-between ${
-                user.email === companyMail.email ? "bg-[#EDEBFA] dark:bg-[#65558F]/20 border-l-4 border-[#65558F]" : ""
+              className={`p-2 hover:bg-brand/5 dark:hover:bg-brand/20 cursor-pointer flex justify-between transition-colors ${
+                user.email === companyMail.email ? "bg-brand/10 dark:bg-brand/20 border-l-4 border-brand" : ""
               }`}
               onClick={() => onSelectUser(user)}
             >
-              <span className={user.email === companyMail.email ? "font-semibold text-[#65558F] dark:text-purple-300" : "text-gray-800 dark:text-gray-200"}>
+              <span className={user.email === companyMail.email ? "font-semibold text-brand dark:text-brand-focus" : "text-content dark:text-content-subtle-inverse"}>
                 {user.email}
               </span>
-              <span className={user.email === companyMail.email ? "text-[#65558F] dark:text-purple-300" : "text-gray-600 dark:text-gray-400"}>
+              <span className={user.email === companyMail.email ? "text-brand dark:text-brand-focus" : "text-content-muted"}>
                 {user.username}
               </span>
             </div>
@@ -61,7 +61,7 @@ const RecipientInput: React.FC<Props> = ({
       type="email"
       value={recipientInput}
       onChange={onChange}
-      className="w-full pl-1 rounded-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="w-full pl-1 rounded-sm bg-transparent text-content dark:text-content-inverse placeholder-content-muted focus:outline-none"
       placeholder={t("recipient.emailPlaceholder")}
       required
     />

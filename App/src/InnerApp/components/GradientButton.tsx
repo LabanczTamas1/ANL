@@ -13,13 +13,14 @@ interface GradientButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
 }
 
 /**
- * Unified rose glass style — every variant shares the same modern
- * glassmorphism look: a translucent rose fill, hairline rose border and a
- * soft backdrop blur. The `variant` prop is kept for API compatibility.
+ * Unified rose style — every variant shares the same look: a solid rose fill
+ * with a hairline rose border and a soft glass-like hover. A solid fill keeps
+ * the white label readable on any surface (light email pages *and* dark hero
+ * backgrounds). The `variant` prop is kept for API compatibility.
  */
 const ROSE_GLASS =
-  "bg-accent-rose/10 backdrop-blur-md border border-accent-rose/30 text-white shadow-sm shadow-accent-rose/10 " +
-  "hover:bg-accent-rose/20 hover:border-accent-rose/50 hover:shadow-lg hover:shadow-accent-rose/20 hover:scale-[1.02]";
+  "bg-accent-rose backdrop-blur-md border border-accent-rose text-white shadow-sm shadow-accent-rose/30 " +
+  "hover:bg-accent-rose/80 hover:border-accent-rose/70 hover:shadow-lg hover:shadow-accent-rose/40";
 
 const VARIANT_CLASSES: Record<string, string> = {
   primary: ROSE_GLASS,
