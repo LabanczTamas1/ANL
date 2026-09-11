@@ -186,7 +186,7 @@ const Sidebar: React.FC = () => {
 
       {/* Footer Section */}
       <div className="mt-auto mt-6 text-sm text-center text-gray-500">
-        <div>{t('sidebar.copyright', { year: '2024' })}</div>
+        <div>{t('sidebar.copyright', { year: String(new Date().getFullYear()) })}</div>
         <Link to="/home/terms-and-policy">
           <div className="text-blue-500 hover:text-blue-400 cursor-pointer">
             {t('sidebar.termsAndPolicy')}

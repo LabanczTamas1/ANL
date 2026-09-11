@@ -11,7 +11,7 @@ const InformationsLayout = () => {
       <Navbar />
 
       {/* Page content */}
-      <div className="flex-1">
+      <div className="flex-1 dark">
         <Outlet />
       </div>
 

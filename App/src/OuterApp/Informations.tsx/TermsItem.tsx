@@ -9,12 +9,12 @@ interface TermsItemsProps {
 const TermsItem: React.FC<TermsItemsProps> = ({ title, information, explanation }) => {
   return (
     <div className="py-4">
-      <h2 className="text-xl md:text-2xl font-semibold pb-2 text-white">{title}</h2>
-      <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-t border-gray-700 pt-4">
-        <div className="w-full md:w-3/5 text-justify text-gray-300 whitespace-pre-line">{information}</div>
+      <h2 className="text-xl md:text-2xl font-semibold pb-2 text-content dark:text-content-inverse">{title}</h2>
+      <div className="flex flex-col md:flex-row gap-4 md:gap-8 border-t border-line dark:border-line-dark pt-4">
+        <div className="w-full md:w-3/5 text-justify text-content-subtle dark:text-content-subtle-inverse whitespace-pre-line">{information}</div>
         {explanation && (
-          <div className="w-full md:w-2/5 text-justify text-gray-400 whitespace-pre-line">
-            <h3 className="text-lg font-semibold mb-1 text-gray-200">Explanation:</h3>
+          <div className="w-full md:w-2/5 text-justify text-content-muted whitespace-pre-line">
+            <h3 className="text-lg font-semibold mb-1 text-content dark:text-content-inverse">Explanation:</h3>
             {explanation}
           </div>
         )}
