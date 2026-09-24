@@ -2,13 +2,13 @@
 // Finance Scheduler — periodic checks for due pending payments
 // ---------------------------------------------------------------------------
 
-import cron from 'node-cron';
+import cron, { type ScheduledTask } from 'node-cron';
 import { checkDuePayments } from '../service/pendingPaymentService.js';
 import { createLogger } from '../../../utils/logger.js';
 
 const logger = createLogger('finance', 'infra');
 
-let task: cron.ScheduledTask | null = null;
+let task: ScheduledTask | null = null;
 
 /**
  * Start the finance scheduler.
