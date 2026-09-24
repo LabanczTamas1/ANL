@@ -300,11 +300,15 @@ export async function moveCard(req: Request, res: Response): Promise<void> {
     const insertAt = Math.min(newIndex, reordered.length);
     reordered.splice(insertAt, 0, cardId);
 
-    for (let i = 0; i < reordered.length; i++) {
-      await execute(
-        `UPDATE kanban_cards SET sort_order = $1 WHERE id = $2`,
-        [i, reordered[i]],
-      );
+    // `reordered` is always a real, server-built array, but guard explicitly so
+    // the loop bound can never be an attacker-controlled `.length` (CWE-834).
+    if (Array.isArray(reordered)) {
+      for (let i = 0; i < reordered.length; i++) {
+        await execute(
+          `UPDATE kanban_cards SET sort_order = $1 WHERE id = $2`,
+          [i, reordered[i]],
+        );
+      }
     }
 
     // Update column card counts if cross-column move
