@@ -1,0 +1,17 @@
+name: "CodeQL config"
+
+# Reduce noise and analysis time by skipping vendored code, build output,
+# generated assets and test fixtures. CodeQL ignores node_modules by default,
+# but these paths are listed explicitly to keep the scan focused on our own
+# source and to avoid configuration errors on large/generated trees.
+paths-ignore:
+  - "**/node_modules"
+  - "**/dist"
+  - "**/build"
+  - "**/coverage"
+  - "App/public"
+  - "backend/logs"
+  - "backend/migrations"
+  - "**/*.min.js"
+  - "**/*.test.ts"
+  - "**/__tests__/**"
