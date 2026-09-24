@@ -20,6 +20,13 @@ const Navbar: React.FC = () => {
     setIsLanguageMenuOpen(!isLanguageMenuOpen);
   };
 
+  // Responsive: show MobileNavbar on small screens. This early return lives
+  // BEFORE the desktop `flags` SVG trees below so the mobile path never builds
+  // those three inline-SVG element trees on every render.
+  if (isMobile) {
+    return <MobileNavbar />;
+  }
+
   const flags: Record<Language, JSX.Element> = {
     english: (
       <svg viewBox="0 0 60 30" className="w-6 h-4">
@@ -58,11 +65,6 @@ const Navbar: React.FC = () => {
       </svg>
     ),
   };
-
-  // Responsive: show MobileNavbar on small screens
-  if (isMobile) {
-    return <MobileNavbar />;
-  }
 
   const blendStyle = { mixBlendMode: "exclusion" as const };
 

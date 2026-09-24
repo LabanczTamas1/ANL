@@ -17,28 +17,52 @@ const MobileTopBar = ({ menuOpen, onOpenMenu, t }: MobileTopBarProps) => {
   const location = useLocation();
 
   // Show a compact "Book a Meeting" CTA in the top bar once the hero's primary
-  // CTA (#hero-cta-primary) has scrolled out of view. Only active on pages that
-  // render that hero button (the landing page). A scroll listener is used
-  // instead of IntersectionObserver because it reliably re-checks even if the
-  // target mounts after this effect and works across all mobile browsers.
+  // CTA (#hero-cta-primary) has scrolled up past the 56px nav bar. Only active
+  // on pages that render that hero button (the landing page).
+  //
+  // This uses an IntersectionObserver instead of a scroll listener. The old
+  // scroll handler called getBoundingClientRect() on EVERY scroll event, which
+  // forces a synchronous layout reflow on every scroll frame — the single
+  // biggest source of scroll jank in the mobile navbar, on every page. The
+  // observer runs off the main thread and only fires when the target actually
+  // crosses the bar, so scrolling stays smooth. `entry.boundingClientRect` is
+  // provided by the observer itself (no manual reflow), letting us tell
+  // "scrolled up above the bar" (show) from "still below the fold" (hide).
   useEffect(() => {
     setShowNavCta(false);
-    const check = () => {
+
+    let observer: IntersectionObserver | null = null;
+    let rafId = 0;
+    let attempts = 0;
+
+    const attach = () => {
       const target = document.getElementById("hero-cta-primary");
       if (!target) {
-        setShowNavCta(false);
+        // The hero button may mount a few frames after this effect (async page
+        // render). Retry on the next frames, then give up (page has no hero).
+        if (attempts++ < 60) {
+          rafId = requestAnimationFrame(attach);
+        }
         return;
       }
-      const rect = target.getBoundingClientRect();
-      // Once the hero button's bottom passes above the 56px nav bar, show it.
-      setShowNavCta(rect.bottom <= 56);
+
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          // Once the button's bottom passes above the 56px bar it is no longer
+          // intersecting AND its bottom is <= 56 → show the compact CTA. While
+          // it is still below the fold its bottom is > 56 → keep it hidden.
+          setShowNavCta(entry.boundingClientRect.bottom <= 56);
+        },
+        { threshold: [0, 1], rootMargin: "-56px 0px 0px 0px" }
+      );
+      observer.observe(target);
     };
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
+
+    attach();
+
     return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
+      if (rafId) cancelAnimationFrame(rafId);
+      observer?.disconnect();
     };
   }, [location.pathname]);
 
