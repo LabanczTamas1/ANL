@@ -90,7 +90,8 @@ const Starfield: React.FC = () => {
     canvas.addEventListener("mouseleave", handleMouseLeave);
     resize();
 
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
+    let running = false;
 
     const drawGlow = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
       // Outer glow - purple/brand color
@@ -213,16 +214,66 @@ const Starfield: React.FC = () => {
         }
       }
 
-      animationFrameId = requestAnimationFrame(drawStars);
+      if (running) animationFrameId = requestAnimationFrame(drawStars);
     };
 
-    drawStars();
+    // Start/stop wrappers so the heavy per-frame canvas work (radial-gradient
+    // glows + shadowBlur) can be fully paused. Left running, this loop starves
+    // React's state updates + paint on weak mobile CPUs and makes UI on top of
+    // it (e.g. the mobile nav dropdown) feel laggy.
+    const start = () => {
+      if (running) return;
+      running = true;
+      drawStars();
+    };
+
+    const stop = () => {
+      running = false;
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    };
+
+    // Pause when the canvas is scrolled out of view.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) start();
+        else stop();
+      },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+
+    // Pause when the tab is hidden.
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Pause while a fullscreen overlay (e.g. the mobile nav menu) covers the
+    // canvas — it isn't scrolled out of view, so the IntersectionObserver
+    // wouldn't catch it, yet the loop would keep starving the main thread and
+    // make in-menu taps feel laggy.
+    const handlePause = () => stop();
+    const handleResume = () => {
+      if (!document.hidden) start();
+    };
+    window.addEventListener("anl:pause-bg-animation", handlePause);
+    window.addEventListener("anl:resume-bg-animation", handleResume);
+
+    start();
 
     return () => {
+      stop();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("anl:pause-bg-animation", handlePause);
+      window.removeEventListener("anl:resume-bg-animation", handleResume);
       window.removeEventListener("resize", resize);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
-      cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
