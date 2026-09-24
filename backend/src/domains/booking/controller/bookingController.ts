@@ -20,7 +20,15 @@ class BookingController {
       });
     } catch (error: any) {
       if (error.status) {
-        res.status(error.status).json(error);
+        // Only forward known-safe business-error fields — never the whole
+        // object, which could carry a stack trace (CWE-209).
+        res.status(error.status).json({
+          ...(error.error !== undefined && { error: error.error }),
+          ...(error.errors !== undefined && { errors: error.errors }),
+          ...(error.availableTimes !== undefined && {
+            availableTimes: error.availableTimes,
+          }),
+        });
         return;
       }
       logError(error, { context: 'createBooking', body: req.body });
