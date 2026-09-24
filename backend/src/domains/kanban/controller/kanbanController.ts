@@ -275,6 +275,12 @@ export async function moveCard(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  // Validate newIndex is a non-negative integer to prevent loop-bound injection.
+  if (typeof newIndex !== 'number' || !Number.isInteger(newIndex) || newIndex < 0) {
+    res.status(400).json({ error: 'Invalid newIndex' });
+    return;
+  }
+
   try {
     // Update the card's column and sort order
     await execute(
@@ -289,7 +295,10 @@ export async function moveCard(req: Request, res: Response): Promise<void> {
     );
 
     const reordered = [...destCards.map(c => c.id)];
-    reordered.splice(newIndex, 0, cardId);
+    // Clamp the insertion point to the current array bounds so the (already
+    // validated) client-supplied index can never drive an out-of-range splice.
+    const insertAt = Math.min(newIndex, reordered.length);
+    reordered.splice(insertAt, 0, cardId);
 
     for (let i = 0; i < reordered.length; i++) {
       await execute(

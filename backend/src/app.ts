@@ -49,6 +49,14 @@ app.use(
     secret: process.env.SESSION_SECRET || 'yourSecretKey',
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      // Never expose the session cookie to client-side JS.
+      httpOnly: true,
+      // Only transmit over HTTPS in production (behind the Caddy TLS proxy).
+      secure: process.env.NODE_ENV === 'production',
+      // Mitigate CSRF by not sending the cookie on cross-site requests.
+      sameSite: 'lax',
+    },
   }),
 );
 app.use(passport.initialize());

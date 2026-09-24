@@ -239,7 +239,14 @@ const Card: React.FC<CardProps> = ({
   const extractBaseUrl = (url: string): string => {
     try {
       const urlMatch = url.match(/https?:\/\/[^\s\]]+/);
-      return urlMatch ? urlMatch[0] : "";
+      if (!urlMatch) return "";
+      // Re-validate with the URL parser and only allow http/https schemes so a
+      // crafted value can never produce a javascript:/data: href (DOM XSS).
+      const parsed = new URL(urlMatch[0]);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return "";
+      }
+      return parsed.href;
     } catch {
       return "";
     }

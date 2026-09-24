@@ -19,6 +19,19 @@ import {
 
 const logger = createLogger('booking', 'service');
 
+/**
+ * Escape a string for safe interpolation into HTML email templates.
+ * Prevents stored/reflected XSS from user-supplied booking fields.
+ */
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const REFERRAL_SOURCES = [
   'Google Search',
   'Social Media (LinkedIn, Facebook, etc.)',
@@ -260,7 +273,7 @@ class BookingService {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📅 Date</td>
-                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${dayName}, ${bookingData.date}</td>
+                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${escapeHtml(dayName)}, ${escapeHtml(bookingData.date)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🕐 Time</td>
@@ -268,7 +281,7 @@ class BookingService {
               </tr>
               <tr>
                 <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">🌐 Timezone</td>
-                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.timezone || 'America/New_York'}</td>
+                <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${escapeHtml(bookingData.timezone || 'America/New_York')}</td>
               </tr>
             </table>
             ${meetLink ? `
@@ -323,23 +336,23 @@ class BookingService {
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">👤 Name</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.fullName.trim()}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${escapeHtml(bookingData.fullName.trim())}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📧 Email</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;"><a href="mailto:${bookingData.email.trim()}" style="color: #3b82f6; text-decoration: none;">${bookingData.email.trim()}</a></td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;"><a href="mailto:${encodeURIComponent(bookingData.email.trim())}" style="color: #3b82f6; text-decoration: none;">${escapeHtml(bookingData.email.trim())}</a></td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🏢 Company</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.company.trim()}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${escapeHtml(bookingData.company.trim())}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📣 Referral</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${bookingData.referralSource}${bookingData.referralSourceOther ? ` — ${bookingData.referralSourceOther}` : ''}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${escapeHtml(bookingData.referralSource)}${bookingData.referralSourceOther ? ` — ${escapeHtml(bookingData.referralSourceOther)}` : ''}</td>
                 </tr>
                 ${bookingData.notes ? `<tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">📝 Notes</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.notes}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${escapeHtml(bookingData.notes)}</td>
                 </tr>` : ''}
               </table>
 
@@ -347,7 +360,7 @@ class BookingService {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">📅 Date</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${dayName}, ${bookingData.date}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right; border-bottom: 1px solid #f3f4f6;">${escapeHtml(dayName)}, ${escapeHtml(bookingData.date)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">🕐 Time</td>
@@ -355,7 +368,7 @@ class BookingService {
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">🌐 Timezone</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${bookingData.timezone || 'America/New_York'}</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; font-weight: 600; text-align: right;">${escapeHtml(bookingData.timezone || 'America/New_York')}</td>
                 </tr>
               </table>
               ${meetLink ? `

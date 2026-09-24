@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Least-privilege default token: this workflow only checks out code and
+# deploys over SSH, so read access to repo contents is all it needs.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

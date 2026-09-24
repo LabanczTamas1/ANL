@@ -138,7 +138,11 @@ export async function addMeetingHost(req: Request, res: Response): Promise<void>
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalid = emailList.filter((e) => !emailRegex.test(e));
+    // Guard against ReDoS: reject over-long inputs (RFC 5321 caps addresses at
+    // 254 chars) BEFORE running the backtracking-prone regex on user input.
+    const invalid = emailList.filter(
+      (e) => e.length > 254 || !emailRegex.test(e),
+    );
     if (invalid.length > 0) {
       res.status(400).json({ error: `Invalid email(s): ${invalid.join(', ')}` });
       return;

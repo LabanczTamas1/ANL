@@ -26,7 +26,7 @@ class BookingController {
       logError(error, { context: 'createBooking', body: req.body });
       res
         .status(500)
-        .json({ error: 'Failed to create booking', message: error.message });
+        .json({ error: 'Failed to create booking' });
     }
   }
 
@@ -52,7 +52,6 @@ class BookingController {
       });
       res.status(500).json({
         error: 'Failed to fetch booking details',
-        message: error.message,
       });
     }
   }
@@ -73,7 +72,7 @@ class BookingController {
       logError(error, { context: 'getAllBookings' });
       res
         .status(500)
-        .json({ error: 'Failed to fetch all bookings', message: error.message });
+        .json({ error: 'Failed to fetch all bookings' });
     }
   }
 
@@ -86,7 +85,7 @@ class BookingController {
       logError(error, { context: 'getUserBookings', userId: req.user?.id });
       res
         .status(500)
-        .json({ error: 'Failed to fetch bookings', message: error.message });
+        .json({ error: 'Failed to fetch bookings' });
     }
   }
 
@@ -99,7 +98,6 @@ class BookingController {
       logError(error, { context: 'getLatestBookings', userId: req.user?.id });
       res.status(500).json({
         error: 'Failed to fetch latest bookings',
-        message: error.message,
       });
     }
   }
@@ -122,7 +120,6 @@ class BookingController {
       });
       res.status(500).json({
         error: 'Failed to fetch booking details',
-        message: error.message,
       });
     }
   }
@@ -146,7 +143,7 @@ class BookingController {
       });
       res
         .status(500)
-        .json({ error: 'Failed to delete booking', message: error.message });
+        .json({ error: 'Failed to delete booking' });
     }
   }
 
@@ -168,7 +165,7 @@ class BookingController {
       logError(error, { context: 'getAvailability', date: req.params.date });
       res
         .status(500)
-        .json({ error: 'Internal server error', message: error.message });
+        .json({ error: 'Internal server error' });
     }
   }
 }
