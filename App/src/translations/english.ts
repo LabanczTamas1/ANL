@@ -978,7 +978,8 @@ export const english = {
   'admin.time': "Time",
   'admin.method': "Method",
   'admin.path': "Path",
-  'admin.ip': "IP",
+  'admin.ip': "Client IP",
+  'admin.edgeIp': "Edge IP (Cloudflare)",
   // StatusCodeBarChart
   'admin.statusSuccess': "Success (2xx)",
   'admin.statusRedirect': "Redirect (3xx)",

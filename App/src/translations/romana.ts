@@ -980,7 +980,8 @@ export const romana: Record<TranslationKey, string> = {
   'admin.time': "Oră",
   'admin.method': "Metodă",
   'admin.path': "Cale",
-  'admin.ip': "IP",
+  'admin.ip': "IP client",
+  'admin.edgeIp': "IP edge (Cloudflare)",
   // StatusCodeBarChart
   'admin.statusSuccess': "Succes (2xx)",
   'admin.statusRedirect': "Redirecționare (3xx)",

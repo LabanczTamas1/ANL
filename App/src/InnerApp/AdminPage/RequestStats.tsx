@@ -50,6 +50,7 @@ interface RequestStats {
     path: string;
     role: string;
     ip: string;
+    edgeIp?: string;
     userAgent: string;
   }[];
 }
@@ -311,6 +312,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
                     <Th>{t('admin.path')}</Th>
                     <Th>{t('admin.role')}</Th>
                     <Th>{t('admin.ip')}</Th>
+                    <Th>{t('admin.edgeIp')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -327,6 +329,7 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
                       <Td className="font-mono text-sm truncate max-w-xs">{request.path}</Td>
                       <Td className="capitalize">{request.role}</Td>
                       <Td className="font-mono text-sm">{request.ip}</Td>
+                      <Td className="font-mono text-sm">{request.edgeIp ?? '—'}</Td>
                     </Tr>
                   ))}
                 </Tbody>

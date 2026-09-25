@@ -977,7 +977,8 @@ export const magyar: Record<TranslationKey, string> = {
   'admin.time': "Idő",
   'admin.method': "Metódus",
   'admin.path': "Útvonal",
-  'admin.ip': "IP",
+  'admin.ip': "Kliens IP",
+  'admin.edgeIp': "Edge IP (Cloudflare)",
   // StatusCodeBarChart
   'admin.statusSuccess': "Sikeres (2xx)",
   'admin.statusRedirect': "Átirányítás (3xx)",

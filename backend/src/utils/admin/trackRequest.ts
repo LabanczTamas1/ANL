@@ -47,6 +47,30 @@ function getStatusCategory(statusCode: number): string {
   return 'unknown';
 }
 
+/**
+ * Resolve the real client IP. Traffic is proxied through Cloudflare, so
+ * `req.ip` (and X-Forwarded-For) only reveal the Cloudflare edge address.
+ * Cloudflare forwards the true visitor IP in the `CF-Connecting-IP` header.
+ */
+function getClientIp(req: Request): string | undefined {
+  const cfConnectingIp = req.headers['cf-connecting-ip'];
+  if (typeof cfConnectingIp === 'string' && cfConnectingIp.length > 0) {
+    return cfConnectingIp;
+  }
+  if (Array.isArray(cfConnectingIp) && cfConnectingIp.length > 0) {
+    return cfConnectingIp[0];
+  }
+  return req.ip;
+}
+
+/**
+ * The Cloudflare edge (proxy) IP that the request arrived from. This is what
+ * `req.ip` resolves to when traffic is proxied through Cloudflare.
+ */
+function getEdgeIp(req: Request): string | undefined {
+  return req.ip;
+}
+
 /** Express middleware to track request analytics. */
 export async function trackRequest(
   req: Request,
@@ -87,7 +111,8 @@ export async function trackRequest(
       method,
       path,
       role,
-      ip: req.ip,
+      ip: getClientIp(req),
+      edgeIp: getEdgeIp(req),
       userAgent: req.headers['user-agent'],
     };
 
