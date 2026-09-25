@@ -32,7 +32,6 @@ const MobileNavbar = () => {
     if (menuOpen) {
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
-      document.body.classList.add("mobile-menu-open");
       // While the fullscreen menu is open, the animated page BEHIND it keeps
       // running its requestAnimationFrame canvas loops (FloatingParticles, etc.)
       // at full tilt. On a weak mobile CPU that starves React's state updates +
@@ -45,13 +44,11 @@ const MobileNavbar = () => {
     } else {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
-      document.body.classList.remove("mobile-menu-open");
       window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
     }
     return () => {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
-      document.body.classList.remove("mobile-menu-open");
       window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
     };
   }, [menuOpen]);

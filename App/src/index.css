@@ -48,16 +48,14 @@ summary {
   touch-action: manipulation;
 }
 
-/* While the fullscreen mobile menu is open, freeze CSS animations on the page
-   behind it. The menu overlay is portalled to <body> (outside #root), so it
-   keeps animating normally; only the covered page content is paused. This stops
-   background animation from competing for the main thread and making in-menu
-   taps feel laggy. */
-body.mobile-menu-open #root *,
-body.mobile-menu-open #root *::before,
-body.mobile-menu-open #root *::after {
-  animation-play-state: paused !important;
-}
+/* NOTE: We deliberately do NOT use a `body.mobile-menu-open #root *` universal
+   selector to pause CSS animations behind the menu. Toggling a body class that
+   drives a `*` / `*::before` / `*::after` rule forces the browser to re-match
+   and recalculate styles for EVERY node in the page on both open and close — a
+   multi-second style-recalc on a heavy DOM that made the hamburger feel frozen.
+   The fullscreen overlay is opaque (nothing behind it is visible) and the
+   expensive JS canvas loops are already paused via the `anl:pause-bg-animation`
+   event, so pausing cheap GPU-composited CSS animations here isn't worth it. */
 
 #child-paddings > *{
     padding-top: 1em;
