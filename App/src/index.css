@@ -61,6 +61,21 @@ summary {
     padding-top: 1em;
 }
 
+/* One-shot enter animation for the mobile nav menu. Runs on mount only and is
+   fully GPU-composited (opacity + transform), so it never blocks the main
+   thread. Closing is an instant unmount (no exit animation) so it always feels
+   responsive. */
+@keyframes mobileMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes mobileMenuIn {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
 /* ───────────────────────── Toastify: mobile-friendly UX ───────────────────────── */
 /* Layout the toast as a row: icon | message | close button (vertically centred) */
 .Toastify__toast {
