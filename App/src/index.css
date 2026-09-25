@@ -76,6 +76,42 @@ summary {
   }
 }
 
+/* ───────────────────── Mobile GPU / paint budget guard ─────────────────────
+   On real phones the decorative "ambient" backgrounds used across the outer
+   pages (login, register, landing, about, contact, …) are the dominant cause
+   of jank — NOT the navbar. Three properties are brutal on mobile GPUs:
+
+     1. `animate-pulse` on huge `blur-[120px]` blobs → the browser must
+        re-raster and re-composite a massive blurred texture EVERY frame,
+        forever, stealing the main/compositor thread from taps & scrolling.
+     2. `backdrop-blur-*` → forces an expensive backdrop read + blur on every
+        repaint, which fires on every scroll frame.
+     3. Very large `blur-[Npx]` filters → costly initial raster of oversized
+        layers, and re-raster when composited over moving content.
+
+   Instead of editing dozens of components, we neutralise these globally on
+   phones (≤767px). Desktop keeps the full visual treatment. */
+@media (max-width: 767px) {
+  /* Stop perpetual opacity animation on blurred blobs. */
+  .animate-pulse {
+    animation: none !important;
+  }
+
+  /* Drop all backdrop-blur — the most expensive per-scroll paint on mobile.
+     Elements keep their translucent background, just without the live blur. */
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Cap oversized decorative blur radii (arbitrary `blur-[Npx]` utilities).
+     Excludes backdrop-blur utilities (handled above) so we don't add a stray
+     foreground filter to those elements. */
+  [class*="blur-["]:not([class*="backdrop"]) {
+    filter: blur(32px) !important;
+  }
+}
+
 /* ───────────────────────── Toastify: mobile-friendly UX ───────────────────────── */
 /* Layout the toast as a row: icon | message | close button (vertically centred) */
 .Toastify__toast {

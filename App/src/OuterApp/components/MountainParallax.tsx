@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 // Static star positions (x%, y%) — kept deterministic to avoid hydration issues
 const STARS: { x: number; y: number; size: number; glow: boolean }[] = [
@@ -37,8 +38,13 @@ const MountainParallax: React.FC = () => {
   const bgRef        = useRef<HTMLDivElement>(null);
   const mgRef        = useRef<HTMLDivElement>(null);
   const fgRef        = useRef<HTMLDivElement>(null);
+  // On mobile the per-scroll-frame getBoundingClientRect read + 3 transform
+  // writes cause noticeable scroll jank. Skip the parallax entirely there and
+  // leave the layers at their natural (static) position.
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   useEffect(() => {
+    if (isMobile) return;
     let rafId: number;
 
     const update = () => {
@@ -66,7 +72,7 @@ const MountainParallax: React.FC = () => {
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <div
