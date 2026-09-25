@@ -85,7 +85,6 @@ import UserManagement from "./InnerApp/UserManagement/UserManagement.tsx";
 import Statistics from "./InnerApp/Statistics/Statistics.tsx";
 import TermsAndConditions from "./OuterApp/Informations.tsx/TermsAndConditions.tsx";
 import Services from "./OuterApp/Services.tsx";
-import NavTestPage from "./OuterApp/NavTestPage.tsx";
 import MessageDetail from "./InnerApp/components/MessageDetail.tsx";
 import { ReactNode } from "react";
 import OAuthCallback from "./services/OauthCallback.tsx";
@@ -202,10 +201,6 @@ const router = createBrowserRouter([
   {
     path: "/services",
     element: <Services />,
-  },
-  {
-    path: "/nav-test",
-    element: <NavTestPage />,
   },
   {
     path: "/mail/send-mail",
