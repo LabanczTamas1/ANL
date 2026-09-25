@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface Particle {
   x: number;
@@ -26,6 +27,11 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animationRef = useRef<number>();
+  // Perpetual canvas loops are the main-thread bottleneck on phones and are
+  // rendered on nearly every page (sometimes several at once). Skip them on
+  // mobile so taps / navigation / the nav bar stay responsive; the effect
+  // below bails because the canvas is never rendered.
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -228,6 +234,8 @@ const FloatingParticles: React.FC<FloatingParticlesProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, [particleCount]);
+
+  if (isMobile) return null;
 
   return (
     <canvas

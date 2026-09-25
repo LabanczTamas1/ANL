@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 interface Star {
   x: number;
@@ -28,6 +29,12 @@ const Starfield: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
   const mouseRef = useRef<MousePosition>({ x: -1000, y: -1000 });
+  // This perpetual full-screen canvas loop is the single biggest main-thread
+  // cost on the landing page. On phones it starves tap handling / navigation
+  // and makes the whole UI (incl. the nav bar) feel laggy, so we skip the
+  // decorative starfield entirely on mobile — the effect below bails because
+  // the canvas is never rendered.
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const targetMouseRef = useRef<MousePosition>({ x: -1000, y: -1000 });
 
   const randomColor = () =>
@@ -276,6 +283,8 @@ const Starfield: React.FC = () => {
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
+
+  if (isMobile) return null;
 
   return (
     <canvas
