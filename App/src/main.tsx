@@ -13,15 +13,10 @@ posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   // click, adding per-tap main-thread work that makes taps feel laggy on
   // low-end mobile. We don't use the signal, so turn it off.
   capture_dead_clicks: false,
-  // Session replay (rrweb) serializes DOM mutations on the MAIN THREAD. On
-  // mobile, every tap that changes the DOM (e.g. opening the fullscreen nav
-  // overlay) forces a synchronous mutation-serialization pass that stalls the
-  // UI for hundreds of ms → taps feel laggy / delayed. Weak mobile CPUs can't
-  // absorb that cost, so disable replay on small screens and keep it on
-  // desktop where it's cheap and most useful for debugging.
-  disable_session_recording:
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 767px)").matches,
+  // Session replay (rrweb) is enabled on all devices. It was previously
+  // disabled on mobile while chasing navbar lag, but the real cause was the
+  // decorative ambient backgrounds (see index.css mobile paint guard), so
+  // replay can safely run on phones again.
 });
 
 // Re-enable capturing if the user already consented in a previous visit
