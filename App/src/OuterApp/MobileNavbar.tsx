@@ -41,15 +41,32 @@ const MobileNavbar = () => {
       // Focus the dialog container for a11y on the next frame (setTimeout here
       // could trigger a reflow/scroll jump on iOS).
       requestAnimationFrame(() => dialogRef.current?.focus());
-    } else {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
+      // Restore the scroll lock if the navbar unmounts while the menu is open.
+      return () => {
+        document.body.style.overflow = "";
+        document.documentElement.style.overflow = "";
+      };
     }
+
+    // ── Closing ──────────────────────────────────────────────────────────
+    // Release the scroll lock immediately so the closed state can paint, but
+    // DEFER resuming the background canvas loops. If we resume synchronously
+    // here, the overlay-hide repaint, the scroll-lock reflow, and the first
+    // frame of every background animation all land in the SAME frame while the
+    // just-revealed page behind also needs repainting — that collision is what
+    // made closing feel slow/buggy on every page. Waiting two frames lets the
+    // menu visibly close first, then the ambient animations spin back up.
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
+      });
+    });
     return () => {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      window.dispatchEvent(new CustomEvent("anl:resume-bg-animation"));
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
     };
   }, [menuOpen]);
 
