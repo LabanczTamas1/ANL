@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CalendarDays, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
+import { status } from '@design-system';
+import { Alert, Button, Card, Heading, IconButton, Text } from '@design-system/components';
 
 const StatusCodeBarChart = () => {
   const { t } = useLanguage();
@@ -23,10 +25,10 @@ const StatusCodeBarChart = () => {
 
   // Status code category styling
   const statusConfig = {
-    '2xx': { color: '#4ade80', label: t('admin.statusSuccess') },
-    '3xx': { color: '#60a5fa', label: t('admin.statusRedirect') },
-    '4xx': { color: '#facc15', label: t('admin.statusClientError') },
-    '5xx': { color: '#f87171', label: t('admin.statusServerError') }
+    '2xx': { color: status.success, label: t('admin.statusSuccess') },
+    '3xx': { color: status.info, label: t('admin.statusRedirect') },
+    '4xx': { color: status.warning, label: t('admin.statusClientError') },
+    '5xx': { color: status.error, label: t('admin.statusServerError') }
   };
 
   // Time range options
@@ -274,8 +276,8 @@ const StatusCodeBarChart = () => {
       });
       
       return (
-        <div className="w-full md:col-span-2 bg-white p-3 border border-gray-200 shadow-lg rounded-md">
-          <p className="font-medium text-gray-800">{dataPoint.fullDate || label}</p>
+        <div className="w-full md:col-span-2 bg-surface-light dark:bg-surface-elevated p-3 border border-line dark:border-line-dark shadow-lg rounded-md">
+          <p className="font-medium text-content dark:text-content-inverse">{dataPoint.fullDate || label}</p>
           <p className="text-sm font-semibold mt-1">{t('admin.totalColon')} {total.toLocaleString()}</p>
           <div className="mt-2">
             {sortedPayload.map((entry, index) => (
@@ -298,40 +300,38 @@ const StatusCodeBarChart = () => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md md:col-span-2">
+    <Card className="md:col-span-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h3 className="text-xl font-semibold mb-3 md:mb-0">{t('admin.statusCodeAnalytics')}</h3>
+        <Heading level={3} className="mb-3 md:mb-0">{t('admin.statusCodeAnalytics')}</Heading>
         
         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto">
           {/* Date Range Selector */}
-          <div className="flex items-center space-x-2 bg-gray-50 rounded-md px-3 py-1.5 text-sm">
-            <CalendarDays size={16} className="text-gray-500" />
-            <span className="text-gray-600">{dateRange.start} — {dateRange.end}</span>
+          <div className="flex items-center space-x-2 bg-black/[0.03] dark:bg-white/5 rounded-md px-3 py-1.5 text-sm">
+            <CalendarDays size={16} className="text-content-muted" />
+            <span className="text-content-subtle dark:text-content-subtle-inverse">{dateRange.start} — {dateRange.end}</span>
           </div>
           
           {/* Time Range Selector */}
-          <div className="flex items-center rounded-md bg-gray-100 p-1">
-            <button 
+          <div className="flex items-center rounded-md bg-black/[0.04] dark:bg-white/10 p-1">
+            <IconButton
+              variant="ghost"
+              size="sm"
+              aria-label={t('admin.range24h')}
               onClick={() => navigateTimeRange('prev')}
               disabled={timeRange === timeRangeOptions[0].value}
-              className={`p-1 rounded ${
-                timeRange === timeRangeOptions[0].value
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
             >
               <ArrowLeft size={16} />
-            </button>
+            </IconButton>
             
             <div className="flex mx-1 rounded-md overflow-hidden">
               {timeRangeOptions.map(option => (
                 <button
                   key={option.value}
                   onClick={() => setTimeRange(option.value)}
-                  className={`px-3 py-1 text-sm font-medium ${
+                  className={`px-3 py-1 text-sm font-medium rounded transition-colors ${
                     timeRange === option.value
-                      ? 'bg-white shadow text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-200'
+                      ? 'bg-surface-light dark:bg-surface-elevated shadow text-brand dark:text-brand-focus'
+                      : 'text-content-subtle dark:text-content-subtle-inverse hover:bg-black/[0.04] dark:hover:bg-white/10'
                   }`}
                 >
                   {option.label}
@@ -339,26 +339,27 @@ const StatusCodeBarChart = () => {
               ))}
             </div>
             
-            <button 
+            <IconButton
+              variant="ghost"
+              size="sm"
+              aria-label={t('admin.range90d')}
               onClick={() => navigateTimeRange('next')}
               disabled={timeRange === timeRangeOptions[timeRangeOptions.length - 1].value}
-              className={`p-1 rounded ${
-                timeRange === timeRangeOptions[timeRangeOptions.length - 1].value
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
             >
               <ArrowRight size={16} />
-            </button>
+            </IconButton>
             
             {/* Refresh Button */}
-            <button 
+            <IconButton
+              variant="outline"
+              size="sm"
+              aria-label={t('admin.refreshData')}
               onClick={fetchStats}
-              className="ml-2 p-1.5 bg-white rounded-md text-gray-600 hover:text-gray-800 border border-gray-200"
+              className="ml-2 bg-surface-light dark:bg-surface-elevated"
               title={t('admin.refreshData')}
             >
               <RefreshCw size={16} />
-            </button>
+            </IconButton>
           </div>
         </div>
       </div>
@@ -369,10 +370,10 @@ const StatusCodeBarChart = () => {
           <button
             key={key}
             onClick={() => toggleStatusCategory(key)}
-            className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+            className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus ${
               selectedStatuses[key]
-                ? 'border-gray-300 text-gray-800'
-                : 'bg-gray-100 border-gray-200 text-gray-500'
+                ? 'text-content dark:text-content-inverse'
+                : 'bg-black/[0.04] dark:bg-white/10 border-line dark:border-line-dark text-content-muted'
             }`}
             style={{ 
               backgroundColor: selectedStatuses[key] ? `${config.color}20` : '', 
@@ -390,24 +391,19 @@ const StatusCodeBarChart = () => {
       
       {/* Error Message */}
       {error && (
-        <div className="flex justify-center items-center h-20 mb-4">
-          <div className="text-red-500 text-center p-4 bg-red-50 rounded-md border border-red-200 w-full">
-            {error}
-            <div className="mt-2">
-              <button 
-                onClick={fetchStats}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                {t('admin.tryAgain')}
-              </button>
-            </div>
+        <Alert tone="error" className="mb-4 text-center">
+          {error}
+          <div className="mt-2">
+            <Button variant="ghost" size="sm" onClick={fetchStats} className="text-brand dark:text-brand-focus">
+              {t('admin.tryAgain')}
+            </Button>
           </div>
-        </div>
+        </Alert>
       )}
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">{t('admin.loadingStatusData')}</div>
+          <Text tone="muted">{t('admin.loadingStatusData')}</Text>
         </div>
       ) : (
         <div className="h-80">
@@ -469,7 +465,7 @@ const StatusCodeBarChart = () => {
           return (
             <div 
               key={key} 
-              className="p-4 rounded-lg border border-gray-200"
+              className="p-4 rounded-lg border border-line dark:border-line-dark"
               style={{ borderColor: selectedStatuses[key] ? config.color : '' }}
             >
               <div className="flex items-center">
@@ -477,17 +473,17 @@ const StatusCodeBarChart = () => {
                   className="w-3 h-3 rounded-sm mr-2" 
                   style={{ backgroundColor: config.color }}
                 />
-                <span className="text-sm font-medium text-gray-600">{config.label}</span>
+                <span className="text-sm font-medium text-content-subtle dark:text-content-subtle-inverse">{config.label}</span>
               </div>
               <div className="mt-2">
-                <span className="text-2xl font-bold">{total.toLocaleString()}</span>
-                <span className="ml-2 text-sm text-gray-500">{percentage}%</span>
+                <span className="text-2xl font-bold text-content dark:text-content-inverse">{total.toLocaleString()}</span>
+                <span className="ml-2 text-sm text-content-muted">{percentage}%</span>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 };
 

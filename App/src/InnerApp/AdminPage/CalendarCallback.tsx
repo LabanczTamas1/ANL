@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
+import { Spinner, Text } from '@design-system/components';
 
 /**
  * Handles the Google OAuth redirect for calendar connection.
@@ -31,10 +32,10 @@ const CalendarCallback = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-surface-dark">
       <div className="text-center">
-        <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-gray-500 text-sm">{t('admin.connectingCalendar')}</p>
+        <Spinner size="lg" className="text-brand mx-auto mb-3" />
+        <Text tone="muted" size="sm">{t('admin.connectingCalendar')}</Text>
       </div>
     </div>
   );

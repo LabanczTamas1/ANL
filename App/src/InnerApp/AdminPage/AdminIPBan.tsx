@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { FiShield, FiSlash } from "react-icons/fi";
 import { useLanguage } from "../../hooks/useLanguage";
+import {
+  Alert,
+  Button,
+  Heading,
+  Input,
+  Text,
+} from "@design-system/components";
 
 
 const API_BASE = "http://localhost:3001"; // change this to your backend base URL
@@ -81,43 +89,53 @@ const AdminIPBan = () => {
 
   return (
     <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">🔒 {t("admin.ipBanTitle")}</h2>
+      <Heading level={3} className="mb-4 flex items-center gap-2">
+        <FiShield aria-hidden="true" /> {t("admin.ipBanTitle")}
+      </Heading>
 
       <div className="flex gap-2 mb-4">
-        <input
+        <Input
           type="text"
           placeholder={t("admin.enterIpToBan")}
           value={newIP}
           onChange={(e) => setNewIP(e.target.value)}
-          className="border px-2 py-1 flex-1 rounded"
+          containerClassName="flex-1"
         />
-        <button
-          onClick={handleBanIP}
-          disabled={loading}
-          className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
-        >
+        <Button variant="danger" onClick={handleBanIP} loading={loading}>
           {t("admin.banIp")}
-        </button>
+        </Button>
       </div>
 
-      {message && <p className="mb-2 text-green-600">{message}</p>}
+      {message && (
+        <Alert tone="success" className="mb-2">
+          {message}
+        </Alert>
+      )}
 
-      <h3 className="font-semibold mb-2">🚫 {t("admin.bannedIpsHeading")}</h3>
+      <Heading level={4} className="mb-2 flex items-center gap-2">
+        <FiSlash aria-hidden="true" /> {t("admin.bannedIpsHeading")}
+      </Heading>
       <ul className="space-y-1">
-        {bannedIPs.length === 0 && <p className="text-sm text-gray-500">{t("admin.noIpsBanned")}</p>}
+        {bannedIPs.length === 0 && (
+          <Text tone="muted" size="sm">
+            {t("admin.noIpsBanned")}
+          </Text>
+        )}
         {bannedIPs.map((ip) => (
           <li
             key={ip}
-            className="flex justify-between items-center bg-gray-100 px-3 py-1 rounded"
+            className="flex justify-between items-center bg-black/[0.04] dark:bg-white/5 px-3 py-1.5 rounded-lg"
           >
-            <span>{ip}</span>
-            <button
+            <span className="text-content dark:text-content-inverse font-mono text-sm">{ip}</span>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleUnbanIP(ip)}
               disabled={loading}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-brand dark:text-brand-focus"
             >
               {t("admin.unban")}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

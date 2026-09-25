@@ -40,7 +40,7 @@ const AdminPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-full bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100">
+    <div className="min-h-full bg-surface-light dark:bg-surface-dark text-content dark:text-content-inverse">
       <ToastContainer position="top-right" theme="colored" />
       <AdminTabBar activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="p-4 md:p-6">

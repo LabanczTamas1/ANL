@@ -1,5 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
+import {
+  Alert,
+  Button,
+  Heading,
+  Input,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+} from '@design-system/components';
 
 interface MeetingHostsProps {
   userRole?: string;
@@ -117,90 +131,87 @@ const MeetingHosts: React.FC<MeetingHostsProps> = () => {
 
   return (
     <div className="max-w-2xl">
-      <h2 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{t('admin.meetingHostsTitle')}</h2>
-      <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+      <Heading level={2} className="mb-2">
+        {t('admin.meetingHostsTitle')}
+      </Heading>
+      <Text tone="muted" size="sm" className="mb-6">
         {t('admin.meetingHostsDesc')}
-      </p>
+      </Text>
 
       {/* Messages */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+        <Alert tone="error" className="mb-4">
           {error}
-        </div>
+        </Alert>
       )}
       {success && (
-        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg text-sm">
+        <Alert tone="success" className="mb-4">
           {success}
-        </div>
+        </Alert>
       )}
 
       {/* Add form */}
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-        <input
+        <Input
           type="email"
           placeholder={t('admin.enterEmailPlaceholder')}
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
-          className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#65558F] focus:border-[#65558F] outline-none"
           disabled={saving}
+          containerClassName="flex-1"
         />
-        <button
-          type="submit"
-          disabled={saving || !newEmail.trim()}
-          className="px-4 py-2 bg-[#65558F] text-white rounded-lg font-medium hover:bg-[#4e4070] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
+        <Button type="submit" loading={saving} disabled={!newEmail.trim()}>
           {saving ? t('admin.adding') : t('admin.addHost')}
-        </button>
+        </Button>
       </form>
 
       {/* Hosts list */}
       {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">{t('admin.loadingHosts')}</p>
+        <Text tone="muted">{t('admin.loadingHosts')}</Text>
       ) : hosts.length === 0 ? (
-        <div className="p-6 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-lg text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <div className="p-6 bg-black/[0.03] dark:bg-white/5 border border-line dark:border-line-dark rounded-lg text-center">
+          <Text tone="muted" size="sm">
             {t('admin.noHostsConfigured')}
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
+          </Text>
+          <Text tone="muted" size="xs" className="mt-1">
             {t('admin.hostsFallbackNote')}
-          </p>
+          </Text>
         </div>
       ) : (
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-[#1a1a2e]">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {t('admin.emailAddress')}
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
-                  {t('admin.actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+        <TableContainer>
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>{t('admin.emailAddress')}</Th>
+                <Th className="text-right w-24">{t('admin.actions')}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
               {hosts.map((email) => (
-                <tr key={email} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-200">{email}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
+                <Tr key={email} hoverable>
+                  <Td className="text-sm">{email}</Td>
+                  <Td className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleRemove(email)}
                       disabled={saving}
-                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium disabled:opacity-50"
+                      className="text-status-error"
                     >
                       {t('admin.remove')}
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </Td>
+                </Tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </TableContainer>
       )}
 
-      <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-        {hosts.length} {hosts.length !== 1 ? t('admin.hosts') : t('admin.host')} {t('admin.configured')}
-      </p>
+      <Text tone="muted" size="xs" className="mt-4">
+        {hosts.length} {hosts.length !== 1 ? t('admin.hosts') : t('admin.host')}{' '}
+        {t('admin.configured')}
+      </Text>
     </div>
   );
 };

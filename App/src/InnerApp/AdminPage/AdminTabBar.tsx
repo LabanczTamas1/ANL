@@ -11,17 +11,17 @@ interface Props {
 const AdminTabBar: React.FC<Props> = ({ activeTab, onTabChange }) => {
   const { t } = useLanguage();
   return (
-  <div className="border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
+  <div className="border-b border-line dark:border-line-dark px-4 overflow-x-auto">
     <nav className="flex gap-1 min-w-max">
       {TABS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onTabChange(id)}
           aria-current={activeTab === id ? 'page' : undefined}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus ${
             activeTab === id
-              ? 'border-[#65558F] text-[#65558F] dark:text-purple-400 dark:border-purple-400'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              ? 'border-brand text-brand dark:text-brand-focus dark:border-brand-focus'
+              : 'border-transparent text-content-subtle dark:text-content-subtle-inverse hover:text-content dark:hover:text-content-inverse'
           }`}
         >
           <Icon className="text-base" />
