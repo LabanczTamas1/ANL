@@ -45,6 +45,7 @@ onFCP(reportWebVital);
 onLCP(reportWebVital);
 onTTFB(reportWebVital);
 onINP(reportWebVital);
+import { lazy, Suspense } from "react";
 import {
   createBrowserRouter,
   RouterProvider,
@@ -52,56 +53,61 @@ import {
   Outlet,
 } from "react-router-dom";
 import ScrollToTop from "./ScrollToTop";
+import BasicLoader from "./Loaders/BasicLoader.tsx";
+// Eagerly loaded: the landing page is the LCP element for "/", and
+// NotFoundPage is the router errorElement — both must render immediately.
 import LandingPage from "./OuterApp/LandingPage.tsx";
-import RegisterPage from "./OuterApp/RegisterPage.tsx";
-import LoginPage from "./OuterApp/LoginPage.tsx";
 import NotFoundPage from "./HelperPages/NotFoundPage.tsx";
-// import App from "./App.tsx";
-import ProgressPage from "./InnerApp/ProgressPage.tsx";
-import Contact from "./OuterApp/Contact.tsx";
-import Inbox from "./InnerApp/Inbox.tsx";
-import SendMail from "./InnerApp/SendMail.tsx";
-import Layout from "./InnerApp/Layout.tsx";
-import Home from "./InnerApp/Home.tsx";
-import Account from "./InnerApp/Account.tsx";
-import AboutUs from "./OuterApp/AboutUs.tsx";
-import Kanban from "./InnerApp/Kanban/Kanban.tsx";
-import AdminPage from "./InnerApp/AdminPage/index.tsx";
-import Booking from "./InnerApp/Booking/Booking.tsx";
-import Availability from "./InnerApp/Booking/Availability.tsx";
-import AvailabilityOverview from "./InnerApp/Booking/AvailabilityOverview.tsx";
-import PrivacyPolicy from "./OuterApp/Informations.tsx/PrivacyPolicy.tsx";
-import CookiePolicy from "./OuterApp/Informations.tsx/CookiePolicy.tsx";
-import InformationsLayout from "./OuterApp/Informations.tsx/InformationsLayout.tsx";
-import AddAvailability from "./InnerApp/Booking/AddAvailability.tsx";
-import DeleteAvailability from "./InnerApp/Booking/DeleteAvailability.tsx";
-import EmptyPage from "./HelperPages/EmptyPage.tsx";
-import ProgressTracker from "./InnerApp/ProgressTracker/ProgressTracker.tsx";
-import CalendarPage from "./InnerApp/CalendarPage.tsx";
-import ProgressAdmin from "./InnerApp/ProgressTracker/ProgressAdmin.tsx";
-import { HelmetProvider } from "react-helmet-async";
-import Onboarding from "./InnerApp/Onboarding/Onboarding.tsx";
-import UserManagement from "./InnerApp/UserManagement/UserManagement.tsx";
-import Statistics from "./InnerApp/Statistics/Statistics.tsx";
-import TermsAndConditions from "./OuterApp/Informations.tsx/TermsAndConditions.tsx";
-import Services from "./OuterApp/Services.tsx";
-import MessageDetail from "./InnerApp/components/MessageDetail.tsx";
+
+// Route components are lazy-loaded so each one ships as its own chunk. This
+// keeps the initial JS bundle small instead of shipping every page up front.
+const RegisterPage = lazy(() => import("./OuterApp/RegisterPage.tsx"));
+const LoginPage = lazy(() => import("./OuterApp/LoginPage.tsx"));
+const ProgressPage = lazy(() => import("./InnerApp/ProgressPage.tsx"));
+const Contact = lazy(() => import("./OuterApp/Contact.tsx"));
+const Inbox = lazy(() => import("./InnerApp/Inbox.tsx"));
+const SendMail = lazy(() => import("./InnerApp/SendMail.tsx"));
+const Layout = lazy(() => import("./InnerApp/Layout.tsx"));
+const Home = lazy(() => import("./InnerApp/Home.tsx"));
+const Account = lazy(() => import("./InnerApp/Account.tsx"));
+const AboutUs = lazy(() => import("./OuterApp/AboutUs.tsx"));
+const Kanban = lazy(() => import("./InnerApp/Kanban/Kanban.tsx"));
+const AdminPage = lazy(() => import("./InnerApp/AdminPage/index.tsx"));
+const Booking = lazy(() => import("./InnerApp/Booking/Booking.tsx"));
+const Availability = lazy(() => import("./InnerApp/Booking/Availability.tsx"));
+const AvailabilityOverview = lazy(() => import("./InnerApp/Booking/AvailabilityOverview.tsx"));
+const PrivacyPolicy = lazy(() => import("./OuterApp/Informations.tsx/PrivacyPolicy.tsx"));
+const CookiePolicy = lazy(() => import("./OuterApp/Informations.tsx/CookiePolicy.tsx"));
+const InformationsLayout = lazy(() => import("./OuterApp/Informations.tsx/InformationsLayout.tsx"));
+const AddAvailability = lazy(() => import("./InnerApp/Booking/AddAvailability.tsx"));
+const DeleteAvailability = lazy(() => import("./InnerApp/Booking/DeleteAvailability.tsx"));
+const EmptyPage = lazy(() => import("./HelperPages/EmptyPage.tsx"));
+const ProgressTracker = lazy(() => import("./InnerApp/ProgressTracker/ProgressTracker.tsx"));
+const CalendarPage = lazy(() => import("./InnerApp/CalendarPage.tsx"));
+const ProgressAdmin = lazy(() => import("./InnerApp/ProgressTracker/ProgressAdmin.tsx"));
+const Onboarding = lazy(() => import("./InnerApp/Onboarding/Onboarding.tsx"));
+const UserManagement = lazy(() => import("./InnerApp/UserManagement/UserManagement.tsx"));
+const Statistics = lazy(() => import("./InnerApp/Statistics/Statistics.tsx"));
+const TermsAndConditions = lazy(() => import("./OuterApp/Informations.tsx/TermsAndConditions.tsx"));
+const Services = lazy(() => import("./OuterApp/Services.tsx"));
+const MessageDetail = lazy(() => import("./InnerApp/components/MessageDetail.tsx"));
+const OAuthCallback = lazy(() => import("./services/OauthCallback.tsx"));
+const LanguageSwitcherPage = lazy(() => import("./InnerApp/LanguageSwitcherPage.tsx"));
+const SuccessfulBooking = lazy(() => import("./InnerApp/Booking/SuccessfulBooking.tsx"));
+const BookingConfirmation = lazy(() => import("./OuterApp/BookingConfirmation.tsx"));
+const EmailVerification = lazy(() => import("./OuterApp/EmailVerification.tsx"));
+const ForgotPasswordPage = lazy(() => import("./OuterApp/ForgotPasswordPage.tsx"));
+const DesignPlaygroundLayout = lazy(() => import("./OuterApp/DesignPlayground/DesignPlaygroundLayout.tsx"));
+const PlaygroundOverview = lazy(() => import("./OuterApp/DesignPlayground/PlaygroundOverview.tsx"));
+const PlaygroundComponentPage = lazy(() => import("./OuterApp/DesignPlayground/PlaygroundComponentPage.tsx"));
+const LastOutComing = lazy(() => import("./InnerApp/SentEmails"));
+const CalendarCallback = lazy(() => import("./InnerApp/AdminPage/CalendarCallback.tsx"));
+const AddReview = lazy(() => import("./InnerApp/AddReview.tsx"));
 import { ReactNode } from "react";
-import OAuthCallback from "./services/OauthCallback.tsx";
-import LanguageSwitcherPage from "./InnerApp/LanguageSwitcherPage.tsx";
+import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { translations } from "./translations/translations";
 import { NotificationProvider } from "./contexts/NotificationContext";
-import SuccessfulBooking from "./InnerApp/Booking/SuccessfulBooking.tsx";
-import BookingConfirmation from "./OuterApp/BookingConfirmation.tsx";
-import EmailVerification from "./OuterApp/EmailVerification.tsx";
-import ForgotPasswordPage from "./OuterApp/ForgotPasswordPage.tsx";
-import DesignPlaygroundLayout from "./OuterApp/DesignPlayground/DesignPlaygroundLayout.tsx";
-import PlaygroundOverview from "./OuterApp/DesignPlayground/PlaygroundOverview.tsx";
-import PlaygroundComponentPage from "./OuterApp/DesignPlayground/PlaygroundComponentPage.tsx";
-import LastOutComing from "./InnerApp/SentEmails";
-import CalendarCallback from "./InnerApp/AdminPage/CalendarCallback.tsx";
-import AddReview from "./InnerApp/AddReview.tsx";
 
 // Admin Protected Route Component
 const AdminRoute = ({ children }: { children: ReactNode }) => {
@@ -130,7 +136,9 @@ const ManagerRoute = ({ children }: { children: ReactNode }) => {
 const RootLayout = () => (
   <>
     <ScrollToTop />
-    <Outlet />
+    <Suspense fallback={<BasicLoader />}>
+      <Outlet />
+    </Suspense>
   </>
 );
 

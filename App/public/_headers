@@ -1,0 +1,16 @@
+# Cloudflare Pages caching rules.
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
+
+# Content-hashed build output (JS/CSS/fonts under /assets/*) is immutable:
+# the filename changes whenever the content changes, so it is safe to cache
+# forever and never revalidate. This removes per-asset revalidation round
+# trips on repeat visits.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The SPA entry document must always be fresh so new deploys take effect
+# immediately (it references the latest hashed asset filenames).
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
