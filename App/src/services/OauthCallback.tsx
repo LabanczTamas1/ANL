@@ -7,7 +7,7 @@ const OAuthCallback: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -121,16 +121,16 @@ const OAuthCallback: React.FC = () => {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
       <div className="text-center p-8 bg-gray-800 rounded-lg shadow-xl max-w-md">
-        {loading ? (
-          <>
-            <h2 className="text-2xl font-bold mb-4">{t('oauth.authenticating')}</h2>
-            <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto"></div>
-          </>
-        ) : (
+        {error ? (
           <>
             <h2 className="text-2xl font-bold mb-4 text-red-500">{t('oauth.authError')}</h2>
             <p className="mb-4">{error}</p>
             <p>{t('oauth.redirecting')}</p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold mb-4">{t('oauth.authenticating')}</h2>
+            <div className="w-16 h-16 border-t-4 border-blue-500 border-solid rounded-full animate-spin mx-auto"></div>
           </>
         )}
       </div>
