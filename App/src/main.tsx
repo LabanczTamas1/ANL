@@ -69,7 +69,7 @@ const Inbox = lazy(() => import("./InnerApp/Inbox.tsx"));
 const SendMail = lazy(() => import("./InnerApp/SendMail.tsx"));
 const Layout = lazy(() => import("./InnerApp/Layout.tsx"));
 const Home = lazy(() => import("./InnerApp/Home.tsx"));
-const Account = lazy(() => import("./InnerApp/Account.tsx"));
+const Account = lazy(() => import("./InnerApp/Account"));
 const AboutUs = lazy(() => import("./OuterApp/AboutUs.tsx"));
 const Kanban = lazy(() => import("./InnerApp/Kanban/Kanban.tsx"));
 const AdminPage = lazy(() => import("./InnerApp/AdminPage/index.tsx"));
