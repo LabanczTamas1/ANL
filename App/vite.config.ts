@@ -1,10 +1,28 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 
+/**
+ * Strip the `crossorigin` attribute Vite stamps onto the built <link>/<script>
+ * tags. Our assets are same-origin, so crossorigin adds nothing — but it forces
+ * the browser to fetch them in CORS mode. Behind Cloudflare that CORS handshake
+ * can fail (cached/edge variance), and a crossorigin stylesheet that fails the
+ * check is downloaded but NOT applied, leaving the site unstyled. Removing the
+ * attribute makes these plain same-origin requests that always apply.
+ */
+function stripCrossorigin(): Plugin {
+  return {
+    name: 'strip-crossorigin',
+    enforce: 'post',
+    transformIndexHtml(html) {
+      return html.replace(/\s+crossorigin(?:="[^"]*")?/g, '')
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), stripCrossorigin()],
   resolve: {
     alias: {
       '@design-system': fileURLToPath(new URL('./src/design-system', import.meta.url)),
