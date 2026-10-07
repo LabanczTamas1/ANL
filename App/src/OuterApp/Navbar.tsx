@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 const lightLogo = "/light-logo.png";
 import { Link } from "react-router-dom";
@@ -12,6 +12,7 @@ type Language = "english" | "magyar" | "romana";
 const Navbar: React.FC = () => {
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState<boolean>(false);
   const isMobile = useMediaQuery("(max-width: 600px)");
+  const languageMenuRef = useRef<HTMLDivElement>(null);
 
   const { language, setLanguage, translations } = useLanguage();
   const t = translations[language];
@@ -19,6 +20,30 @@ const Navbar: React.FC = () => {
   const toggleLanguageMenu = () => {
     setIsLanguageMenuOpen(!isLanguageMenuOpen);
   };
+
+  // Close the language dropdown when focus or a click/tap leaves it (including
+  // clicking the Sign In / Register buttons) or when Escape is pressed.
+  useEffect(() => {
+    if (!isLanguageMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) {
+        setIsLanguageMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsLanguageMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isLanguageMenuOpen]);
 
   // Responsive: show MobileNavbar on small screens. This early return lives
   // BEFORE the desktop `flags` SVG trees below so the mobile path never builds
@@ -117,9 +142,11 @@ const Navbar: React.FC = () => {
       </div>
       {/* Right: language + auth icons */}
       <div className="flex items-center gap-3">
-        <div className="relative">
+        <div className="relative" ref={languageMenuRef}>
           <button
             onClick={toggleLanguageMenu}
+            aria-haspopup="true"
+            aria-expanded={isLanguageMenuOpen}
             className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none"
           >
             {flags[language]}
