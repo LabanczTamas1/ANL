@@ -147,7 +147,7 @@ const Navbar: React.FC = () => {
             onClick={toggleLanguageMenu}
             aria-haspopup="true"
             aria-expanded={isLanguageMenuOpen}
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65558F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
           >
             {flags[language]}
           </button>
