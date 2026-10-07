@@ -27,6 +27,36 @@ const METHOD_BAR_COLORS: Record<string, string> = {
   DELETE: 'bg-status-error',
 };
 
+/**
+ * Ordered list of the IP sources captured for each request, paired with the
+ * translation key used for their label. Rendered top-to-bottom, most specific
+ * (true visitor) first and falling back to proxy/edge addresses.
+ */
+const IP_SOURCE_FIELDS: {
+  key: keyof NonNullable<RequestStats['recentRequests'][number]['ipSources']>;
+  labelKey: string;
+}[] = [
+  { key: 'cfConnectingIp', labelKey: 'admin.ipCfConnecting' },
+  { key: 'trueClientIp', labelKey: 'admin.ipTrueClient' },
+  { key: 'xForwardedFor', labelKey: 'admin.ipForwardedFor' },
+  { key: 'xRealIp', labelKey: 'admin.ipRealIp' },
+  { key: 'edgeIp', labelKey: 'admin.ipEdge' },
+  { key: 'remoteAddr', labelKey: 'admin.ipRemoteAddr' },
+  { key: 'cfCountry', labelKey: 'admin.ipCfCountry' },
+];
+
+/** Map an HTTP status code to a Badge tone so successes/errors stand out. */
+function statusTone(
+  code: number | undefined,
+): 'success' | 'info' | 'warning' | 'error' | 'neutral' {
+  if (code === undefined) return 'neutral';
+  if (code >= 200 && code < 300) return 'success';
+  if (code >= 300 && code < 400) return 'info';
+  if (code >= 400 && code < 500) return 'warning';
+  if (code >= 500) return 'error';
+  return 'neutral';
+}
+
 interface RequestStats {
   totalRequests: string;
   methodCounts: {
@@ -51,7 +81,17 @@ interface RequestStats {
     role: string;
     ip: string;
     edgeIp?: string;
+    ipSources?: {
+      cfConnectingIp?: string;
+      trueClientIp?: string;
+      xForwardedFor?: string;
+      xRealIp?: string;
+      edgeIp?: string;
+      remoteAddr?: string;
+      cfCountry?: string;
+    };
     userAgent: string;
+    statusCode?: number;
   }[];
 }
 
@@ -310,28 +350,72 @@ const RequestStats: React.FC<RequestStatsProps> = ({ userRole }) => {
                     <Th>{t('admin.time')}</Th>
                     <Th>{t('admin.method')}</Th>
                     <Th>{t('admin.path')}</Th>
+                    <Th>{t('admin.status')}</Th>
                     <Th>{t('admin.role')}</Th>
-                    <Th>{t('admin.ip')}</Th>
-                    <Th>{t('admin.edgeIp')}</Th>
+                    <Th>{t('admin.ipAddresses')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {stats.recentRequests.map((request, index) => (
-                    <Tr key={index} hoverable>
-                      <Td className="whitespace-nowrap">
-                        {new Date(request.timestamp).toLocaleString()}
-                      </Td>
-                      <Td>
-                        <Badge tone={METHOD_TONES[request.method] ?? 'neutral'} pill>
-                          {request.method}
-                        </Badge>
-                      </Td>
-                      <Td className="font-mono text-sm truncate max-w-xs">{request.path}</Td>
-                      <Td className="capitalize">{request.role}</Td>
-                      <Td className="font-mono text-sm">{request.ip}</Td>
-                      <Td className="font-mono text-sm">{request.edgeIp ?? '—'}</Td>
-                    </Tr>
-                  ))}
+                  {stats.recentRequests.map((request, index) => {
+                    const sources = IP_SOURCE_FIELDS.map(({ key, labelKey }) => ({
+                      labelKey,
+                      value: request.ipSources?.[key],
+                    })).filter((s) => s.value);
+
+                    // Fall back to the legacy fields when ipSources is absent
+                    // (older records captured before per-source tracking).
+                    if (sources.length === 0) {
+                      if (request.ip)
+                        sources.push({ labelKey: 'admin.ipCfConnecting', value: request.ip });
+                      if (request.edgeIp)
+                        sources.push({ labelKey: 'admin.ipEdge', value: request.edgeIp });
+                    }
+
+                    return (
+                      <Tr key={index} hoverable>
+                        <Td className="whitespace-nowrap">
+                          {new Date(request.timestamp).toLocaleString()}
+                        </Td>
+                        <Td>
+                          <Badge tone={METHOD_TONES[request.method] ?? 'neutral'} pill>
+                            {request.method}
+                          </Badge>
+                        </Td>
+                        <Td className="font-mono text-sm truncate max-w-xs">{request.path}</Td>
+                        <Td>
+                          {request.statusCode === undefined ? (
+                            <span className="text-content-muted">—</span>
+                          ) : (
+                            <Badge tone={statusTone(request.statusCode)} pill>
+                              {request.statusCode}
+                            </Badge>
+                          )}
+                        </Td>
+                        <Td className="capitalize">{request.role}</Td>
+                        <Td>
+                          {sources.length === 0 ? (
+                            <span className="text-content-muted">—</span>
+                          ) : (
+                            <div className="space-y-1">
+                              {sources.map(({ labelKey, value }) => (
+                                <div
+                                  key={labelKey}
+                                  className="flex items-baseline gap-2 whitespace-nowrap"
+                                >
+                                  <Badge tone="neutral" size="sm">
+                                    {t(labelKey)}
+                                  </Badge>
+                                  <span className="font-mono text-sm text-content dark:text-content-inverse">
+                                    {value}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
                 </Tbody>
               </Table>
             </TableContainer>

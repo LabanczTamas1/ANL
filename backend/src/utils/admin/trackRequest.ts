@@ -47,19 +47,21 @@ function getStatusCategory(statusCode: number): string {
   return 'unknown';
 }
 
+/** Normalise a header that may be a string, string[] or undefined. */
+function headerValue(value: string | string[] | undefined): string | undefined {
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (Array.isArray(value) && value.length > 0) return value.join(', ');
+  return undefined;
+}
+
 /**
  * Resolve the real client IP. Traffic is proxied through Cloudflare, so
  * `req.ip` (and X-Forwarded-For) only reveal the Cloudflare edge address.
  * Cloudflare forwards the true visitor IP in the `CF-Connecting-IP` header.
  */
 function getClientIp(req: Request): string | undefined {
-  const cfConnectingIp = req.headers['cf-connecting-ip'];
-  if (typeof cfConnectingIp === 'string' && cfConnectingIp.length > 0) {
-    return cfConnectingIp;
-  }
-  if (Array.isArray(cfConnectingIp) && cfConnectingIp.length > 0) {
-    return cfConnectingIp[0];
-  }
+  const cfConnectingIp = headerValue(req.headers['cf-connecting-ip']);
+  if (cfConnectingIp) return cfConnectingIp;
   return req.ip;
 }
 
@@ -69,6 +71,30 @@ function getClientIp(req: Request): string | undefined {
  */
 function getEdgeIp(req: Request): string | undefined {
   return req.ip;
+}
+
+/**
+ * Collect every available IP source for the request, each clearly labelled by
+ * origin. Some sources are only present when the request transits through a
+ * proxy/CDN (Cloudflare), so values may be undefined.
+ */
+function getIpSources(req: Request): Record<string, string | undefined> {
+  return {
+    // Real visitor IP as forwarded by Cloudflare.
+    cfConnectingIp: headerValue(req.headers['cf-connecting-ip']),
+    // Cloudflare Enterprise "True-Client-IP" header.
+    trueClientIp: headerValue(req.headers['true-client-ip']),
+    // Proxy chain (left-most is the original client).
+    xForwardedFor: headerValue(req.headers['x-forwarded-for']),
+    // Common reverse-proxy real client header (e.g. Nginx).
+    xRealIp: headerValue(req.headers['x-real-ip']),
+    // Express-resolved IP (honours trust proxy) — the edge/proxy address.
+    edgeIp: req.ip,
+    // Raw TCP socket peer — the immediate upstream connection.
+    remoteAddr: req.socket?.remoteAddress,
+    // Cloudflare datacenter country, handy context for the visitor IP.
+    cfCountry: headerValue(req.headers['cf-ipcountry']),
+  };
 }
 
 /** Express middleware to track request analytics. */
@@ -113,6 +139,7 @@ export async function trackRequest(
       role,
       ip: getClientIp(req),
       edgeIp: getEdgeIp(req),
+      ipSources: getIpSources(req),
       userAgent: req.headers['user-agent'],
     };
 
