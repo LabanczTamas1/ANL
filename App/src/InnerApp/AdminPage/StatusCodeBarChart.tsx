@@ -49,6 +49,24 @@ const StatusCodeBarChart = () => {
     { value: '90d', label: t('admin.range90d') }
   ];
 
+  // Format an exact timestamp for the X axis, with granularity that matches
+  // the selected range (time of day for short ranges, date for long ones).
+  const formatAxisTime = (ms) => {
+    const date = new Date(ms);
+    if (timeRange === '24h') {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    if (timeRange === '7d') {
+      return date.toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
   // Fetch stats from API
   const fetchStats = async () => {
     setLoading(true);
@@ -105,47 +123,24 @@ const StatusCodeBarChart = () => {
       
       // Process recent requests to extract status code information
       const recentRequests = apiData.recentRequests || [];
-      
-      // Create a mapping of timestamps to status code counts
-      const timestampMap = {};
-      
-      // Group requests by time period
+
+      // Build one data point per request at its EXACT timestamp (no bucketing).
+      // Requests that share the identical millisecond are merged so their
+      // counts stack correctly at that instant.
+      const exactMap = {};
+
       recentRequests.forEach(request => {
         if (!request || !request.timestamp) return;
-        
-        // Parse timestamp
+
         const requestTime = new Date(request.timestamp);
-        
+
         // Skip if outside the selected time range
         if (requestTime < start || requestTime > end) return;
-        
-        // Determine the grouping key based on time range
-        let timeKey;
-        
-        switch (selectedTimeRange) {
-          case '24h':
-            // Group by hour for 24h view
-            timeKey = new Date(requestTime).setMinutes(0, 0, 0);
-            break;
-          case '7d':
-            // Group by 4 hours for 7d view
-            const hours = requestTime.getHours();
-            const fourHourBlock = Math.floor(hours / 4) * 4;
-            timeKey = new Date(requestTime).setHours(fourHourBlock, 0, 0, 0);
-            break;
-          case '30d':
-            // Group by day for 30d view
-            timeKey = new Date(requestTime).setHours(0, 0, 0, 0);
-            break;
-          case '90d':
-            // Group by day for 90d view
-            timeKey = new Date(requestTime).setHours(0, 0, 0, 0);
-            break;
-        }
-        
-        // Initialize the timestamp entry if it doesn't exist
-        if (!timestampMap[timeKey]) {
-          timestampMap[timeKey] = {
+
+        const timeKey = requestTime.getTime(); // exact ms
+
+        if (!exactMap[timeKey]) {
+          exactMap[timeKey] = {
             timestamp: timeKey,
             '2xx': 0,
             '3xx': 0,
@@ -154,85 +149,34 @@ const StatusCodeBarChart = () => {
             total: 0,
           };
         }
-        
-        // Extract status code from response
-        // Note: This may need adjustment based on your actual API response structure
+
         const statusCode = request.statusCode || 200; // Default to 200 if not provided
-        
-        // Increment the appropriate category
+
         if (statusCode >= 200 && statusCode < 300) {
-          timestampMap[timeKey]['2xx']++;
+          exactMap[timeKey]['2xx']++;
         } else if (statusCode >= 300 && statusCode < 400) {
-          timestampMap[timeKey]['3xx']++;
+          exactMap[timeKey]['3xx']++;
         } else if (statusCode >= 400 && statusCode < 500) {
-          timestampMap[timeKey]['4xx']++;
+          exactMap[timeKey]['4xx']++;
         } else if (statusCode >= 500) {
-          timestampMap[timeKey]['5xx']++;
+          exactMap[timeKey]['5xx']++;
         }
-        
-        // Increment total
-        timestampMap[timeKey].total++;
+
+        exactMap[timeKey].total++;
       });
-      
-      // Convert the map to an array and sort by timestamp
-      let timeSeriesData = Object.values(timestampMap).sort((a, b) => a.timestamp - b.timestamp);
-      
-      // If no data points from API or not enough, add some zero-value points
-      if (timeSeriesData.length === 0) {
-        // Add some empty data points
-        const interval = selectedTimeRange === '24h' ? 3600 * 1000 : 
-                         selectedTimeRange === '7d' ? 4 * 3600 * 1000 :
-                         24 * 3600 * 1000; // Default to daily for 30d and 90d
-        
-        const numberOfPoints = selectedTimeRange === '24h' ? 24 : 
-                              selectedTimeRange === '7d' ? 42 : 
-                              selectedTimeRange === '30d' ? 30 : 90;
-        
-        for (let i = 0; i < numberOfPoints; i++) {
-          const timestamp = new Date(start.getTime() + (i * interval));
-          timeSeriesData.push({
-            timestamp: timestamp.getTime(),
-            '2xx': 0,
-            '3xx': 0,
-            '4xx': 0,
-            '5xx': 0,
-            total: 0
-          });
-        }
-      }
-      
-      // Format for display
+
+      // Convert the map to an array and sort by exact timestamp
+      let timeSeriesData = Object.values(exactMap).sort((a, b) => a.timestamp - b.timestamp);
+
+      // Format for display — keep the exact timestamp for a time-scaled X axis.
       const formattedData = timeSeriesData.map(point => {
         const date = new Date(point.timestamp);
-        
-        // Format the label based on time range
-        let timeLabel;
-        if (selectedTimeRange === '24h') {
-          timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (selectedTimeRange === '7d') {
-          timeLabel = `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${date.getHours()}:00`;
-        } else {
-          timeLabel = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        }
-        
         return {
           ...point,
-          name: timeLabel,
-          fullDate: date.toLocaleString()
+          fullDate: date.toLocaleString(),
         };
       });
-      
-      // Filter to show only some labels for readability
-      const labelEvery = selectedTimeRange === '24h' ? 4 : 
-                        selectedTimeRange === '7d' ? 6 : 
-                        selectedTimeRange === '30d' ? 4 : 5;
-      
-      formattedData.forEach((point, index) => {
-        if (index % labelEvery !== 0) {
-          point.name = '';
-        }
-      });
-      
+
       setData(formattedData);
       setLoading(false);
     } catch (err) {
@@ -457,11 +401,16 @@ const StatusCodeBarChart = () => {
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
-                dataKey="name"
+                dataKey="timestamp"
+                type="number"
+                scale="time"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={formatAxisTime}
                 tick={{ fontSize: 12, fill: '#6b7280' }}
                 tickLine={false}
                 axisLine={{ stroke: '#e5e7eb' }}
                 tickMargin={10}
+                minTickGap={40}
               />
               <YAxis
                 tick={{ fontSize: 12, fill: '#6b7280' }}
