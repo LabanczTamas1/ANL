@@ -147,7 +147,7 @@ const Navbar: React.FC = () => {
             onClick={toggleLanguageMenu}
             aria-haspopup="true"
             aria-expanded={isLanguageMenuOpen}
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#65558F]/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65558F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
           >
             {flags[language]}
           </button>
@@ -184,23 +184,23 @@ const Navbar: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-        <Link to="/login" className="ml-2" style={blendStyle}>
-          <button
-            className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md"
-            title={t.login}
-            style={{ width: 38, height: 38 }}
-          >
-            <FaSignInAlt size={18} />
-          </button>
+        <Link
+          to="/login"
+          title={t.login}
+          aria-label={t.login}
+          className="ml-2 flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
+          style={{ ...blendStyle, width: 38, height: 38 }}
+        >
+          <FaSignInAlt size={18} />
         </Link>
-        <Link to="/register" style={blendStyle}>
-          <button
-            className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md"
-            title={t.signIn}
-            style={{ width: 38, height: 38 }}
-          >
-            <FaUserPlus size={18} />
-          </button>
+        <Link
+          to="/register"
+          title={t.signIn}
+          aria-label={t.signIn}
+          className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
+          style={{ ...blendStyle, width: 38, height: 38 }}
+        >
+          <FaUserPlus size={18} />
         </Link>
       </div>
       {/* Mobile view optimizations */}
