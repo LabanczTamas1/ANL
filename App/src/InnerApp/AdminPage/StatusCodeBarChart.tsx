@@ -1,6 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { CalendarDays, ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../hooks/useLanguage';
 import { status } from '@design-system';
@@ -20,6 +29,7 @@ const StatusCodeBarChart = () => {
     '4xx': true,
     '5xx': true
   });
+  const [showTotal, setShowTotal] = useState(true);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -387,6 +397,24 @@ const StatusCodeBarChart = () => {
             {config.label}
           </button>
         ))}
+        {/* Total request line toggle */}
+        <button
+          onClick={() => setShowTotal((prev) => !prev)}
+          className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus ${
+            showTotal
+              ? 'border-content-muted text-content dark:text-content-inverse bg-black/[0.04] dark:bg-white/10'
+              : 'bg-black/[0.04] dark:bg-white/10 border-line dark:border-line-dark text-content-muted'
+          }`}
+        >
+          <div
+            className="w-3 h-0.5 mr-2"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(90deg, #6b7280 0, #6b7280 4px, transparent 4px, transparent 7px)',
+            }}
+          />
+          {t('admin.totalColon').replace(':', '')}
+        </button>
       </div>
       
       {/* Error Message */}
@@ -408,21 +436,34 @@ const StatusCodeBarChart = () => {
       ) : (
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
+            <ComposedChart
               data={data}
               margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-              barGap={0}
-              barSize={timeRange === '24h' ? 8 : timeRange === '7d' ? 10 : timeRange === '30d' ? 8 : 6}
             >
+              <defs>
+                {Object.entries(statusConfig).map(([key, config]) => (
+                  <linearGradient
+                    key={key}
+                    id={`statusGradient-${key}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor={config.color} stopOpacity={0.5} />
+                    <stop offset="95%" stopColor={config.color} stopOpacity={0.05} />
+                  </linearGradient>
+                ))}
+              </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
+              <XAxis
                 dataKey="name"
                 tick={{ fontSize: 12, fill: '#6b7280' }}
                 tickLine={false}
                 axisLine={{ stroke: '#e5e7eb' }}
                 tickMargin={10}
               />
-              <YAxis 
+              <YAxis
                 tick={{ fontSize: 12, fill: '#6b7280' }}
                 tickLine={false}
                 axisLine={false}
@@ -432,22 +473,39 @@ const StatusCodeBarChart = () => {
                   return value;
                 }}
               />
-              <Tooltip content={<CustomTooltip />} cursor={false} />
-              
-              {/* Render the stacked bars - the "hamburger" effect */}
-              {Object.entries(statusConfig).map(([key, config]) => (
-                selectedStatuses[key] && (
-                  <Bar 
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#d1d5db', strokeWidth: 1 }} />
+
+              {/* Continuous stacked areas — smooth, filled curves per status category */}
+              {Object.entries(statusConfig).map(([key, config]) =>
+                selectedStatuses[key] ? (
+                  <Area
                     key={key}
+                    type="monotone"
                     dataKey={key}
                     stackId="status-stack"
-                    fill={config.color}
-                    radius={key === '5xx' ? [4, 4, 0, 0] : [0, 0, 0, 0]} // Only round the top of the stack
+                    stroke={config.color}
+                    strokeWidth={2}
+                    fill={`url(#statusGradient-${key})`}
+                    activeDot={{ r: 4, strokeWidth: 0 }}
                     animationDuration={300}
                   />
-                )
-              ))}
-            </BarChart>
+                ) : null,
+              )}
+
+              {/* Total request line overlaid for at-a-glance volume trend */}
+              {showTotal && (
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#6b7280"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  animationDuration={300}
+                />
+              )}
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       )}
