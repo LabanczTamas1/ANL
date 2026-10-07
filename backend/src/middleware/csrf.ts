@@ -39,6 +39,11 @@ const CSRF_EXEMPT_PATTERNS: RegExp[] = [
   /\/auth\/google(\/callback)?$/,
   /\/auth\/facebook(\/callback)?$/,
   /\/contact$/,
+  // Public booking creation (POST /booking). Unauthenticated — it does not
+  // consume the auth/refresh cookie, so it carries no CSRF risk (same as
+  // /contact). The SPA submits it without a Bearer token, so without this it
+  // would be wrongly rejected with 403.
+  /\/booking$/,
 ];
 
 /**
