@@ -127,6 +127,17 @@ const CTASection: React.FC<CTASectionProps> = ({
   const primaryButtonClasses =
     "group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-accent-rose/10 backdrop-blur-md border border-accent-rose/30 rounded-2xl text-white font-semibold text-lg whitespace-nowrap overflow-hidden hover:bg-accent-rose/20 hover:border-accent-rose/50 hover:shadow-lg hover:shadow-accent-rose/20";
 
+  // Geometry-matching twin of the primary button, used only in the sticky
+  // (portaled) hero. The real visible CTA is portaled to <body>, which places
+  // it last in the tab order — so keyboard focus would reach "Learn more"
+  // before "Book a meeting". This transparent, in-flow copy reserves the same
+  // layout slot AND is the actual keyboard-focusable link, so focus lands on
+  // "Book a meeting" first (its focus ring renders right over the visible
+  // button). The portaled copy is marked aria-hidden / tabIndex -1.
+  const primaryButtonTwinClasses =
+    "relative inline-flex items-center justify-center gap-3 px-8 py-4 border border-transparent rounded-2xl font-semibold text-lg whitespace-nowrap text-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-rose focus-visible:ring-offset-2 focus-visible:ring-offset-surface-black";
+
+
   return (
     <section className={`relative overflow-hidden flex flex-col justify-center ${fullHeight ? 'min-h-screen py-12' : 'py-24'}`}>
       {/* Animated gradient background */}
@@ -169,18 +180,27 @@ const CTASection: React.FC<CTASectionProps> = ({
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           {useSticky ? (
             <>
-              {/* Invisible in-flow placeholder reserves the layout slot and
-                  reports the position the portaled CTA should track. */}
-              <div ref={placeholderRef} aria-hidden="true" className="invisible">
-                <span className={primaryButtonClasses}>
+              {/* In-flow slot. Reserves the layout the portaled CTA tracks AND
+                  holds the real keyboard-focusable primary link, so Tab reaches
+                  "Book a meeting" before "Learn more". It is visually
+                  transparent (the portaled copy is what you see); its focus ring
+                  renders right over the visible button. */}
+              <div ref={placeholderRef}>
+                <Link
+                  to={primaryButtonLink}
+                  aria-label={resolvedPrimary}
+                  className={primaryButtonTwinClasses}
+                >
                   <FaCalendarAlt className="w-5 h-5" />
                   <span>{resolvedPrimary}</span>
                   <FaArrowRight className="w-4 h-4" />
-                </span>
+                </Link>
               </div>
               {createPortal(
                 <Link
                   to={primaryButtonLink}
+                  aria-hidden="true"
+                  tabIndex={-1}
                   style={
                     home
                       ? pinned
