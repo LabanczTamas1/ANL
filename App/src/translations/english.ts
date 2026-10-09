@@ -1212,6 +1212,12 @@ export const english = {
   'onboarding.step6.short': "Strategy",
   'onboarding.step7.label': "Just Some Final Words",
   'onboarding.step7.short': "Finish",
+  'onboarding.timed.0.1': "Welcome to the introduction!",
+  'onboarding.timed.0.2': "Let's walk through your onboarding journey.",
+  'onboarding.timed.0.3': "Welcome!",
+  'onboarding.timed.1.1': "Our company values integrity and innovation.",
+  'onboarding.timed.2.1': "Here's an overview of our product.",
+  'onboarding.timed.2.2': "Key features include ease of use and reliability.",
 };
 
 export type TranslationKey = keyof typeof english;

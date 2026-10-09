@@ -1214,4 +1214,10 @@ export const romana: Record<TranslationKey, string> = {
   'onboarding.step6.short': "Strategie",
   'onboarding.step7.label': "Doar câteva cuvinte finale",
   'onboarding.step7.short': "Finalizare",
+  'onboarding.timed.0.1': "Bine ai venit la introducere!",
+  'onboarding.timed.0.2': "Să parcurgem împreună procesul tău de integrare.",
+  'onboarding.timed.0.3': "Bine ai venit!",
+  'onboarding.timed.1.1': "Compania noastră prețuiește integritatea și inovația.",
+  'onboarding.timed.2.1': "Iată o prezentare generală a produsului nostru.",
+  'onboarding.timed.2.2': "Caracteristicile principale includ ușurința în utilizare și fiabilitatea.",
 };

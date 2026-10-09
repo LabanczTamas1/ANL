@@ -38,19 +38,20 @@ const steps: Step[] = [
 
 interface TimedText {
   time: number;
-  text: string;
+  /** Translation key for the callout text shown at this timestamp. */
+  textKey: string;
 }
 
 const timedTexts: Record<number, TimedText[]> = {
   0: [
-    { time: 5, text: "Welcome to the introduction!" },
-    { time: 7, text: "Let's walk through your onboarding journey." },
-    { time: 27, text: "Welcome!" },
+    { time: 5, textKey: "onboarding.timed.0.1" },
+    { time: 7, textKey: "onboarding.timed.0.2" },
+    { time: 27, textKey: "onboarding.timed.0.3" },
   ],
-  1: [{ time: 10, text: "Our company values integrity and innovation." }],
+  1: [{ time: 10, textKey: "onboarding.timed.1.1" }],
   2: [
-    { time: 3, text: "Here's an overview of our product." },
-    { time: 7, text: "Key features include ease of use and reliability." },
+    { time: 3, textKey: "onboarding.timed.2.1" },
+    { time: 7, textKey: "onboarding.timed.2.2" },
   ],
 };
 
@@ -88,8 +89,8 @@ export default function Onboarding(): React.JSX.Element {
       (entry) => Math.floor(currentTime) >= entry.time
     );
 
-    setDisplayText(matched.length > 0 ? matched[matched.length - 1].text : "");
-  }, [currentTime, currentStep]);
+    setDisplayText(matched.length > 0 ? t(matched[matched.length - 1].textKey) : "");
+  }, [currentTime, currentStep, t]);
 
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;

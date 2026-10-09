@@ -108,6 +108,7 @@ export const magyar: Record<TranslationKey, string> = {
     'sidebar.availability': 'Elérhetőség',
     'sidebar.availabilityOverview': 'Elérhetőség áttekintése',
     'sidebar.bookMeeting': 'Találkozó foglalása',
+    'sidebar.calendar': 'Naptár',
     'sidebar.email': 'E-mail',
     'sidebar.inbox': 'Beérkező',
     'sidebar.sendMail': 'E-mail küldése',
@@ -1211,4 +1212,10 @@ export const magyar: Record<TranslationKey, string> = {
   'onboarding.step6.short': "Stratégia",
   'onboarding.step7.label': "Csak néhány záró szó",
   'onboarding.step7.short': "Befejezés",
+  'onboarding.timed.0.1': "Üdvözöljük a bevezetőben!",
+  'onboarding.timed.0.2': "Nézzük végig a bevezetési folyamatodat.",
+  'onboarding.timed.0.3': "Üdvözöljük!",
+  'onboarding.timed.1.1': "Cégünk számára fontos a tisztesség és az innováció.",
+  'onboarding.timed.2.1': "Íme egy áttekintés a termékünkről.",
+  'onboarding.timed.2.2': "A fő jellemzők közé tartozik a könnyű használat és a megbízhatóság.",
 };
