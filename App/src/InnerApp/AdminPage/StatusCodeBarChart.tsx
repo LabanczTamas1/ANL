@@ -124,10 +124,37 @@ const StatusCodeBarChart = () => {
       // Process recent requests to extract status code information
       const recentRequests = apiData.recentRequests || [];
 
-      // Build one data point per request at its EXACT timestamp (no bucketing).
-      // Requests that share the identical millisecond are merged so their
-      // counts stack correctly at that instant.
-      const exactMap = {};
+      // Industry-standard approach (Grafana / Datadog / Cloudflare): bin
+      // requests into evenly-spaced time buckets and fill empty buckets with
+      // zero. Regular x-spacing + gap-fill is what makes the line smooth and
+      // consistent instead of a jagged set of spikes at random timestamps.
+      // Bucket width adapts to the selected range so the curve stays detailed
+      // without becoming noisy.
+      const bucketMs =
+        selectedTimeRange === '24h'
+          ? 10 * 60 * 1000 // 10 minutes
+          : selectedTimeRange === '7d'
+            ? 60 * 60 * 1000 // 1 hour
+            : selectedTimeRange === '30d'
+              ? 4 * 60 * 60 * 1000 // 4 hours
+              : 24 * 60 * 60 * 1000; // 1 day
+
+      const startMs = Math.floor(start.getTime() / bucketMs) * bucketMs;
+      const endMs = Math.ceil(end.getTime() / bucketMs) * bucketMs;
+
+      // Pre-create every bucket across the range initialised to zero so the
+      // series is continuous and evenly spaced.
+      const buckets = {};
+      for (let ts = startMs; ts <= endMs; ts += bucketMs) {
+        buckets[ts] = {
+          timestamp: ts,
+          '2xx': 0,
+          '3xx': 0,
+          '4xx': 0,
+          '5xx': 0,
+          total: 0,
+        };
+      }
 
       recentRequests.forEach(request => {
         if (!request || !request.timestamp) return;
@@ -137,36 +164,28 @@ const StatusCodeBarChart = () => {
         // Skip if outside the selected time range
         if (requestTime < start || requestTime > end) return;
 
-        const timeKey = requestTime.getTime(); // exact ms
-
-        if (!exactMap[timeKey]) {
-          exactMap[timeKey] = {
-            timestamp: timeKey,
-            '2xx': 0,
-            '3xx': 0,
-            '4xx': 0,
-            '5xx': 0,
-            total: 0,
-          };
-        }
+        // Snap the request to its bucket boundary.
+        const bucketKey = Math.floor(requestTime.getTime() / bucketMs) * bucketMs;
+        const bucket = buckets[bucketKey];
+        if (!bucket) return;
 
         const statusCode = request.statusCode || 200; // Default to 200 if not provided
 
         if (statusCode >= 200 && statusCode < 300) {
-          exactMap[timeKey]['2xx']++;
+          bucket['2xx']++;
         } else if (statusCode >= 300 && statusCode < 400) {
-          exactMap[timeKey]['3xx']++;
+          bucket['3xx']++;
         } else if (statusCode >= 400 && statusCode < 500) {
-          exactMap[timeKey]['4xx']++;
+          bucket['4xx']++;
         } else if (statusCode >= 500) {
-          exactMap[timeKey]['5xx']++;
+          bucket['5xx']++;
         }
 
-        exactMap[timeKey].total++;
+        bucket.total++;
       });
 
-      // Convert the map to an array and sort by exact timestamp
-      let timeSeriesData = Object.values(exactMap).sort((a, b) => a.timestamp - b.timestamp);
+      // Convert the map to an array and sort by bucket timestamp.
+      let timeSeriesData = Object.values(buckets).sort((a, b) => a.timestamp - b.timestamp);
 
       // Format for display — keep the exact timestamp for a time-scaled X axis.
       const formattedData = timeSeriesData.map(point => {
