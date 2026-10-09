@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import ReactPlayer from "react-player";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button, Card, Heading, Text, ProgressBar, cn } from "@design-system/components";
+import { useLanguage } from "../../hooks/useLanguage";
+
 const background = "/Onboarding-background.svg";
 const lightLogo = "/light-logo.png";
-import { BackButton } from "./BackButton";
-import { NextButton } from "./NextButton";
-import { Progress } from "./Progress";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -19,18 +20,20 @@ const videos: string[] = [
 ];
 
 interface Step {
-  label: string;
-  shortLabel: string;
+  /** Translation key for the full step title. */
+  labelKey: string;
+  /** Translation key for the short label used in nav buttons. */
+  shortKey: string;
 }
 
 const steps: Step[] = [
-  { label: "What To Expect From Onboarding", shortLabel: "Intro" },
-  { label: "What To Expect From The 90 Days", shortLabel: "90 Days" },
-  { label: "Sign Contract & Pay Invoice", shortLabel: "Contract" },
-  { label: "Time For Ads Manager Integration!", shortLabel: "Ads" },
-  { label: "Tell Us About Your Audience!", shortLabel: "Audience" },
-  { label: "Book In Your Strategy Session", shortLabel: "Strategy" },
-  { label: "Just Some Final Words", shortLabel: "Finish" },
+  { labelKey: "onboarding.step1.label", shortKey: "onboarding.step1.short" },
+  { labelKey: "onboarding.step2.label", shortKey: "onboarding.step2.short" },
+  { labelKey: "onboarding.step3.label", shortKey: "onboarding.step3.short" },
+  { labelKey: "onboarding.step4.label", shortKey: "onboarding.step4.short" },
+  { labelKey: "onboarding.step5.label", shortKey: "onboarding.step5.short" },
+  { labelKey: "onboarding.step6.label", shortKey: "onboarding.step6.short" },
+  { labelKey: "onboarding.step7.label", shortKey: "onboarding.step7.short" },
 ];
 
 interface TimedText {
@@ -54,6 +57,7 @@ const timedTexts: Record<number, TimedText[]> = {
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function Onboarding(): React.JSX.Element {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [displayText, setDisplayText] = useState<string>("");
@@ -93,9 +97,11 @@ export default function Onboarding(): React.JSX.Element {
   const goBack = (): void => setCurrentStep((prev) => Math.max(prev - 1, 0));
   const goNext = (): void => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
 
+  // `dark` scopes the design-system dark tokens to this always-dark glass
+  // surface, independent of the user's global light/dark preference.
   return (
     <div
-      className="relative flex flex-col min-h-screen bg-cover bg-center bg-surface-black text-content-inverse"
+      className="dark relative flex flex-col min-h-screen bg-cover bg-center bg-surface-black text-content-inverse"
       style={{ backgroundImage: `url(${background})` }}
     >
       {/* Overlay */}
@@ -107,16 +113,19 @@ export default function Onboarding(): React.JSX.Element {
         <header className="flex items-center justify-between mb-6 sm:mb-8">
           <img
             src={lightLogo}
-            alt="Logo"
+            alt={t("onboarding.logoAlt")}
             className="h-logo-sm w-auto sm:h-logo-sm transition-all duration-normal"
           />
-          <span className="text-sm font-medium text-content-subtle-inverse tabular-nums">
-            {currentStep + 1} / {steps.length}
-          </span>
+          <Text size="sm" tone="subtle" className="font-medium tabular-nums">
+            {t("onboarding.stepCounter", {
+              current: String(currentStep + 1),
+              total: String(steps.length),
+            })}
+          </Text>
         </header>
 
         {/* ── Step indicator (segmented bar) ────────────────────────────── */}
-        <nav aria-label="Onboarding steps" className="mb-6 sm:mb-8 max-w-3xl mx-auto w-full">
+        <nav aria-label={t("onboarding.stepsNav")} className="mb-6 sm:mb-8 max-w-3xl mx-auto w-full">
           <ol className="flex items-center gap-1 sm:gap-1.5">
             {steps.map((step, idx) => {
               const isActive = idx === currentStep;
@@ -126,9 +135,12 @@ export default function Onboarding(): React.JSX.Element {
                   <button
                     type="button"
                     onClick={() => setCurrentStep(idx)}
-                    aria-label={`Go to step ${idx + 1}: ${step.label}`}
+                    aria-label={t("onboarding.goToStep", {
+                      number: String(idx + 1),
+                      label: t(step.labelKey),
+                    })}
                     aria-current={isActive ? "step" : undefined}
-                    className={[
+                    className={cn(
                       "w-full h-2 rounded-full transition-all duration-normal",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-focus focus-visible:ring-offset-1",
                       "hover:scale-y-150 origin-bottom",
@@ -137,7 +149,7 @@ export default function Onboarding(): React.JSX.Element {
                         : isActive
                           ? "bg-brand/70"
                           : "bg-content-muted/25 hover:bg-content-muted/40",
-                    ].join(" ")}
+                    )}
                   />
                 </li>
               );
@@ -148,13 +160,20 @@ export default function Onboarding(): React.JSX.Element {
         {/* ── Main content area ──────────────────────────────────────────── */}
         <main className="flex flex-col items-center flex-1">
           {/* Step title */}
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 sm:mb-6 leading-tight max-w-2xl">
-            {steps[currentStep].label}
-          </h1>
+          <Heading
+            level={2}
+            as="h1"
+            className="text-center font-bold md:text-3xl lg:text-4xl mb-4 sm:mb-6 leading-tight max-w-2xl"
+          >
+            {t(steps[currentStep].labelKey)}
+          </Heading>
 
           {/* Video player */}
-          <div className="w-full max-w-3xl mx-auto mb-4 sm:mb-6">
-            <div className="relative w-full rounded-xl overflow-hidden shadow-glass" style={{ paddingBottom: "56.25%" }}>
+          <Card
+            padding="sm"
+            className="w-full max-w-3xl mx-auto mb-4 sm:mb-6 !bg-glass !border-white/10 backdrop-blur-glass shadow-glass"
+          >
+            <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: "56.25%" }}>
               <div className="absolute inset-0">
                 <ReactPlayer
                   ref={playerRef}
@@ -168,22 +187,28 @@ export default function Onboarding(): React.JSX.Element {
             </div>
             {/* Video progress */}
             <div className="mt-3">
-              <Progress value={progress} />
+              <ProgressBar value={progress} tone="brand" trackClassName="h-1.5" />
             </div>
-          </div>
+          </Card>
 
           {/* Timed text callout */}
           <div
-            className={[
+            className={cn(
               "max-w-xl text-center transition-all duration-normal",
               displayText ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1",
-            ].join(" ")}
+            )}
             aria-live="polite"
           >
             {displayText && (
-              <p className="inline-block rounded-2xl bg-glass px-5 py-3 text-sm sm:text-base font-medium text-content-inverse shadow-card backdrop-blur-glass">
-                {displayText}
-              </p>
+              <Card
+                as="p"
+                padding="none"
+                className="inline-block !bg-glass !border-white/10 backdrop-blur-glass shadow-card px-5 py-3"
+              >
+                <Text as="span" size="sm" className="font-medium sm:text-base">
+                  {displayText}
+                </Text>
+              </Card>
             )}
           </div>
         </main>
@@ -191,13 +216,51 @@ export default function Onboarding(): React.JSX.Element {
         {/* ── Navigation buttons ─────────────────────────────────────────── */}
         <footer className="mt-6 sm:mt-8">
           <div className="flex items-stretch justify-between gap-3 max-w-3xl mx-auto">
-            <BackButton onClick={goBack} disabled={isFirstStep}>
-              {steps[currentStep - 1]?.shortLabel ?? ""}
-            </BackButton>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={goBack}
+              aria-label={t("onboarding.backTo", {
+                label: currentStep > 0 ? t(steps[currentStep - 1].labelKey) : t("onboarding.previousStep"),
+              })}
+              leftIcon={<ChevronLeft className="h-5 w-5 shrink-0" aria-hidden="true" />}
+              className={cn(
+                "max-w-[45%] backdrop-blur-glass shadow-card active:scale-[0.97]",
+                "!bg-glass !border-white/10 !text-content-inverse hover:!bg-brand/30",
+                isFirstStep && "invisible pointer-events-none",
+              )}
+            >
+              <span className="flex flex-col items-start leading-tight overflow-hidden">
+                <span className="text-xs text-content-muted">{t("onboarding.back")}</span>
+                <span className="truncate">
+                  {currentStep > 0 ? t(steps[currentStep - 1].shortKey) : ""}
+                </span>
+              </span>
+            </Button>
 
-            <NextButton onClick={goNext} disabled={isLastStep}>
-              {steps[currentStep + 1]?.shortLabel ?? ""}
-            </NextButton>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={goNext}
+              aria-label={t("onboarding.nextTo", {
+                label:
+                  currentStep < steps.length - 1
+                    ? t(steps[currentStep + 1].labelKey)
+                    : t("onboarding.nextStep"),
+              })}
+              rightIcon={<ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />}
+              className={cn(
+                "max-w-[45%] shadow-card active:scale-[0.97]",
+                isLastStep && "invisible pointer-events-none",
+              )}
+            >
+              <span className="flex flex-col items-end leading-tight overflow-hidden">
+                <span className="text-xs text-content-inverse/70">{t("onboarding.next")}</span>
+                <span className="truncate">
+                  {currentStep < steps.length - 1 ? t(steps[currentStep + 1].shortKey) : ""}
+                </span>
+              </span>
+            </Button>
           </div>
         </footer>
       </div>

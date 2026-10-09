@@ -1186,6 +1186,32 @@ export const english = {
   'bookingConfirm.backHome': "Back to Homepage",
   'bookingConfirm.privateNote': "This booking confirmation is private. Do not share the link.",
   'bookingConfirm.defaultType': "Kick Off Meeting",
+
+  // Onboarding
+  'onboarding.logoAlt': "Logo",
+  'onboarding.stepsNav': "Onboarding steps",
+  'onboarding.stepCounter': "{{current}} / {{total}}",
+  'onboarding.goToStep': "Go to step {{number}}: {{label}}",
+  'onboarding.back': "Back",
+  'onboarding.next': "Next",
+  'onboarding.backTo': "Back to {{label}}",
+  'onboarding.nextTo': "Next: {{label}}",
+  'onboarding.previousStep': "previous step",
+  'onboarding.nextStep': "next step",
+  'onboarding.step1.label': "What To Expect From Onboarding",
+  'onboarding.step1.short': "Intro",
+  'onboarding.step2.label': "What To Expect From The 90 Days",
+  'onboarding.step2.short': "90 Days",
+  'onboarding.step3.label': "Sign Contract & Pay Invoice",
+  'onboarding.step3.short': "Contract",
+  'onboarding.step4.label': "Time For Ads Manager Integration!",
+  'onboarding.step4.short': "Ads",
+  'onboarding.step5.label': "Tell Us About Your Audience!",
+  'onboarding.step5.short': "Audience",
+  'onboarding.step6.label': "Book In Your Strategy Session",
+  'onboarding.step6.short': "Strategy",
+  'onboarding.step7.label': "Just Some Final Words",
+  'onboarding.step7.short': "Finish",
 };
 
 export type TranslationKey = keyof typeof english;
