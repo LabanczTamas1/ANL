@@ -3,8 +3,10 @@ import ReactPlayer from "react-player";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Card, Heading, Text, ProgressBar, cn } from "@design-system/components";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useThemePreference } from "../../hooks/useThemePreference";
+import ThemeToggle from "../components/ThemeToggle";
 
-const background = "/Onboarding-background.svg";
+const darkLogo = "/dark-logo.png";
 const lightLogo = "/light-logo.png";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
@@ -59,6 +61,7 @@ const timedTexts: Record<number, TimedText[]> = {
 
 export default function Onboarding(): React.JSX.Element {
   const { t } = useLanguage();
+  const { darkMode, toggleTheme } = useThemePreference();
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [displayText, setDisplayText] = useState<string>("");
@@ -98,31 +101,37 @@ export default function Onboarding(): React.JSX.Element {
   const goBack = (): void => setCurrentStep((prev) => Math.max(prev - 1, 0));
   const goNext = (): void => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
 
-  // `dark` scopes the design-system dark tokens to this always-dark glass
-  // surface, independent of the user's global light/dark preference.
+  // Respects the user's global light/dark preference (shared `darkMode` flag),
+  // matching the rest of the app instead of forcing a dark surface.
   return (
-    <div
-      className="dark relative flex flex-col min-h-screen bg-cover bg-center bg-surface-black text-content-inverse"
-      style={{ backgroundImage: `url(${background})` }}
-    >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-surface-black/40 backdrop-blur-glass" />
+    <div className="relative flex flex-col min-h-screen overflow-hidden bg-[#F4F4F8] dark:bg-surface-overlay text-content dark:text-content-inverse">
+      {/* Background gradient orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-teal/20 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Content (over overlay) */}
+      {/* Content */}
       <div className="relative z-raised flex flex-col flex-1 px-4 py-5 sm:px-6 md:px-10 lg:px-16">
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <header className="flex items-center justify-between mb-6 sm:mb-8">
           <img
-            src={lightLogo}
+            src={darkMode ? lightLogo : darkLogo}
             alt={t("onboarding.logoAlt")}
             className="h-logo-sm w-auto sm:h-logo-sm transition-all duration-normal"
           />
-          <Text size="sm" tone="subtle" className="font-medium tabular-nums">
-            {t("onboarding.stepCounter", {
-              current: String(currentStep + 1),
-              total: String(steps.length),
-            })}
-          </Text>
+          <div className="flex items-center gap-3">
+            <Text size="sm" tone="subtle" className="font-medium tabular-nums">
+              {t("onboarding.stepCounter", {
+                current: String(currentStep + 1),
+                total: String(steps.length),
+              })}
+            </Text>
+            <ThemeToggle
+              darkMode={darkMode}
+              onToggle={toggleTheme}
+              labelLight={t("booking.themeLight")}
+              labelDark={t("booking.themeDark")}
+            />
+          </div>
         </header>
 
         {/* ── Step indicator (segmented bar) ────────────────────────────── */}
@@ -172,7 +181,7 @@ export default function Onboarding(): React.JSX.Element {
           {/* Video player */}
           <Card
             padding="sm"
-            className="w-full max-w-3xl mx-auto mb-4 sm:mb-6 !bg-glass !border-white/10 backdrop-blur-glass shadow-glass"
+            className="w-full max-w-3xl mx-auto mb-4 sm:mb-6 !bg-white/90 dark:!bg-surface-elevated/80 !border-line dark:!border-line-glass backdrop-blur-xl shadow-glass"
           >
             <div className="relative w-full rounded-lg overflow-hidden" style={{ paddingBottom: "56.25%" }}>
               <div className="absolute inset-0">
@@ -204,7 +213,7 @@ export default function Onboarding(): React.JSX.Element {
               <Card
                 as="p"
                 padding="none"
-                className="inline-block !bg-glass !border-white/10 backdrop-blur-glass shadow-card px-5 py-3"
+                className="inline-block !bg-white/90 dark:!bg-surface-elevated/80 !border-line dark:!border-line-glass backdrop-blur-xl shadow-card px-5 py-3"
               >
                 <Text as="span" size="sm" className="font-medium sm:text-base">
                   {displayText}
@@ -226,8 +235,7 @@ export default function Onboarding(): React.JSX.Element {
               })}
               leftIcon={<ChevronLeft className="h-5 w-5 shrink-0" aria-hidden="true" />}
               className={cn(
-                "max-w-[45%] backdrop-blur-glass shadow-card active:scale-[0.97]",
-                "!bg-glass !border-white/10 !text-content-inverse hover:!bg-brand/30",
+                "max-w-[45%] backdrop-blur-xl shadow-card active:scale-[0.97]",
                 isFirstStep && "invisible pointer-events-none",
               )}
             >
