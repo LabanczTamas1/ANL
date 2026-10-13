@@ -72,7 +72,7 @@ export const glass = {
 
 // ─── Font Family ────────────────────────────────────────────────────────────
 export const fontFamily = {
-  sans: ['Inter', 'system-ui', 'sans-serif'],
+  sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
 };
 
 // ─── Component Sizes (extends Tailwind spacing) ─────────────────────────────

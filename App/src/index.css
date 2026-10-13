@@ -23,7 +23,10 @@ input:-webkit-autofill:active {
 }
 
 :root{
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+    font-weight: 450;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 html, body, #root {
