@@ -239,7 +239,8 @@ export async function getCards(req: Request, res: Response): Promise<void> {
   const { columnId } = req.params;
   try {
     const rows = await query(
-      `SELECT id, column_id as "ColumnId", name as "Name", sort_order as "DateOfAdded",
+      `SELECT id, column_id as "ColumnId", name as "Name",
+              (EXTRACT(EPOCH FROM created_at) * 1000)::bigint as "DateOfAdded",
               is_commented as "IsCommented", template_id as "TemplateId",
               contact_name as "ContactName", business_name as "BusinessName",
               first_contact as "FirstContact", phone_number as "PhoneNumber",
