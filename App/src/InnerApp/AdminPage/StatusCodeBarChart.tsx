@@ -121,23 +121,21 @@ const StatusCodeBarChart = () => {
         end: end.toLocaleDateString()
       });
       
-      // Process recent requests to extract status code information
+      // Prefer the server's COMPLETE status aggregates (stored as hourly/daily
+      // Redis hashes) so the chart reflects all traffic, not just the capped
+      // last-1000 recent requests. Fall back to bucketing the recent requests
+      // only when the aggregates are empty (e.g. right after a stats reset).
+      const useDaily =
+        selectedTimeRange === '30d' || selectedTimeRange === '90d';
+      const aggregateSeries = useDaily
+        ? apiData.timeSeriesData?.daily ?? []
+        : apiData.timeSeriesData?.hourly ?? [];
       const recentRequests = apiData.recentRequests || [];
 
-      // Industry-standard approach (Grafana / Datadog / Cloudflare): bin
-      // requests into evenly-spaced time buckets and fill empty buckets with
-      // zero. Regular x-spacing + gap-fill is what makes the line smooth and
-      // consistent instead of a jagged set of spikes at random timestamps.
-      // Bucket width adapts to the selected range so the curve stays detailed
-      // without becoming noisy.
-      const bucketMs =
-        selectedTimeRange === '24h'
-          ? 10 * 60 * 1000 // 10 minutes
-          : selectedTimeRange === '7d'
-            ? 60 * 60 * 1000 // 1 hour
-            : selectedTimeRange === '30d'
-              ? 4 * 60 * 60 * 1000 // 4 hours
-              : 24 * 60 * 60 * 1000; // 1 day
+      // The aggregates are hour- or day-granular, so size buckets to match.
+      const bucketMs = useDaily
+        ? 24 * 60 * 60 * 1000 // 1 day
+        : 60 * 60 * 1000; // 1 hour
 
       const startMs = Math.floor(start.getTime() / bucketMs) * bucketMs;
       const endMs = Math.ceil(end.getTime() / bucketMs) * bucketMs;
@@ -156,33 +154,60 @@ const StatusCodeBarChart = () => {
         };
       }
 
-      recentRequests.forEach(request => {
-        if (!request || !request.timestamp) return;
+      if (aggregateSeries.length > 0) {
+        // Full history path: fold each aggregate point into its bucket.
+        aggregateSeries.forEach((point) => {
+          if (!point || !point.timestamp) return;
 
-        const requestTime = new Date(request.timestamp);
+          const pointTime = new Date(point.timestamp);
+          if (pointTime < start || pointTime > end) return;
 
-        // Skip if outside the selected time range
-        if (requestTime < start || requestTime > end) return;
+          const bucketKey = Math.floor(pointTime.getTime() / bucketMs) * bucketMs;
+          const bucket = buckets[bucketKey];
+          if (!bucket) return;
 
-        // Snap the request to its bucket boundary.
-        const bucketKey = Math.floor(requestTime.getTime() / bucketMs) * bucketMs;
-        const bucket = buckets[bucketKey];
-        if (!bucket) return;
+          bucket['2xx'] += point['2xx'] || 0;
+          bucket['3xx'] += point['3xx'] || 0;
+          bucket['4xx'] += point['4xx'] || 0;
+          bucket['5xx'] += point['5xx'] || 0;
+          bucket.total +=
+            point.total ??
+            (point['2xx'] || 0) +
+              (point['3xx'] || 0) +
+              (point['4xx'] || 0) +
+              (point['5xx'] || 0);
+        });
+      } else {
+        // Fallback path: derive the series from the recent-requests list.
+        recentRequests.forEach((request) => {
+          if (!request || !request.timestamp) return;
 
-        const statusCode = request.statusCode || 200; // Default to 200 if not provided
+          const requestTime = new Date(request.timestamp);
 
-        if (statusCode >= 200 && statusCode < 300) {
-          bucket['2xx']++;
-        } else if (statusCode >= 300 && statusCode < 400) {
-          bucket['3xx']++;
-        } else if (statusCode >= 400 && statusCode < 500) {
-          bucket['4xx']++;
-        } else if (statusCode >= 500) {
-          bucket['5xx']++;
-        }
+          // Skip if outside the selected time range
+          if (requestTime < start || requestTime > end) return;
 
-        bucket.total++;
-      });
+          // Snap the request to its bucket boundary.
+          const bucketKey =
+            Math.floor(requestTime.getTime() / bucketMs) * bucketMs;
+          const bucket = buckets[bucketKey];
+          if (!bucket) return;
+
+          const statusCode = request.statusCode || 200; // Default to 200 if not provided
+
+          if (statusCode >= 200 && statusCode < 300) {
+            bucket['2xx']++;
+          } else if (statusCode >= 300 && statusCode < 400) {
+            bucket['3xx']++;
+          } else if (statusCode >= 400 && statusCode < 500) {
+            bucket['4xx']++;
+          } else if (statusCode >= 500) {
+            bucket['5xx']++;
+          }
+
+          bucket.total++;
+        });
+      }
 
       // Convert the map to an array and sort by bucket timestamp.
       let timeSeriesData = Object.values(buckets).sort((a, b) => a.timestamp - b.timestamp);

@@ -193,6 +193,57 @@ export async function trackRequest(
   next();
 }
 
+type StatusCategory = '2xx' | '3xx' | '4xx' | '5xx';
+
+interface StatusTimePoint {
+  timestamp: string;
+  '2xx': number;
+  '3xx': number;
+  '4xx': number;
+  '5xx': number;
+  total: number;
+}
+
+/**
+ * Convert a Redis status hash (fields shaped `${isoTimestamp}:${category}`)
+ * into an ascending, per-timestamp time series the admin chart can plot. The
+ * ISO timestamp itself contains colons, so the category is taken from the last
+ * colon-separated segment.
+ */
+function groupStatusHash(
+  hash: Record<string, string> | null | undefined,
+): StatusTimePoint[] {
+  if (!hash) return [];
+  const categories: StatusCategory[] = ['2xx', '3xx', '4xx', '5xx'];
+  const byTimestamp: Record<string, StatusTimePoint> = {};
+
+  for (const [field, rawValue] of Object.entries(hash)) {
+    const sep = field.lastIndexOf(':');
+    if (sep === -1) continue;
+    const timestamp = field.slice(0, sep);
+    const category = field.slice(sep + 1) as StatusCategory;
+    if (!categories.includes(category)) continue;
+
+    const count = parseInt(rawValue, 10) || 0;
+    if (!byTimestamp[timestamp]) {
+      byTimestamp[timestamp] = {
+        timestamp,
+        '2xx': 0,
+        '3xx': 0,
+        '4xx': 0,
+        '5xx': 0,
+        total: 0,
+      };
+    }
+    byTimestamp[timestamp][category] += count;
+    byTimestamp[timestamp].total += count;
+  }
+
+  return Object.values(byTimestamp).sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
+}
+
 /** Retrieve aggregated request statistics. */
 export async function getRequestStats(): Promise<Record<string, unknown>> {
   const fallback = {
@@ -292,6 +343,25 @@ export async function getRequestStats(): Promise<Record<string, unknown>> {
             }
           });
         }
+      } catch {}
+    })(),
+
+    // Hourly + daily status time series. These Redis hashes hold the COMPLETE
+    // per-category history (incremented on every request), unlike the capped
+    // last-1000 recent-requests list, so the chart can show the full window.
+    (async () => {
+      try {
+        const [hourly, daily] = await Promise.race<any>([
+          Promise.all([
+            client.hGetAll('stats:hourly_status'),
+            client.hGetAll('stats:daily_status'),
+          ]),
+          new Promise((_, rej) => setTimeout(() => rej('timeout'), 3000)),
+        ]);
+        response.timeSeriesData = {
+          hourly: groupStatusHash(hourly),
+          daily: groupStatusHash(daily),
+        };
       } catch {}
     })(),
   ]);
