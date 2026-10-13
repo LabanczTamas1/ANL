@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { InboxItem } from "./Inbox";
 import SentRowItem from "./components/SentRowItem";
 import { useLanguage } from "../hooks/useLanguage";
+import { parseTimestamp } from "../utils/parseTimestamp";
 
 const SentEmails = () => {
   const { t } = useLanguage();
@@ -41,9 +42,9 @@ const SentEmails = () => {
   }, [token]);
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return t("msgDetail.noDate");
+    const date = parseTimestamp(timestamp);
+    if (!date) return t("msgDetail.noDate");
 
-    const date = new Date(Number(timestamp));
     const today = new Date();
 
     const isToday =

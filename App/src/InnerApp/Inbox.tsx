@@ -5,6 +5,7 @@ import ConfirmModal from "./components/ConfirmModal";
 import GradientButton from "./components/GradientButton";
 import { useNotification } from "../contexts/NotificationContext";
 import { useLanguage } from "../hooks/useLanguage";
+import { parseTimestamp } from "../utils/parseTimestamp";
 
 export interface InboxItem {
   id: string;
@@ -44,8 +45,8 @@ const Inbox = () => {
         });
         const data = await response.json();
         const sortedData = [...data].sort((a, b) => {
-          const timeA = a.timeSended ? Number(a.timeSended) : 0;
-          const timeB = b.timeSended ? Number(b.timeSended) : 0;
+          const timeA = parseTimestamp(a.timeSended)?.getTime() ?? 0;
+          const timeB = parseTimestamp(b.timeSended)?.getTime() ?? 0;
           return timeB - timeA;
         });
 
@@ -74,8 +75,8 @@ const Inbox = () => {
   };
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return t("msgDetail.noDate");
-    const date = new Date(Number(timestamp));
+    const date = parseTimestamp(timestamp);
+    if (!date) return t("msgDetail.noDate");
     const today = new Date();
 
     const isToday =

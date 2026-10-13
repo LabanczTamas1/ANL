@@ -13,7 +13,7 @@ export const english = {
     aboutUs: "About",
     blog: "Blog",
     login: "Login",
-    signIn: "Sign in",
+    signIn: "Sign up",
 
     // Additional page content
     homeHeading: "Your Reliable Partner",

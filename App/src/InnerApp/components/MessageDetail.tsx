@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { InboxItem } from "../Inbox";
 import { useLanguage } from "../../hooks/useLanguage";
+import { parseTimestamp } from "../../utils/parseTimestamp";
 import GradientButton from "./GradientButton";
 
 interface MessageDetailProps {
@@ -19,6 +20,21 @@ interface EmailMessage {
   body: string;
   timeSended: string;
 }
+
+/**
+ * Build a quoted copy of the original message, used to prefill the compose
+ * form when replying or forwarding.
+ */
+const buildQuotedBody = (message: InboxItem): string => {
+  const date = parseTimestamp(message.timeSended);
+  const when = date ? date.toLocaleString("en-US") : "";
+  const header = `--- ${message.fromName} <${message.fromEmail}>${when ? ` · ${when}` : ""} ---`;
+  const quoted = (message.body ?? "")
+    .split("\n")
+    .map((line) => `> ${line}`)
+    .join("\n");
+  return `${header}\n${quoted}`;
+};
 
 
 const MessageDetail = ({ messageId }: MessageDetailProps) => {
@@ -61,9 +77,9 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   }, [id]);
 
   const formatDate = (timestamp: string | null): string => {
-    if (!timestamp) return t("msgDetail.noDate");
+    const date = parseTimestamp(timestamp);
+    if (!date) return t("msgDetail.noDate");
 
-    const date = new Date(Number(timestamp));
     return date.toLocaleString("en-US", {
       year: "numeric",
       month: "long",
@@ -76,6 +92,36 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
 
   const handleGoBack = () => {
     navigate("/home/mail/inbox");
+  };
+
+  const handleReply = () => {
+    if (!message) return;
+    const subject = message.subject?.startsWith("Re: ")
+      ? message.subject
+      : `Re: ${message.subject ?? ""}`;
+    const quoted = buildQuotedBody(message);
+    navigate("/home/mail/send", {
+      state: {
+        recipient: message.fromEmail,
+        subject,
+        body: `\n\n${quoted}`,
+      },
+    });
+  };
+
+  const handleForward = () => {
+    if (!message) return;
+    const subject = message.subject?.startsWith("Fwd: ")
+      ? message.subject
+      : `Fwd: ${message.subject ?? ""}`;
+    const quoted = buildQuotedBody(message);
+    navigate("/home/mail/send", {
+      state: {
+        recipient: "",
+        subject,
+        body: `\n\n${quoted}`,
+      },
+    });
   };
 
   if (loading) {
@@ -171,10 +217,10 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
             {t("msgDetail.backToInbox")}
           </GradientButton>
           <div className="flex gap-2">
-            <GradientButton>
+            <GradientButton onClick={handleReply}>
               {t("msgDetail.reply")}
             </GradientButton>
-            <GradientButton>
+            <GradientButton onClick={handleForward}>
               {t("msgDetail.forward")}
             </GradientButton>
           </div>

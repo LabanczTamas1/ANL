@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { usePostHog } from "@posthog/react";
 
 export interface EmailData {
@@ -25,13 +26,18 @@ export const useSendMail = (
   token: string | null
 ) => {
   const posthog = usePostHog();
+  const location = useLocation();
+  const prefill = location.state as
+    | { recipient?: string; subject?: string; body?: string }
+    | null;
+
   const [emailData, setEmailData] = useState<EmailData>({
-    subject: "",
-    recipient: "",
-    body: "",
+    subject: prefill?.subject ?? "",
+    recipient: prefill?.recipient ?? "",
+    body: prefill?.body ?? "",
     name: "",
   });
-  const [recipientInput, setRecipientInput] = useState("");
+  const [recipientInput, setRecipientInput] = useState(prefill?.recipient ?? "");
   const [showDropdown, setShowDropdown] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([companyMail]);
