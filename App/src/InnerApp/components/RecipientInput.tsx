@@ -36,19 +36,19 @@ const RecipientInput: React.FC<Props> = ({
         autoComplete="off"
       />
       {showDropdown && (
-        <div className="absolute z-dropdown w-full mt-1 bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-dark rounded-xl shadow-elevated max-h-60 overflow-auto">
+        <div className="absolute z-dropdown w-full mt-1 bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-dark rounded-lg shadow-elevated max-h-60 overflow-auto">
           {filteredUsers.map((user, index) => (
             <div
               key={index}
-              className={`p-2 hover:bg-brand/5 dark:hover:bg-brand/20 cursor-pointer flex justify-between transition-colors ${
+              className={`p-2 hover:bg-brand/5 dark:hover:bg-brand/20 cursor-pointer flex justify-between gap-2 transition-colors ${
                 user.email === companyMail.email ? "bg-brand/10 dark:bg-brand/20 border-l-4 border-brand" : ""
               }`}
               onClick={() => onSelectUser(user)}
             >
-              <span className={user.email === companyMail.email ? "font-semibold text-brand dark:text-brand-focus" : "text-content dark:text-content-subtle-inverse"}>
+              <span className={user.email === companyMail.email ? "font-semibold text-brand dark:text-brand-focus truncate" : "text-content dark:text-content-subtle-inverse truncate"}>
                 {user.email}
               </span>
-              <span className={user.email === companyMail.email ? "text-brand dark:text-brand-focus" : "text-content-muted"}>
+              <span className={user.email === companyMail.email ? "text-brand dark:text-brand-focus shrink-0" : "text-content-muted shrink-0"}>
                 {user.username}
               </span>
             </div>

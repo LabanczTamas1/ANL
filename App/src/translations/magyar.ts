@@ -137,6 +137,7 @@ export const magyar: Record<TranslationKey, string> = {
     'sendMail.subject': 'Tárgy:',
     'sendMail.subjectPlaceholder': 'Adja meg a tárgyat',
     'sendMail.body': 'Levél szövege',
+    'sendMail.bodyPlaceholder': 'Írja meg az üzenetét…',
     'sendMail.addLink': 'Link hozzáadása',
     'sendMail.send': 'Levél küldése',
     'sendMail.sending': 'Küldés...',
@@ -1030,6 +1031,9 @@ export const magyar: Record<TranslationKey, string> = {
   'msgDetail.backToInbox': "Vissza a beérkezett üzenetekhez",
   'msgDetail.reply': "Válasz",
   'msgDetail.forward': "Továbbítás",
+  'msgDetail.sent': "Elküldve",
+  'msgDetail.received': "Fogadva",
+  'msgDetail.messagesInThread': "{{count}} üzenet ebben a beszélgetésben",
   // RecipientInput
   'recipient.searchPlaceholder': "Keresés e-mail vagy felhasználónév alapján",
   'recipient.emailPlaceholder': "Add meg a címzett e-mail címét",
@@ -1058,6 +1062,7 @@ export const magyar: Record<TranslationKey, string> = {
   // Inbox
   'inbox.title': "Beérkezett üzenetek",
   'inbox.writeMail': "Levél írása",
+  'inbox.messageCount': "{{count}} üzenet",
   'inbox.deleteCount': "Törlés ({{count}})",
   'inbox.selectAll': "Összes kijelölése",
   'inbox.loading': "Betöltés...",

@@ -28,8 +28,11 @@ export const useSendMail = (
   const posthog = usePostHog();
   const location = useLocation();
   const prefill = location.state as
-    | { recipient?: string; subject?: string; body?: string }
+    | { recipient?: string; subject?: string; body?: string; threadId?: string; parentId?: string }
     | null;
+
+  const threadId = prefill?.threadId ?? null;
+  const parentId = prefill?.parentId ?? null;
 
   const [emailData, setEmailData] = useState<EmailData>({
     subject: prefill?.subject ?? "",
@@ -158,7 +161,12 @@ export const useSendMail = (
       return;
     }
 
-    const submissionData = { ...emailData, recipient: isOwner ? recipientInput : emailData.recipient };
+    const submissionData = {
+      ...emailData,
+      recipient: isOwner ? recipientInput : emailData.recipient,
+      ...(threadId ? { threadId } : {}),
+      ...(parentId ? { parentId } : {}),
+    };
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/email/save-email`, {

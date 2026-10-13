@@ -1,5 +1,6 @@
 import React from "react";
 import { useLanguage } from "../../hooks/useLanguage";
+import { Button, Text } from "@design-system/components";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -22,27 +23,22 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white dark:bg-[#1e1e1e] rounded-lg shadow-lg p-6 w-96">
-        <p className="text-lg font-medium text-black dark:text-white mb-4">
-          {question}
-        </p>
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-modal p-4">
+      <div className="w-full max-w-sm rounded-lg border border-line dark:border-line-dark bg-surface-light dark:bg-surface-elevated shadow-elevated p-6">
+        <Text className="font-medium mb-5">{question}</Text>
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-lg"
-          >
+          <Button variant="secondary" onClick={onClose}>
             {cancelText ?? t("confirmModal.cancel")}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
           >
             {confirmText ?? t("confirmModal.yes")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

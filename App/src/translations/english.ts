@@ -137,6 +137,7 @@ export const english = {
     'sendMail.subject': 'Subject:',
     'sendMail.subjectPlaceholder': 'Enter subject',
     'sendMail.body': 'Email Body',
+    'sendMail.bodyPlaceholder': 'Write your message…',
     'sendMail.addLink': 'Add Link',
     'sendMail.send': 'Send Email',
     'sendMail.sending': 'Sending...',
@@ -1030,6 +1031,9 @@ export const english = {
   'msgDetail.backToInbox': "Back to Inbox",
   'msgDetail.reply': "Reply",
   'msgDetail.forward': "Forward",
+  'msgDetail.sent': "Sent",
+  'msgDetail.received': "Received",
+  'msgDetail.messagesInThread': "{{count}} messages in this conversation",
   // RecipientInput
   'recipient.searchPlaceholder': "Search by email or username",
   'recipient.emailPlaceholder': "Enter recipient's email",
@@ -1058,6 +1062,7 @@ export const english = {
   // Inbox
   'inbox.title': "Inbox",
   'inbox.writeMail': "Write Mail",
+  'inbox.messageCount': "{{count}} message(s)",
   'inbox.deleteCount': "Delete ({{count}})",
   'inbox.selectAll': "Select All",
   'inbox.loading': "Loading...",

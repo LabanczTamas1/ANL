@@ -1,7 +1,7 @@
 import React from "react";
 import { LinkData } from "../../Types/types";
 import { useLanguage } from "../../hooks/useLanguage";
-import GradientButton from "./GradientButton";
+import { Button, Heading, Input, Label } from "@design-system/components";
 
 interface Props {
   show: boolean;
@@ -17,39 +17,41 @@ const LinkModal: React.FC<Props> = ({ show, linkData, setLinkData, onInsert, onC
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-modal p-4">
-      <div className="relative bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-glass p-5 rounded-2xl shadow-elevated w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4 text-content dark:text-content-inverse">{t("linkModal.insertLink")}</h3>
+      <div className="relative w-full max-w-md rounded-lg border border-line dark:border-line-dark bg-surface-light dark:bg-surface-elevated p-5 shadow-elevated">
+        <Heading level={3} className="mb-4">{t("linkModal.insertLink")}</Heading>
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-content-subtle dark:text-content-subtle-inverse mb-1">{t("linkModal.url")}</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="link-url">{t("linkModal.url")}</Label>
+            <Input
+              id="link-url"
+              name="url"
               type="url"
               value={linkData.url}
-              onChange={setLinkData} // now type-safe
-              className="w-full p-2 border border-line dark:border-line-dark rounded-xl bg-surface-light dark:bg-surface-dark text-content dark:text-content-inverse placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand transition-shadow"
+              onChange={setLinkData}
               placeholder={t("linkModal.urlPlaceholder")}
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-content-subtle dark:text-content-subtle-inverse mb-1">{t("linkModal.displayText")}</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="link-text">{t("linkModal.displayText")}</Label>
+            <Input
+              id="link-text"
+              name="text"
               type="text"
               value={linkData.text}
-              onChange={setLinkData} // also type-safe
-              className="w-full p-2 border border-line dark:border-line-dark rounded-xl bg-surface-light dark:bg-surface-dark text-content dark:text-content-inverse placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-brand transition-shadow"
+              onChange={setLinkData}
               placeholder={t("linkModal.displayTextPlaceholder")}
             />
           </div>
 
-          <div className="flex justify-end space-x-2 mt-4">
-            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-line dark:border-line-dark text-content-subtle dark:text-content-subtle-inverse hover:bg-brand/5 dark:hover:bg-brand/10 transition-colors">
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="secondary" onClick={onClose}>
               {t("linkModal.cancel")}
-            </button>
-            <GradientButton onClick={onInsert} disabled={!linkData.url}>
+            </Button>
+            <Button onClick={onInsert} disabled={!linkData.url}>
               {t("linkModal.insertLink")}
-            </GradientButton>
+            </Button>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { InboxItem } from "./Inbox";
 import SentRowItem from "./components/SentRowItem";
 import { useLanguage } from "../hooks/useLanguage";
 import { parseTimestamp } from "../utils/parseTimestamp";
+import { Card, Heading, Spinner, Text } from "@design-system/components";
 
 const SentEmails = () => {
   const { t } = useLanguage();
@@ -66,18 +67,21 @@ const SentEmails = () => {
   };
 
   return (
-    <div className="p-2 border border-line dark:border-line-dark rounded-xl shadow-soft dark:shadow-dark-card text-content dark:text-content-inverse">
-      <h2 className="font-bold text-4xl pl-2 mb-2">{t("sentEmails.title")}</h2>
+    <Card padding="sm" className="text-content dark:text-content-inverse">
+      <Heading level={2} className="mb-3 px-1">{t("sentEmails.title")}</Heading>
       {loading ? (
-        <div className="text-center py-4 text-content-muted">{t("sentEmails.loading")}</div>
+        <div className="flex items-center justify-center gap-2 py-8">
+          <Spinner className="text-brand" label={t("sentEmails.loading")} />
+          <Text tone="muted">{t("sentEmails.loading")}</Text>
+        </div>
       ) : !Array.isArray(inboxData) || inboxData.length === 0 ? (
-        <div className="text-center py-4 text-content-muted">{t("sentEmails.noData")}</div>
+        <Text tone="muted" className="text-center py-8">{t("sentEmails.noData")}</Text>
       ) : (
         inboxData.map((item, index) => (
           <SentRowItem key={index} item={item} formatDate={formatDate} />
         ))
       )}
-    </div>
+    </Card>
   );
 };
 

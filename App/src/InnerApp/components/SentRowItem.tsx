@@ -1,7 +1,7 @@
 import React from "react";
 import { InboxItem } from "../Inbox"; // ✅ reuse the same type
 import { useLanguage } from "../../hooks/useLanguage";
-// If you want a separate type for Sent, you can, but it's compatible
+import { Text } from "@design-system/components";
 
 interface SentRowItemProps {
   item: InboxItem;
@@ -11,15 +11,13 @@ interface SentRowItemProps {
 const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
   const { t } = useLanguage();
   return (
-    <div
-      className={`relative border border-line dark:border-line-dark rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 cursor-pointer mb-2 transition-colors`}
-    >
+    <div className="relative border border-line dark:border-line-dark border-l-4 border-l-transparent rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 mb-2 transition-colors">
       {/* Desktop view */}
-      <div className="hidden md:flex flex-row justify-between px-2 py-2 pr-6 transition-all duration-300">
-        <div className="flex-1 px-2 truncate">
+      <div className="hidden md:flex flex-row items-center justify-between px-2 py-2 pr-6">
+        <div className="flex-1 px-2 truncate text-content-muted">
           {item.fromEmail || t("inboxRow.noEmail")}
         </div>
-        <div className="flex-1 px-2 truncate">
+        <div className="flex-1 px-2 truncate text-content dark:text-content-inverse">
           {item.fromName || t("inboxRow.noName")}
         </div>
         <div className="flex-1 px-2 truncate font-medium">
@@ -31,36 +29,36 @@ const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
               (item.body.length > 30 ? "..." : "")
             : t("inboxRow.noMessage")}
         </div>
-        <div className="flex-none ml-auto px-2 text-right whitespace-nowrap">
+        <div className="flex-none ml-auto px-2 text-right whitespace-nowrap text-content-muted">
           {formatDate(item.timeSended || null)}
         </div>
       </div>
 
       {/* Mobile view */}
-      <div className="md:hidden p-3 pr-6 transition-all duration-300">
+      <div className="md:hidden p-3 pr-6">
         <div className="flex justify-between items-center mb-1">
-          <div className="font-medium text-sm truncate flex-1">
+          <Text className="font-medium text-sm truncate flex-1">
             {item.fromName || t("inboxRow.noName")}
-          </div>
-          <div className="text-xs text-content-muted ml-2 flex items-center">
+          </Text>
+          <Text tone="muted" size="xs" as="span" className="ml-2 whitespace-nowrap">
             {formatDate(item.timeSended || null)}
-          </div>
+          </Text>
         </div>
 
         <div className="truncate mb-1 font-medium">
           {item.subject || t("inboxRow.noSubject")}
         </div>
 
-        <div className="text-sm truncate text-content-muted">
+        <Text tone="muted" size="sm" className="truncate">
           {item.body
             ? item.body.replace(/#|```|\*\*/g, "").slice(0, 60) +
               (item.body.length > 60 ? "..." : "")
             : t("inboxRow.noMessage")}
-        </div>
+        </Text>
 
-        <div className="text-xs text-content-muted mt-1 truncate">
+        <Text tone="muted" size="xs" className="mt-1 truncate">
           {item.fromEmail || t("inboxRow.noEmail")}
-        </div>
+        </Text>
       </div>
     </div>
   );

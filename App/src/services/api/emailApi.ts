@@ -16,6 +16,10 @@ export const getInbox = (username: string) =>
 export const getSentMails = (username: string) =>
   apiClient.get(`/email/sentmails/${username}`);
 
+/** GET /api/v1/email/thread/:threadId?username= — full conversation */
+export const getThread = (threadId: string, username: string) =>
+  apiClient.get(`/email/thread/${threadId}`, { params: { username } });
+
 /** PUT /api/v1/email/mark-as-read */
 export const markAsRead = (payload: { emailIds: string[]; username: string }) =>
   apiClient.put('/email/mark-as-read', payload);

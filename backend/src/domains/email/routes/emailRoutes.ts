@@ -13,6 +13,8 @@ router.get('/unread-count', authMiddleware, ec.getUnreadCount);
 // SSE stream — token passed as query param (EventSource can't set headers)
 router.get('/updates/stream', ec.streamUpdates);
 router.get('/sentmails/:username', ec.getSentMails);
+// thread view — all messages in a conversation for the current user
+router.get('/thread/:threadId', authMiddleware, ec.getThread);
 // catch-all must be last
 router.get('/:username', ec.getInbox);
 

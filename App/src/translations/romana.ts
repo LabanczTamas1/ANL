@@ -139,6 +139,7 @@ export const romana: Record<TranslationKey, string> = {
     'sendMail.subject': 'Subiect:',
     'sendMail.subjectPlaceholder': 'Introduceți subiectul',
     'sendMail.body': 'Conținutul emailului',
+    'sendMail.bodyPlaceholder': 'Scrieți mesajul dumneavoastră…',
     'sendMail.addLink': 'Adaugă link',
     'sendMail.send': 'Trimite email',
     'sendMail.sending': 'Se trimite...',
@@ -1032,6 +1033,9 @@ export const romana: Record<TranslationKey, string> = {
   'msgDetail.backToInbox': "Înapoi la mesaje primite",
   'msgDetail.reply': "Răspunde",
   'msgDetail.forward': "Redirecționează",
+  'msgDetail.sent': "Trimis",
+  'msgDetail.received': "Primit",
+  'msgDetail.messagesInThread': "{{count}} mesaje în această conversație",
   // RecipientInput
   'recipient.searchPlaceholder': "Caută după e-mail sau nume de utilizator",
   'recipient.emailPlaceholder': "Introdu adresa de e-mail a destinatarului",
@@ -1060,6 +1064,7 @@ export const romana: Record<TranslationKey, string> = {
   // Inbox
   'inbox.title': "Mesaje primite",
   'inbox.writeMail': "Scrie mesaj",
+  'inbox.messageCount': "{{count}} mesaj(e)",
   'inbox.deleteCount': "Șterge ({{count}})",
   'inbox.selectAll': "Selectează tot",
   'inbox.loading': "Se încarcă...",

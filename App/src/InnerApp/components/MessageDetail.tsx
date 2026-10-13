@@ -4,21 +4,19 @@ import ReactMarkdown from "react-markdown";
 import { InboxItem } from "../Inbox";
 import { useLanguage } from "../../hooks/useLanguage";
 import { parseTimestamp } from "../../utils/parseTimestamp";
-import GradientButton from "./GradientButton";
+import {
+  Badge,
+  Button,
+  Card,
+  Heading,
+  IconButton,
+  Spinner,
+  Text,
+  cn,
+} from "@design-system/components";
 
 interface MessageDetailProps {
   messageId?: string;
-}
-
-interface EmailMessage {
-  id: string;
-  fromId: string;
-  fromName: string;
-  fromEmail: string;
-  recipient: string;
-  subject: string;
-  body: string;
-  timeSended: string;
 }
 
 /**
@@ -36,44 +34,102 @@ const buildQuotedBody = (message: InboxItem): string => {
   return `${header}\n${quoted}`;
 };
 
+const markdownComponents = (t: (key: string) => string) => ({
+  a: ({ children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      {...props}
+      className="text-brand dark:text-brand-focus hover:text-brand-hover underline"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
+  ),
+  img: ({ ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <img
+      {...props}
+      className="max-w-full h-auto rounded-lg my-4"
+      alt={props.alt || t("msgDetail.imageAlt")}
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        target.onerror = null;
+        target.src = "https://via.placeholder.com/600x300?text=Image+Not+Found";
+      }}
+    />
+  ),
+});
 
 const MessageDetail = ({ messageId }: MessageDetailProps) => {
   const { t } = useLanguage();
   const [message, setMessage] = useState<InboxItem | null>(null);
+  const [thread, setThread] = useState<InboxItem[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const token = localStorage.getItem("authToken");
   const params = useParams();
   const navigate = useNavigate();
-  
+
   // Use messageId from props or from URL parameters (now named 'details')
   const id = messageId || params.details;
 
   useEffect(() => {
-    
-    const fetchInboxData = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       const username = localStorage.getItem("name") || "testuser";
-  
+
       try {
         const response = await fetch(`${API_BASE_URL}/inbox/${username}`, {
-          method: 'GET',
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
-        const data = await response.json();
-        console.log(data);
-        
-        setMessage(data.find((email: EmailMessage) => email.id === id));
+        const data: InboxItem[] = await response.json();
+        const current = Array.isArray(data)
+          ? data.find((email) => email.id === id) ?? null
+          : null;
+        setMessage(current);
+        setExpandedId(current?.id ?? null);
+
+        const conversationId = current?.threadId ?? current?.id;
+        if (current && conversationId) {
+          try {
+            const threadRes = await fetch(
+              `${API_BASE_URL}/inbox/thread/${conversationId}?username=${encodeURIComponent(username)}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              },
+            );
+            if (threadRes.ok) {
+              const threadData: InboxItem[] = await threadRes.json();
+              setThread(
+                Array.isArray(threadData) && threadData.length > 0
+                  ? threadData
+                  : [current],
+              );
+            } else {
+              setThread([current]);
+            }
+          } catch {
+            setThread([current]);
+          }
+        } else if (current) {
+          setThread([current]);
+        }
       } catch (error) {
-        console.error("Error fetching inbox data:", error);
+        console.error("Error fetching message:", error);
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchInboxData();
+
+    fetchData();
   }, [id]);
 
   const formatDate = (timestamp: string | null): string => {
@@ -105,6 +161,8 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
         recipient: message.fromEmail,
         subject,
         body: `\n\n${quoted}`,
+        threadId: message.threadId ?? message.id,
+        parentId: message.id,
       },
     });
   };
@@ -127,7 +185,10 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-surface-light dark:bg-surface-dark">
-        <div className="text-content dark:text-content-inverse text-xl">{t("msgDetail.loading")}</div>
+        <div className="flex items-center gap-3 text-content dark:text-content-inverse">
+          <Spinner size="lg" className="text-brand" label={t("msgDetail.loading")} />
+          <Text>{t("msgDetail.loading")}</Text>
+        </div>
       </div>
     );
   }
@@ -135,94 +196,122 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   if (!message) {
     return (
       <div className="flex justify-center items-center h-screen bg-surface-light dark:bg-surface-dark">
-        <div className="text-content dark:text-content-inverse text-xl">{t("msgDetail.notFound")}</div>
+        <Text size="lg">{t("msgDetail.notFound")}</Text>
       </div>
     );
   }
 
+  const isThreaded = thread.length > 1;
+
   return (
     <div className="h-screen overflow-auto bg-surface-light dark:bg-surface-dark p-4">
-      <div className="bg-surface-light dark:bg-surface-elevated border border-line dark:border-line-dark rounded-2xl shadow-card dark:shadow-dark-card p-6 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-content dark:text-content-inverse">{message.subject}</h1>
-          <button 
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-start gap-4 mb-6">
+          <div className="min-w-0">
+            <Heading level={1} className="truncate">
+              {message.subject || t("inboxRow.noSubject")}
+            </Heading>
+            {isThreaded && (
+              <div className="mt-2">
+                <Badge tone="brand" pill>
+                  {t("msgDetail.messagesInThread", { count: String(thread.length) })}
+                </Badge>
+              </div>
+            )}
+          </div>
+          <IconButton
+            variant="ghost"
             onClick={handleGoBack}
-            className="p-2 rounded-full text-content dark:text-content-inverse hover:bg-brand/5 dark:hover:bg-brand/10 transition-colors"
             aria-label={t("msgDetail.closeMessage")}
           >
-            <svg 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-content dark:text-content-inverse"
-            >
-              <path 
-                d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z" 
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6.4 19L5 17.6L10.6 12L5 6.4L6.4 5L12 10.6L17.6 5L19 6.4L13.4 12L19 17.6L17.6 19L12 13.4L6.4 19Z"
                 fill="currentColor"
               />
             </svg>
-          </button>
-        </div>
-        
-        <div className="border-b border-line dark:border-line-dark pb-4 mb-4">
-          <div className="flex items-center mb-2">
-            <span className="font-medium text-content-muted mr-2">{t("msgDetail.from")}</span>
-            <span className="text-content dark:text-content-inverse">{message.fromName} &lt;{message.fromEmail}&gt;</span>
-          </div>
-          <div className="flex items-center mb-2">
-            <span className="font-medium text-content-muted mr-2">{t("msgDetail.to")}</span>
-            <span className="text-content dark:text-content-inverse">{message.recipient}</span>
-          </div>
-          <div className="flex items-center">
-            <span className="font-medium text-content-muted mr-2">{t("msgDetail.date")}</span>
-            <span className="text-content dark:text-content-inverse">{formatDate(message.timeSended)}</span>
-          </div>
-        </div>
-        
-        <div className="prose prose-lg dark:prose-invert max-w-none text-content dark:text-content-inverse">
-          <ReactMarkdown
-            components={{
-              a: ({children, ...props}) => (
-                <a 
-                  {...props} 
-                  className="text-brand dark:text-brand-focus hover:text-brand-hover underline" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  {children}
-                </a>
-              ),
-              img: ({...props}) => (
-                <img 
-                  {...props} 
-                  className="max-w-full h-auto rounded my-4" 
-                  alt={props.alt || t("msgDetail.imageAlt")} 
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = "https://via.placeholder.com/600x300?text=Image+Not+Found";
-                  }}
-                />
-              ),
-            }}
-          >
-            {message.body}
-          </ReactMarkdown>
+          </IconButton>
         </div>
 
-        <div className="mt-6 flex justify-between">
-          <GradientButton onClick={handleGoBack}>
+        {/* Conversation */}
+        <div className="space-y-3">
+          {thread.map((entry) => {
+            const expanded = isThreaded ? expandedId === entry.id : true;
+            const isSent = entry.source === "sent";
+            return (
+              <Card key={entry.id} padding="none" className="overflow-hidden">
+                {/* Message header row */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    isThreaded
+                      ? setExpandedId((prev) => (prev === entry.id ? null : entry.id))
+                      : undefined
+                  }
+                  className={cn(
+                    "w-full flex items-center justify-between gap-3 px-5 py-4 text-left",
+                    isThreaded && "hover:bg-black/[0.03] dark:hover:bg-white/5 transition-colors",
+                  )}
+                  aria-expanded={expanded}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                        isSent
+                          ? "bg-brand-muted text-brand dark:text-brand-focus"
+                          : "bg-black/[0.06] text-content-subtle dark:bg-white/10 dark:text-content-subtle-inverse",
+                      )}
+                      aria-hidden="true"
+                    >
+                      {(entry.fromName || "?").charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Text className="font-semibold truncate">
+                          {entry.fromName || t("inboxRow.noName")}
+                        </Text>
+                        <Badge tone={isSent ? "brand" : "neutral"} size="sm">
+                          {isSent ? t("msgDetail.sent") : t("msgDetail.received")}
+                        </Badge>
+                      </div>
+                      <Text tone="muted" size="xs" className="truncate">
+                        {entry.fromEmail || t("inboxRow.noEmail")}
+                      </Text>
+                    </div>
+                  </div>
+                  <Text tone="muted" size="xs" className="whitespace-nowrap shrink-0">
+                    {formatDate(entry.timeSended)}
+                  </Text>
+                </button>
+
+                {expanded && (
+                  <div className="px-5 pb-5">
+                    <div className="border-t border-line dark:border-line-dark pt-4 prose prose-sm sm:prose-base dark:prose-invert max-w-none text-content dark:text-content-inverse">
+                      <ReactMarkdown components={markdownComponents(t)}>
+                        {entry.body}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Actions */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <Button variant="secondary" onClick={handleGoBack}>
             {t("msgDetail.backToInbox")}
-          </GradientButton>
+          </Button>
           <div className="flex gap-2">
-            <GradientButton onClick={handleReply}>
+            <Button variant="primary" onClick={handleReply}>
               {t("msgDetail.reply")}
-            </GradientButton>
-            <GradientButton onClick={handleForward}>
+            </Button>
+            <Button variant="outline" onClick={handleForward}>
               {t("msgDetail.forward")}
-            </GradientButton>
+            </Button>
           </div>
         </div>
       </div>

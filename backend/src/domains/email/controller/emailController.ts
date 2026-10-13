@@ -46,7 +46,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function saveEmail(req: Request, res: Response): Promise<void> {
-  const { subject, recipient, body, name } = req.body;
+  const { subject, recipient, body, name, threadId, parentId } = req.body;
 
   if (!subject || !recipient || !body) {
     res.status(400).json({ error: 'All fields (subject, recipient, body) are required' });
@@ -64,19 +64,24 @@ export async function saveEmail(req: Request, res: Response): Promise<void> {
     }
 
     const mailId = uuidv4();
+    // A reply carries the originating conversation; a brand-new mail starts its
+    // own thread rooted at the inbox message id.
+    const conversationId: string = typeof threadId === 'string' && threadId ? threadId : mailId;
+    const replyParentId: string | null =
+      typeof parentId === 'string' && parentId ? parentId : null;
 
     // Save to messages table (inbox)
     await query(
-      `INSERT INTO messages (id, from_id, from_name, from_email, recipient_id, subject, body)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [mailId, user.id, name, user.email, user.id, subject, bodyString],
+      `INSERT INTO messages (id, from_id, from_name, from_email, recipient_id, subject, body, thread_id, parent_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [mailId, user.id, name, user.email, user.id, subject, bodyString, conversationId, replyParentId],
     );
 
     // Save to sent_messages table
     await query(
-      `INSERT INTO sent_messages (id, from_id, from_name, from_email, recipient_email, subject, body)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [uuidv4(), user.id, name, user.email, recipientString, subject, bodyString],
+      `INSERT INTO sent_messages (id, from_id, from_name, from_email, recipient_email, subject, body, thread_id, parent_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [uuidv4(), user.id, name, user.email, recipientString, subject, bodyString, conversationId, replyParentId],
     );
 
     try { await emitUnreadCount(user.id); } catch (_) {}
@@ -88,7 +93,7 @@ export async function saveEmail(req: Request, res: Response): Promise<void> {
       text: `Email from ANL Website:\n${bodyString}\n`,
     });
 
-    res.status(200).json({ message: 'Email saved successfully', id: mailId });
+    res.status(200).json({ message: 'Email saved successfully', id: mailId, threadId: conversationId });
   } catch (error) {
     logError(error, { context: 'saveEmail' });
     res.status(500).json({ error: 'Failed to save email' });
@@ -106,7 +111,8 @@ export async function getInbox(req: Request, res: Response): Promise<void> {
 
     const rows = await query(
       `SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
-              subject, body, is_read as "isRead", is_system as "isSystem", created_at as "timeSended"
+              subject, body, is_read as "isRead", is_system as "isSystem",
+              thread_id as "threadId", parent_id as "parentId", created_at as "timeSended"
        FROM messages WHERE recipient_id = $1 ORDER BY created_at DESC`,
       [user.id],
     );
@@ -114,6 +120,52 @@ export async function getInbox(req: Request, res: Response): Promise<void> {
     res.json(rows);
   } catch (error) {
     logError(error, { context: 'getInbox' });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+/**
+ * Return every message in a conversation that the current user is party to,
+ * merging their inbox copies and their sent copies, oldest first. Powers the
+ * threaded reply view.
+ */
+export async function getThread(req: Request, res: Response): Promise<void> {
+  const { threadId } = req.params;
+  const { username } = req.query;
+
+  if (!threadId) {
+    res.status(400).json({ error: 'threadId is required' });
+    return;
+  }
+
+  try {
+    const user = await userRepo.findByUsername(username as string);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    const rows = await query(
+      `SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
+              NULL as "recipient", subject, body, is_read as "isRead",
+              thread_id as "threadId", parent_id as "parentId", created_at as "timeSended",
+              'inbox' as "source"
+         FROM messages
+        WHERE thread_id = $1 AND recipient_id = $2
+       UNION ALL
+       SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
+              recipient_email as "recipient", subject, body, NULL as "isRead",
+              thread_id as "threadId", parent_id as "parentId", created_at as "timeSended",
+              'sent' as "source"
+         FROM sent_messages
+        WHERE thread_id = $1 AND from_id = $2
+       ORDER BY "timeSended" ASC`,
+      [threadId, user.id],
+    );
+
+    res.json(rows);
+  } catch (error) {
+    logError(error, { context: 'getThread' });
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -129,7 +181,8 @@ export async function getSentMails(req: Request, res: Response): Promise<void> {
 
     const rows = await query(
       `SELECT id, from_id as "fromId", from_name as "fromName", from_email as "fromEmail",
-              recipient_email as "recipient", subject, body, created_at as "timeSended"
+              recipient_email as "recipient", subject, body,
+              thread_id as "threadId", parent_id as "parentId", created_at as "timeSended"
        FROM sent_messages WHERE from_id = $1 ORDER BY created_at DESC`,
       [user.id],
     );

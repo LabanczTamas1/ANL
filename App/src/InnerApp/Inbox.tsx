@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import InboxRowItem from "./components/InboxRowItem";
 import ConfirmModal from "./components/ConfirmModal";
-import GradientButton from "./components/GradientButton";
 import { useNotification } from "../contexts/NotificationContext";
 import { useLanguage } from "../hooks/useLanguage";
 import { parseTimestamp } from "../utils/parseTimestamp";
+import { Button, Card, Heading, Spinner, Text } from "@design-system/components";
 
 export interface InboxItem {
   id: string;
@@ -17,6 +17,9 @@ export interface InboxItem {
   isRead: string;
   fromId?: string;
   recipient?: string;
+  threadId?: string;
+  parentId?: string;
+  source?: "inbox" | "sent";
 }
 
 const Inbox = () => {
@@ -201,102 +204,82 @@ const Inbox = () => {
       <div className="bg-surface-light dark:bg-surface-elevated w-full rounded-tl-lg">
         <div className="p-4 text-content dark:text-content-inverse">
           {/* Header */}
-          <div className="flex flex-row mb-2 items-center justify-between">
-            <div className="flex items-center">
+          <div className="flex flex-row mb-4 items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <svg
-                className="mt-2 w-6 h-6 md:w-8 md:h-8"
+                className="w-6 h-6 md:w-8 md:h-8 shrink-0"
                 viewBox="0 0 33 33"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
                 <path
                   d="M5.5 27.5C4.74375 27.5 4.09635 27.2307 3.55781 26.6922C3.01927 26.1536 2.75 25.5063 2.75 24.75V8.25C2.75 7.49375 3.01927 6.84635 3.55781 6.30781C4.09635 5.76927 4.74375 5.5 5.5 5.5H27.5C28.2563 5.5 28.9036 5.76927 29.4422 6.30781C29.9807 6.84635 30.25 7.49375 30.25 8.25V24.75C30.25 25.5063 29.9807 26.1536 29.4422 26.6922C28.9036 27.2307 28.2563 27.5 27.5 27.5H5.5ZM16.5 17.875L5.5 11V24.75H27.5V11L16.5 17.875ZM16.5 15.125L27.5 8.25H5.5L16.5 15.125ZM5.5 11V8.25V24.75V11Z"
                   fill="currentColor"
                 />
               </svg>
-              <h2 className="font-bold text-xl md:text-2xl lg:text-4xl pl-2">
-                {t("inbox.title")}
-              </h2>
+              <Heading level={2} className="truncate">{t("inbox.title")}</Heading>
             </div>
 
             {/* Right side actions */}
-            <div className="flex items-center space-x-3">
-              <GradientButton
+            <div className="flex items-center gap-2">
+              <Button
                 onClick={() => navigate("/home/mail/send")}
-                className="flex items-center gap-1"
+                leftIcon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                }
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
                 {t("inbox.writeMail")}
-              </GradientButton>
+              </Button>
 
               {selectedEmails.length > 0 && (
-                <GradientButton
+                <Button
                   variant="danger"
                   onClick={() => setBulkDeleteModal(true)}
-                  className="flex items-center gap-1"
+                  leftIcon={
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  }
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
                   {t("inbox.deleteCount", { count: String(selectedEmails.length) })}
-                </GradientButton>
+                </Button>
               )}
             </div>
           </div>
 
           {/* Main Inbox */}
-          <div className="p-2 border border-line dark:border-line-dark rounded-xl mt-2 shadow-soft dark:shadow-dark-card">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-xl md:text-2xl lg:text-4xl pl-2">
-                {t("inbox.title")}
-              </h2>
+          <Card padding="sm" className="mt-2">
+            <div className="flex justify-between items-center mb-4 px-1">
+              <Text tone="muted" size="sm">
+                {t("inbox.messageCount", { count: String(inboxData.length) })}
+              </Text>
 
-              <div className="flex items-center">
-                <div className="mr-4 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="selectAll"
-                    checked={
-                      selectedEmails.length === inboxData.length &&
-                      inboxData.length > 0
-                    }
-                    onChange={handleSelectAll}
-                    className="mr-2 accent-brand"
-                  />
-                  <label htmlFor="selectAll" className="text-sm text-content-subtle dark:text-content-subtle-inverse">
-                    {t("inbox.selectAll")}
-                  </label>
-                </div>
-              </div>
+              <label htmlFor="selectAll" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="selectAll"
+                  checked={
+                    selectedEmails.length === inboxData.length &&
+                    inboxData.length > 0
+                  }
+                  onChange={handleSelectAll}
+                  className="accent-brand h-4 w-4"
+                />
+                <Text tone="subtle" size="sm">{t("inbox.selectAll")}</Text>
+              </label>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[32rem] overflow-y-auto pr-1">
               {loading ? (
-                <div className="text-center py-4 text-content-muted">{t("inbox.loading")}</div>
+                <div className="flex items-center justify-center gap-2 py-8">
+                  <Spinner className="text-brand" label={t("inbox.loading")} />
+                  <Text tone="muted">{t("inbox.loading")}</Text>
+                </div>
               ) : !Array.isArray(inboxData) || inboxData.length === 0 ? (
-                <div className="text-center py-4 text-content-muted">{t("inbox.noEmails")}</div>
+                <Text tone="muted" className="text-center py-8">{t("inbox.noEmails")}</Text>
               ) : (
                 inboxData.map((item) => (
                   <InboxRowItem
@@ -311,7 +294,7 @@ const Inbox = () => {
                 ))
               )}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
 
