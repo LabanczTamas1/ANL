@@ -1043,6 +1043,7 @@ export const magyar: Record<TranslationKey, string> = {
   'inboxRow.confirmDelete': "Biztosan törölni szeretnéd ezt az üzenetet?",
   'inboxRow.delete': "Törlés",
   'inboxRow.cancel': "Mégse",
+  'inboxRow.new': "Új",
   // ConfirmModal defaults
   'confirmModal.yes': "Igen",
   'confirmModal.cancel': "Mégse",

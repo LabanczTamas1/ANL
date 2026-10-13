@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { InboxItem } from "../Inbox"; 
 import ConfirmModal from "./ConfirmModal";
 import { useLanguage } from "../../hooks/useLanguage";
+import { Badge, cn } from "@design-system/components";
 
 interface InboxRowItemProps {
   item: InboxItem;
@@ -24,10 +25,18 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
   const [hovered, setHovered] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
+  const isUnread = item.isRead === "false";
+
   return (
     <>
       <div
-        className={`relative border border-line dark:border-line-dark rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 cursor-pointer mb-2 transition-colors`}
+        className={cn(
+          "relative border rounded-xl cursor-pointer mb-2 transition-colors",
+          "border-l-4",
+          isUnread
+            ? "border-line border-l-brand bg-brand/[0.06] hover:bg-brand/10 dark:border-line-dark dark:bg-brand/[0.12] dark:hover:bg-brand/20"
+            : "border-line border-l-transparent hover:bg-brand/5 dark:border-line-dark dark:hover:bg-brand/10",
+        )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onClick={() => onMessageClick(item.id)}
@@ -48,7 +57,7 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
 
         {/* Desktop view */}
         <div
-          className={`hidden md:flex flex-row justify-between px-2 py-2 transition-all duration-300 ${
+          className={`hidden md:flex flex-row items-center justify-between px-2 py-2 transition-all duration-300 ${
             hovered ? "pr-10" : "pr-6"
           }`}
         >
@@ -61,40 +70,61 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
               className="accent-brand"
             />
           </div>
-          <div className="flex-1 px-2 truncate">
+          <div
+            className={cn(
+              "flex-1 px-2 truncate",
+              isUnread
+                ? "text-content dark:text-content-inverse"
+                : "text-content-muted",
+            )}
+          >
             {item.fromEmail || t("inboxRow.noEmail")}
           </div>
-          <div className="flex-1 px-2 truncate">
-            {item.isRead === "false" && (
-              <span className="inline-block w-2 h-2 bg-brand rounded-full mr-2"></span>
+          <div className="flex-1 px-2 truncate flex items-center gap-2">
+            {isUnread && (
+              <span
+                className="inline-block w-2 h-2 bg-brand rounded-full shrink-0"
+                aria-hidden="true"
+              />
             )}
-            <span className={`${item.isRead === "false" ? "font-bold" : ""}`}>
+            <span className={isUnread ? "font-bold" : ""}>
               {item.fromName || t("inboxRow.noName")}
             </span>
+            {isUnread && (
+              <Badge tone="brand" size="sm" pill className="shrink-0 uppercase tracking-wide">
+                {t("inboxRow.new")}
+              </Badge>
+            )}
           </div>
           <div
-            className={`flex-1 px-2 truncate ${
-              item.isRead === "false" ? "font-bold" : "font-medium"
-            }`}
+            className={cn(
+              "flex-1 px-2 truncate",
+              isUnread ? "font-bold text-content dark:text-content-inverse" : "font-medium",
+            )}
           >
             {item.subject || t("inboxRow.noSubject")}
           </div>
           <div
-            className={`flex-1 px-2 truncate ${
-              item.isRead === "false"
+            className={cn(
+              "flex-1 px-2 truncate",
+              isUnread
                 ? "text-content dark:text-content-inverse font-medium"
-                : "text-content-muted"
-            }`}
+                : "text-content-muted",
+            )}
           >
             {item.body
               ? item.body.replace(/#|```|\*\*/g, "").slice(0, 30) +
                 (item.body.length > 30 ? "..." : "")
               : t("inboxRow.noMessage")}
           </div>
-          <div className="flex-none ml-auto px-2 text-right whitespace-nowrap">
-            {item.isRead === "false" && (
-              <span className="inline-block w-3 h-3 bg-brand rounded-full mr-2"></span>
+          <div
+            className={cn(
+              "flex-none ml-auto px-2 text-right whitespace-nowrap",
+              isUnread
+                ? "text-content dark:text-content-inverse font-semibold"
+                : "text-content-muted",
             )}
+          >
             {formatDate(item.timeSended || null)}
           </div>
         </div>
@@ -107,37 +137,52 @@ const InboxRowItem: React.FC<InboxRowItemProps> = ({
         >
           <div className="flex justify-between items-center mb-1">
             <div
-              className={`font-medium text-sm truncate flex-1 ${
-                item.isRead === "false" ? "font-bold" : ""
-              }`}
+              className={cn(
+                "text-sm truncate flex-1 flex items-center gap-2",
+                isUnread ? "font-bold" : "font-medium",
+              )}
             >
-              {item.isRead === "false" && (
-                <span className="inline-block w-2 h-2 bg-brand rounded-full mr-2"></span>
+              {isUnread && (
+                <span
+                  className="inline-block w-2 h-2 bg-brand rounded-full shrink-0"
+                  aria-hidden="true"
+                />
               )}
-              {item.fromName || t("inboxRow.noName")}
+              <span className="truncate">{item.fromName || t("inboxRow.noName")}</span>
+              {isUnread && (
+                <Badge tone="brand" size="sm" pill className="shrink-0 uppercase tracking-wide">
+                  {t("inboxRow.new")}
+                </Badge>
+              )}
             </div>
-            <div className="text-xs text-content-muted ml-2 flex items-center">
-              {item.isRead === "false" && (
-                <span className="inline-block w-2 h-2 bg-brand rounded-full mr-1"></span>
+            <div
+              className={cn(
+                "text-xs ml-2 whitespace-nowrap",
+                isUnread
+                  ? "text-content dark:text-content-inverse font-semibold"
+                  : "text-content-muted",
               )}
+            >
               {formatDate(item.timeSended || null)}
             </div>
           </div>
 
           <div
-            className={`truncate mb-1 ${
-              item.isRead === "false" ? "font-bold" : "font-medium"
-            }`}
+            className={cn(
+              "truncate mb-1",
+              isUnread ? "font-bold text-content dark:text-content-inverse" : "font-medium",
+            )}
           >
             {item.subject || t("inboxRow.noSubject")}
           </div>
 
           <div
-            className={`text-sm truncate ${
-              item.isRead === "false"
+            className={cn(
+              "text-sm truncate",
+              isUnread
                 ? "text-content dark:text-content-inverse font-medium"
-                : "text-content-muted"
-            }`}
+                : "text-content-muted",
+            )}
           >
             {item.body
               ? item.body.replace(/#|```|\*\*/g, "").slice(0, 60) +

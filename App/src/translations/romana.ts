@@ -1045,6 +1045,7 @@ export const romana: Record<TranslationKey, string> = {
   'inboxRow.confirmDelete': "Sigur dorești să ștergi acest mesaj?",
   'inboxRow.delete': "Șterge",
   'inboxRow.cancel': "Anulează",
+  'inboxRow.new': "Nou",
   // ConfirmModal defaults
   'confirmModal.yes': "Da",
   'confirmModal.cancel': "Anulează",

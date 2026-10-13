@@ -1043,6 +1043,7 @@ export const english = {
   'inboxRow.confirmDelete': "Are you sure you want to delete this message?",
   'inboxRow.delete': "Delete",
   'inboxRow.cancel': "Cancel",
+  'inboxRow.new': "New",
   // ConfirmModal defaults
   'confirmModal.yes': "Yes",
   'confirmModal.cancel': "Cancel",
