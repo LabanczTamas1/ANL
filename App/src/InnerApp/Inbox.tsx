@@ -272,7 +272,7 @@ const Inbox = () => {
               </label>
             </div>
 
-            <div className="max-h-[32rem] overflow-y-auto pr-1">
+            <div className="max-h-[32rem] overflow-y-auto px-1 py-1">
               {loading ? (
                 <div className="flex items-center justify-center gap-2 py-8">
                   <Spinner className="text-brand" label={t("inbox.loading")} />

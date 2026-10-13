@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { InboxItem } from "../Inbox"; // ✅ reuse the same type
 import { useLanguage } from "../../hooks/useLanguage";
 import { Text } from "@design-system/components";
@@ -10,8 +11,27 @@ interface SentRowItemProps {
 
 const SentRowItem: React.FC<SentRowItemProps> = ({ item, formatDate }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/home/mail/inbox/${item.id}`, {
+      state: { message: { ...item, source: "sent" as const } },
+    });
+  };
+
   return (
-    <div className="relative border border-line dark:border-line-dark border-l-4 border-l-transparent rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 mb-2 transition-colors">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      className="relative cursor-pointer border border-line dark:border-line-dark border-l-4 border-l-transparent rounded-xl hover:bg-brand/5 dark:hover:bg-brand/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand mb-2 transition-colors"
+    >
       {/* Desktop view */}
       <div className="hidden md:flex flex-row items-center justify-between px-2 py-2 pr-6">
         <div className="flex-1 px-2 truncate text-content-muted">

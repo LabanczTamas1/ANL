@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { InboxItem } from "../Inbox";
 import { useLanguage } from "../../hooks/useLanguage";
@@ -69,6 +69,10 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   const token = localStorage.getItem("authToken");
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // A sent message isn't in the inbox list, so SentRowItem passes the full
+  // item via router state to use as a fallback when the inbox lookup misses.
+  const stateMessage = (location.state as { message?: InboxItem } | null)?.message ?? null;
 
   // Use messageId from props or from URL parameters (now named 'details')
   const id = messageId || params.details;
@@ -86,10 +90,9 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
             "Content-Type": "application/json",
           },
         });
-        const data: InboxItem[] = await response.json();
-        const current = Array.isArray(data)
-          ? data.find((email) => email.id === id) ?? null
-          : null;
+        const data: unknown = await response.json();
+        const list: InboxItem[] = Array.isArray(data) ? data : [];
+        const current = list.find((email) => email.id === id) ?? stateMessage;
         setMessage(current);
         setExpandedId(current?.id ?? null);
 
@@ -147,7 +150,7 @@ const MessageDetail = ({ messageId }: MessageDetailProps) => {
   };
 
   const handleGoBack = () => {
-    navigate("/home/mail/inbox");
+    navigate(stateMessage?.source === "sent" ? "/home/mail/last-outgoing" : "/home/mail/inbox");
   };
 
   const handleReply = () => {
