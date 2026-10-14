@@ -55,6 +55,17 @@ const LandingPage = () => {
         />
       </Helmet>
 
+      {/* Top scrim: a taller bar fixed to the top of the viewport that is
+          opaque at the top and fades out in opacity toward the bottom, sitting
+          behind the transparent navbar for legibility. */}
+      <div
+        className="fixed top-0 left-0 w-full h-40 z-40 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to bottom, #080A0D 0%, rgba(8,10,13,0.6) 45%, rgba(8,10,13,0) 100%)",
+        }}
+      />
+
       {/* Background SVG
       <div
         className="absolute h-[112vh] inset-0 bg-no-repeat bg-cover bg-center z-0"
