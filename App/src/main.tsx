@@ -62,8 +62,7 @@ import NotFoundPage from "./HelperPages/NotFoundPage.tsx";
 
 // Route components are lazy-loaded so each one ships as its own chunk. This
 // keeps the initial JS bundle small instead of shipping every page up front.
-const RegisterPage = lazy(() => import("./OuterApp/RegisterPage.tsx"));
-const LoginPage = lazy(() => import("./OuterApp/LoginPage.tsx"));
+const AuthPage = lazy(() => import("./OuterApp/AuthPage.tsx"));
 const ProgressPage = lazy(() => import("./InnerApp/ProgressPage.tsx"));
 const Contact = lazy(() => import("./OuterApp/Contact.tsx"));
 const Inbox = lazy(() => import("./InnerApp/Inbox.tsx"));
@@ -168,12 +167,14 @@ const router = createBrowserRouter([
     element: <EmptyPage />,
   },
   {
-    path: "/register",
-    element: <RegisterPage />,
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
+    // Shared, persistent shell for the auth forms. Because this layout route
+    // stays mounted across both child URLs, switching between /login and
+    // /register changes the URL without a reload and animates the transition.
+    element: <AuthPage />,
+    children: [
+      { path: "/login", element: null },
+      { path: "/register", element: null },
+    ],
   },
   {
     path: "/oauth-callback",

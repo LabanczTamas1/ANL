@@ -5,7 +5,6 @@ import SocialLoginButtons from "./components/SocialLoginButtons";
 import FormInput from "./components/FormInput";
 import CheckboxInput from "./components/CheckboxInput";
 import SubmitButton from "./components/SubmitButton";
-import Navbar from "./Navbar";
 import { usePostHog } from "@posthog/react";
 import { useLanguage } from "../hooks/useLanguage";
 
@@ -19,7 +18,14 @@ interface RegisterFormInputs {
   terms: boolean;
 }
 
-const RegisterForm: React.FC = () => {
+interface RegisterFormProps {
+  /** Called when the user asks to switch to the login form. When provided,
+   * this is used instead of a hard navigation so the parent can animate the
+   * transition while still updating the URL. */
+  onSwitchToLogin?: () => void;
+}
+
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
   const posthog = usePostHog();
@@ -102,42 +108,7 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-surface-overlay overflow-hidden">
-      {/* ── Ambient background (matches homepage CTA section) ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-30">
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `
-                radial-gradient(ellipse at 20% 50%, rgba(101,85,143,0.4) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(122,164,159,0.4) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, rgba(101,85,143,0.3) 0%, transparent 50%)
-              `,
-            }}
-          />
-        </div>
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-brand/20 rounded-full blur-[120px] animate-pulse" />
-        <div
-          className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent-teal/20 rounded-full blur-[120px] animate-pulse"
-          style={{ animationDelay: "1s" }}
-        />
-      </div>
-
-      {/* ── Navbar ── */}
-      <Navbar />
-
-      {/* ── Content ── */}
-      <div className="relative z-10 flex justify-center items-center min-h-[calc(100vh-5rem)] px-4 pt-20 pb-10">
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="w-full max-w-md p-8 rounded-2xl border border-line-glass shadow-2xl"
-          style={{
-            background: "rgba(20, 20, 30, 0.7)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          }}
-        >
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full">
           <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-white">{t("register.title")}</h2>
 
           <SocialLoginButtons
@@ -280,13 +251,11 @@ const RegisterForm: React.FC = () => {
 
           <div className="text-sm text-content-muted mt-4">
             {t("register.alreadyHaveAccount")}{" "}
-            <button type="button" onClick={() => navigate("/login")} className="text-brand-hover underline hover:text-white transition">{t("register.signIn")}</button>
+            <button type="button" onClick={() => (onSwitchToLogin ? onSwitchToLogin() : navigate("/login"))} className="text-brand-hover underline hover:text-white transition">{t("register.signIn")}</button>
             {" — "}
             <button type="button" onClick={() => navigate("/forgot-password")} className="text-brand-hover underline hover:text-white transition">{t("register.forgotPassword")}</button>
           </div>
-        </form>
-      </div>
-    </div>
+    </form>
   );
 };
 

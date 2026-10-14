@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const lightLogo = "/light-logo.png";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../hooks/useLanguage";
-import { FaSignInAlt, FaUserPlus } from "react-icons/fa";
+import { FaSignInAlt } from "react-icons/fa";
 import MobileNavbar from "./MobileNavbar";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 
@@ -97,14 +97,10 @@ const Navbar: React.FC = () => {
     <div
       className="relative sticky top-[1.5rem] z-50 w-full"
       style={{
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        background: "rgba(20, 20, 30, 0.7)",
+        background: "transparent",
         borderRadius: "2.5rem",
         margin: "0 auto",
         maxWidth: "900px",
-        boxShadow: "0 4px 32px 0 rgba(0,0,0,0.18)",
-        border: "1.5px solid rgba(255,255,255,0.08)",
         padding: "0.5rem 2rem",
         display: "flex",
         alignItems: "center",
@@ -188,19 +184,11 @@ const Navbar: React.FC = () => {
           to="/login"
           title={t.login}
           aria-label={t.login}
-          className="ml-2 flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
-          style={{ ...blendStyle, width: 38, height: 38 }}
+          className="ml-2 flex items-center gap-2 px-4 py-2 text-white font-semibold text-lg hover:text-[#65558F] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e] rounded"
+          style={blendStyle}
         >
           <FaSignInAlt size={18} />
-        </Link>
-        <Link
-          to="/register"
-          title={t.signIn}
-          aria-label={t.signIn}
-          className="flex items-center justify-center bg-[#65558F] hover:bg-[#7c6bb7] text-white rounded-full p-2 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#14141e]"
-          style={{ ...blendStyle, width: 38, height: 38 }}
-        >
-          <FaUserPlus size={18} />
+          {t.login}
         </Link>
       </div>
       {/* Mobile view optimizations */}
