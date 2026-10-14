@@ -10,7 +10,7 @@ import ANLShape from "./components/MovingAnimation";
 // Modern Components
 import ModernFoundersSection from "./components/ModernFoundersSection";
 import YouTubeSection from "./components/YouTubeSection";
-import FeatureGrid from "./components/FeatureGrid";
+import ArticlesGrid from "./components/ArticlesGrid";
 import ModernTimeline from "./components/ModernTimeline";
 import TestimonialSection from "./components/TestimonialSection";
 import CTASection from "./components/CTASection";
@@ -18,7 +18,7 @@ import GradientDivider from "./components/GradientDivider";
 import FloatingParticles from "./components/FloatingParticles";
 
 const LandingPage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const founders = [
     {
@@ -110,10 +110,11 @@ const LandingPage = () => {
       {/* Gradient Divider */}
       <GradientDivider style="glow" />
 
-      {/* Feature Grid Section */}
-      <FeatureGrid 
-        title={t("landing.featureTitle")}
-        subtitle={t("landing.featureSubtitle")}
+      {/* Articles Grid Section — news-portal cards of published articles */}
+      <ArticlesGrid
+        title={t("landing.articlesTitle")}
+        subtitle={t("landing.articlesSubtitle")}
+        locale={language === "magyar" ? "hu" : language === "romana" ? "ro" : "en-US"}
       />
 
       {/* Modern Timeline Section */}

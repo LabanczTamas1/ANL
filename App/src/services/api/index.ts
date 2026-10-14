@@ -23,6 +23,7 @@ import * as progressApi from './progressApi';
 import * as fileApi from './fileApi';
 import * as contactApi from './contactApi';
 import * as reviewApi from './reviewApi';
+import * as articleApi from './articleApi';
 
 export {
   authApi,
@@ -36,4 +37,5 @@ export {
   fileApi,
   contactApi,
   reviewApi,
+  articleApi,
 };

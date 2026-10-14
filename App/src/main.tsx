@@ -103,6 +103,10 @@ const PlaygroundComponentPage = lazy(() => import("./OuterApp/DesignPlayground/P
 const LastOutComing = lazy(() => import("./InnerApp/SentEmails"));
 const CalendarCallback = lazy(() => import("./InnerApp/AdminPage/CalendarCallback.tsx"));
 const AddReview = lazy(() => import("./InnerApp/AddReview.tsx"));
+const ArticlePage = lazy(() => import("./OuterApp/ArticlePage.tsx"));
+const ArticlesManager = lazy(() => import("./InnerApp/Articles/ArticlesManager.tsx"));
+const ArticleEditor = lazy(() => import("./InnerApp/Articles/ArticleEditor.tsx"));
+const ArticlePreview = lazy(() => import("./InnerApp/Articles/ArticlePreview.tsx"));
 import { ReactNode } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "./hooks/useLanguage";
@@ -213,6 +217,10 @@ const router = createBrowserRouter([
     element: <Services />,
   },
   {
+    path: "/articles/:slug",
+    element: <ArticlePage />,
+  },
+  {
     path: "/mail/send-mail",
     element: <SendMail />,
   },
@@ -316,6 +324,38 @@ const router = createBrowserRouter([
       {
         path: "add-review",
         element: <AddReview />,
+      },
+      {
+        path: "articles",
+        element: (
+          <ManagerRoute>
+            <ArticlesManager />
+          </ManagerRoute>
+        ),
+      },
+      {
+        path: "articles/new",
+        element: (
+          <ManagerRoute>
+            <ArticleEditor />
+          </ManagerRoute>
+        ),
+      },
+      {
+        path: "articles/:id/edit",
+        element: (
+          <ManagerRoute>
+            <ArticleEditor />
+          </ManagerRoute>
+        ),
+      },
+      {
+        path: "articles/:id/preview",
+        element: (
+          <ManagerRoute>
+            <ArticlePreview />
+          </ManagerRoute>
+        ),
       },
       {
         path: "language-selection",

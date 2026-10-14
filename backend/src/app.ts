@@ -112,6 +112,7 @@ import bookingRoutes from './domains/booking/routes/bookingRoutes.js';
 import fileManagementRoutes from './domains/fileManagement/routes/fileManagementRoutes.js';
 import progressRoutes from './domains/progress/routes/progressRoutes.js';
 import reviewRoutes from './domains/review/routes/reviewRoutes.js';
+import articleRoutes from './domains/article/routes/articleRoutes.js';
 
 app.use('/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -129,6 +130,7 @@ app.use('/api/booking', bookingRoutes);
 app.use('/api', fileManagementRoutes);   // FE calls /api/upload, /api/export
 app.use('/api', progressRoutes);         // FE calls /api/terminatedStatistics
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/articles', articleRoutes);
 
 // ---------------------------------------------------------------------------
 // Analytics & IP blocking (applied AFTER routes, like the original)
