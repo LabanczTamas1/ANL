@@ -33,6 +33,7 @@ export const magyar: Record<TranslationKey, string> = {
     cookies: "Sütik",
     termsAndConditions: "Feltételek és kikötések",
     privacyPolicy: "Adatvédelmi irányelvek",
+    cookieSettings: "Süti beállítások",
     company: "Cég",
     ourTeam: "Csapatunk",
     languages: "Nyelvek",

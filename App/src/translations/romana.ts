@@ -34,6 +34,7 @@ export const romana: Record<TranslationKey, string> = {
     cookies: "Cookie-uri",
     termsAndConditions: "Termeni și condiții",
     privacyPolicy: "Politica de confidențialitate",
+    cookieSettings: "Setări cookie-uri",
     company: "Companie",
     ourTeam: "Echipa noastră",
     languages: "Limbi",

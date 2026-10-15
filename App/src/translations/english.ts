@@ -33,6 +33,7 @@ export const english = {
     cookies: "Cookies",
     termsAndConditions: "Terms and conditions",
     privacyPolicy: "Privacy Policy",
+    cookieSettings: "Cookie Settings",
     company: "Company",
     ourTeam: "Our Team",
     languages: "Languages",

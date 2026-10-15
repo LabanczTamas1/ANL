@@ -3,7 +3,6 @@ import Navbar from "./Navbar";
 import HeroSection from "./HeroSection";
 import Footer from "./Footer";
 import { Helmet } from "react-helmet-async";
-import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import Starfield from "./Stars";
 import ANLShape from "./components/MovingAnimation";
@@ -142,9 +141,6 @@ const LandingPage = () => {
 
       {/* Footer - Unchanged as requested */}
       <Footer darkMode={true} />
-      
-      {/* Cookie Consent Banner - Unchanged as requested */}
-      <CookieConsentBanner />
     </div>
   );
 };

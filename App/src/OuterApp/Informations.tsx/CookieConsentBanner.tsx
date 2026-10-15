@@ -3,11 +3,23 @@ import { Link } from 'react-router-dom';
 import posthog from 'posthog-js';
 import { useLanguage } from '../../hooks/useLanguage';
 import { updateConsent } from '../../services/api/authApi';
+import { COOKIE_SETTINGS_EVENT } from '../../utils/cookieConsent';
 
 interface CookiePreferences {
   essential: boolean;
   analytics: boolean;
 }
+
+const readSavedAnalyticsPref = (): boolean => {
+  try {
+    const raw = localStorage.getItem('cookiePreferences');
+    if (!raw) return true;
+    const prefs = JSON.parse(raw) as Partial<CookiePreferences>;
+    return prefs.analytics !== false;
+  } catch {
+    return true;
+  }
+};
 
 const CookieConsentBanner = () => {
   const { t } = useLanguage();
@@ -20,6 +32,18 @@ const CookieConsentBanner = () => {
     if (!consentGiven) {
       setVisible(true);
     }
+  }, []);
+
+  // Allow re-opening the banner (in preferences mode) from anywhere so users
+  // can withdraw or change consent at any time.
+  useEffect(() => {
+    const handleOpen = () => {
+      setAnalyticsEnabled(readSavedAnalyticsPref());
+      setShowPreferences(true);
+      setVisible(true);
+    };
+    window.addEventListener(COOKIE_SETTINGS_EVENT, handleOpen);
+    return () => window.removeEventListener(COOKIE_SETTINGS_EVENT, handleOpen);
   }, []);
 
   const persistAndHide = (analyticsAllowed: boolean) => {
@@ -37,6 +61,7 @@ const CookieConsentBanner = () => {
         // Non-critical — localStorage is the source of truth for this session
       });
     }
+    setShowPreferences(false);
     setVisible(false);
   };
 
@@ -65,19 +90,19 @@ const CookieConsentBanner = () => {
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => setShowPreferences(true)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                className="px-4 py-2 text-sm font-medium text-gray-700 underline hover:text-gray-900 focus:outline-none"
               >
                 {t('legal.consent.preferences')}
               </button>
               <button
                 onClick={declineCookies}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+                className="px-5 py-2 text-sm font-semibold text-gray-900 bg-gray-200 rounded-lg hover:bg-gray-300 focus:outline-none"
               >
                 {t('legal.consent.decline')}
               </button>
               <button
                 onClick={acceptAllCookies}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none"
+                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none"
               >
                 {t('legal.consent.accept')}
               </button>

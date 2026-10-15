@@ -236,9 +236,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               label={
                 <div>
                   {t("register.acceptThe")}{" "}
-                  <a href="/terms" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("register.termsOfUse")}</a>{" "}
+                  <a href="/information/terms-and-conditions" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("register.termsOfUse")}</a>{" "}
                   {t("register.and")}{" "}
-                  <a href="/privacy" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("privacyPolicy")}</a>.
+                  <a href="/information/privacy-policy" className="text-brand-hover underline hover:text-white transition" target="_blank" rel="noreferrer">{t("privacyPolicy")}</a>.
                 </div>
               }
             />

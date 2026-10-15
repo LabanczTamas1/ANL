@@ -4,6 +4,12 @@
 credentials.json
 backend/credentials.json
 
+# Personal data dumps / exports (never commit)
+exported_data.json
+usersList.json
+backend/exported_data.json
+backend/usersList.json
+
 node_modules
 
 # Logs

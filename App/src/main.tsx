@@ -18,6 +18,14 @@ posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   // disabled on mobile while chasing navbar lag, but the real cause was the
   // decorative ambient backgrounds (see index.css mobile paint guard), so
   // replay can safely run on phones again.
+  //
+  // Privacy: mask every text node and input in session replay so no personal
+  // data (names, emails, messages) is ever captured. This matches the privacy
+  // policy claim that sensitive fields are masked. See posthog.com/docs/session-replay/privacy
+  session_recording: {
+    maskAllInputs: true,
+    maskTextSelector: "*",
+  },
 });
 
 // Re-enable capturing if the user already consented in a previous visit

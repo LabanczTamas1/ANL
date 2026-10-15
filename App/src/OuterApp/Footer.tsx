@@ -4,6 +4,8 @@ const lightLogo = "/light-logo.png";
 const darkLogo = "/dark-logo.png";
 import { Link } from "react-router-dom";
 import { useLanguage } from "./../hooks/useLanguage";
+import { openCookieSettings } from "../utils/cookieConsent";
+import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -129,6 +131,13 @@ const Footer: React.FC<FooterProps> = ({ darkMode }) => {
           <Link to="/information/privacy-policy" className="hover:text-brand-hover transition-colors duration-fast">
             {t.privacyPolicy}
           </Link>
+          <button
+            type="button"
+            onClick={openCookieSettings}
+            className="text-left hover:text-brand-hover transition-colors duration-fast"
+          >
+            {t.cookieSettings}
+          </button>
         </CollapsibleSection>
 
         {/* ── Company ──────────────────────────────────────────────────── */}
@@ -182,6 +191,7 @@ const Footer: React.FC<FooterProps> = ({ darkMode }) => {
           </div>
         </div>
       </div>
+      <CookieConsentBanner />
     </footer>
   );
 };

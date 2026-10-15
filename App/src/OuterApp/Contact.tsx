@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import ContactForm from "./ContactForm";
-import CookieConsentBanner from "./Informations.tsx/CookieConsentBanner";
 import { useLanguage } from "../hooks/useLanguage";
 import { FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaClock, FaArrowRight } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
@@ -217,7 +216,6 @@ const Contact = () => {
       </section>
 
       <Footer darkMode={true} />
-      <CookieConsentBanner />
 
       {/* Ripple help modal */}
       <RippleHelpModal
