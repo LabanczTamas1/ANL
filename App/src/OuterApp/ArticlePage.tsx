@@ -34,7 +34,7 @@ const ArticlePage: React.FC = () => {
   }, [slug]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface-overlay">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-surface-overlay">
       <Helmet>
         <title>{article ? `${article.title} — ANL` : "Article — ANL"}</title>
         {article?.excerpt && <meta name="description" content={article.excerpt} />}
@@ -54,7 +54,7 @@ const ArticlePage: React.FC = () => {
       {/* Ambient brand bloom */}
       <div className="pointer-events-none absolute left-1/2 top-0 h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-brand/20 blur-[160px]" />
 
-      <main className="relative z-10 pb-24 pt-36">
+      <main className="relative z-10 flex-1 pb-24 pt-36">
         {status === "loading" && (
           <div className="mx-auto max-w-3xl px-6">
             <div className="mb-6 h-6 w-32 animate-pulse rounded bg-surface-elevated/60" />

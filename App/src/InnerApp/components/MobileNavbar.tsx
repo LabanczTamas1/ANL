@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck, FaTimes } from 'react-icons/fa';
+import { FaInbox, FaEnvelope, FaUserCircle, FaStar, FaSignOutAlt, FaCalendarCheck, FaTimes, FaRegNewspaper } from 'react-icons/fa';
 import { GiSettingsKnobs } from 'react-icons/gi';
 import { MdLanguage } from 'react-icons/md';
 const lightLogo = "/light-logo.png";
@@ -137,6 +137,14 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({ setIsMenuOpen }) => {
                 <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
                   <FaUserCircle className="text-lg" />
                   <span>{t('sidebar.kanban')}</span>
+                </div>
+              </Link>
+            ) : ""}
+            {(role === "admin" || role === "owner") ? (
+              <Link to="/home/articles" onClick={closeMenu}>
+                <div className="flex items-center gap-2 hover:bg-gray-700 p-2 rounded-lg">
+                  <FaRegNewspaper className="text-lg" />
+                  <span>{t('sidebar.articles')}</span>
                 </div>
               </Link>
             ) : ""}
